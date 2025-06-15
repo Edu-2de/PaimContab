@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, RefObject } from "react";
 import { HiCheckCircle, HiOutlineChevronRight, HiSparkles } from "react-icons/hi2";
 
 // Cores neutras e modernas
@@ -59,11 +59,15 @@ const PLANS: Plan[] = [
   }
 ];
 
-export default function Plans() {
+interface PlansProps {
+  plansRef: RefObject<HTMLDivElement | null>;
+}
+
+export default function Plans({ plansRef }: PlansProps) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   return (
-    <section className="relative w-full min-h-[70vh] px-4 py-20 flex flex-col items-center justify-center bg-gradient-to-br from-neutral-50 via-white to-neutral-200 transition">
+    <section ref={plansRef} className="relative w-full min-h-[70vh] px-4 py-20 flex flex-col items-center justify-center bg-gradient-to-br from-neutral-50 via-white to-neutral-200 transition">
       {/* Fundo geométrico animado, sutil */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <svg width="100%" height="100%" className="absolute inset-0" style={{opacity: 0.13}}>

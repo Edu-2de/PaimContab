@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, RefObject } from "react";
 import { FiTrendingUp, FiUserCheck } from "react-icons/fi";
 
 // Efeito de descriptografar o título
@@ -124,7 +124,12 @@ function useContasAnimadas(qtd = 24, ativo = true) {
   return contas;
 }
 
-export default function Hero1() {
+interface Hero1Props {
+  plansRef: RefObject<HTMLDivElement | null>;
+  briefRef: RefObject<HTMLDivElement | null>;
+}
+
+export default function Hero1({ plansRef, briefRef }: Hero1Props) {
   const titulo = "Gestão M.E.I.";
   const tituloFull = Array.from(titulo);
   // const [decrypted, setDecrypted] = useState(decryptEffect(titulo, 0));
@@ -137,6 +142,20 @@ export default function Hero1() {
 
   const [hovered, setHovered] = useState(false);
   const titleRef = useRef<HTMLSpanElement>(null);
+
+  const scrollToPlans = () => {
+    if (plansRef?.current) {
+      plansRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const scrollToBrief = () => {
+    if (briefRef?.current) {
+      briefRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+
 
   // Controle de hover real (nunca deixa "travado")
   const checkMouseIn = useCallback((event: MouseEvent) => {
@@ -234,6 +253,9 @@ export default function Hero1() {
 
   // Estado para hover dos itens do fundo
   const [hoverContaKey, setHoverContaKey] = useState<string | null>(null);
+
+
+  
 
   function renderDecrypted() {
     return (
@@ -512,22 +534,22 @@ export default function Hero1() {
         Ferramentas e consultoria para administrar seu Microempreendedor Individual com eficiência e segurança.
       </p>
       <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
-        <a
-          href="#consultoria"
-          className="flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-300 hero-btn"
-          style={{ boxShadow: "0 3px 16px 0 #3341550b", minWidth: "180px" }}
-        >
-          <FiUserCheck className="text-xl" />
-          Consultoria
-        </a>
-        <a
-          href="#simulador"
-          className="flex items-center justify-center gap-2 px-7 py-3 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-900 text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-100 hero-btn"
-          style={{ minWidth: "180px" }}
-        >
-          <FiTrendingUp className="text-xl" />
-          Simular Operação
-        </a>
+          <button
+            onClick={scrollToPlans}
+            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-300 hero-btn"
+            style={{ boxShadow: "0 3px 16px 0 #3341550b", minWidth: "180px" }}
+          >
+            <FiUserCheck className="text-xl" />
+            Consultoria
+          </button>
+          <button
+            onClick={scrollToBrief}
+            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-900 text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-100 hero-btn"
+            style={{ minWidth: "180px" }}
+          >
+            <FiTrendingUp className="text-xl" />
+            Simular Operação
+          </button>
       </div>
     </div>
   </section>
