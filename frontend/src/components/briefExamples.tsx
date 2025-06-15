@@ -56,6 +56,7 @@ export default function BriefExamples() {
           <h2 className="text-3xl md:text-4xl font-black text-neutral-900 tracking-tight mb-1">
             Planilha MEI Automatizada
           </h2>
+          <br></br>
           <p className="text-neutral-700 text-base md:text-lg font-medium mb-2 max-w-2xl">
             Experimente uma demonstração prática de um dos materiais exclusivos do seu plano.
             Você poderá baixar e utilizar esta planilha no Excel sempre que quiser, facilitando o controle de receitas e despesas do seu negócio.
