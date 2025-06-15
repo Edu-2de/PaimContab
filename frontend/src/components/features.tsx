@@ -85,12 +85,13 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function Features() {
+  // Preto como padrão
+  const [isDark, setIsDark] = useState(true);
   const [features, setFeatures] = useState(() =>
     shuffle(ALL_FEATURES).slice(0, 4).map(f => ({ ...f, key: Math.random().toString(36) }))
   );
   const [animating, setAnimating] = useState(false);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  const [isDark, setIsDark] = useState(false);
 
   function handleShuffle() {
     if (animating) return;
@@ -276,7 +277,6 @@ export default function Features() {
                 <circle cx="12" cy="12" r="5" stroke="currentColor" />
                 <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
               </svg>
-            
             </>
           ) : (
             <>
