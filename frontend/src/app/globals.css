@@ -43,22 +43,3 @@ body {
   animation: fade-in 0.15s ease;
 }
 
-.main-container {
-  position: relative;
-  overflow: hidden; /* Impede que o popup passe dos limites */
-  width: 100vw;     /* ou o tamanho desejado */
-  height: 100vh;    /* ou o tamanho desejado */
-}
-
-.saiba-mais-popup {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: 90vw;
-  box-sizing: border-box;
-  z-index: 10;
-  /* Se quiser mais proteção: */
-  right: 10px;
-  left: 10px;
-}

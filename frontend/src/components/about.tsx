@@ -2,7 +2,7 @@
 import React, { useState, useRef } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
-// Tooltip com animação suave
+// Tooltip com animação suave e deslocamento maior para baixo
 function Grifado({
   children,
   dicaKey,
@@ -15,7 +15,6 @@ function Grifado({
   const [show, setShow] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Delay para hover out, evitando sumir abruptamente
   function onEnter() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setShow(true);
@@ -43,7 +42,8 @@ function Grifado({
       </span>
       <span
         className={`
-          pointer-events-none absolute z-[100] left-1/2 -translate-x-1/2 mt-3
+          pointer-events-none absolute z-[100] left-1/2 -translate-x-1/2
+          mt-7
           px-4 py-3 rounded-xl border border-neutral-200
           bg-white text-neutral-900 text-base font-medium shadow-xl
           transition-all duration-250 ease-out
