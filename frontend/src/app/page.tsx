@@ -1,4 +1,4 @@
-// ...existing code...
+"use client";
 import Header from '@/components/header';
 import Hero1 from '@/components/hero1';
 import Features from '@/components/features';
@@ -6,21 +6,20 @@ import Footer1 from '@/components/footer1';
 import BriefExamples from '@/components/briefExamples';
 import Plans from '@/components/plans';
 import About from '@/components/about';
-// Remova imports e funções de alternância desnecessárias
+import { useRef } from 'react';
 
-function App() {
+export default function App() {
+  const plansRef = useRef<HTMLDivElement>(null);
+
   return (
     <div>
       <Header />
-      <Hero1 />
+      <Hero1 plansRef={plansRef}/>
       <About />
       <Features />
       <BriefExamples />
-      <Plans />
+      <Plans plansRef={plansRef} />
       <Footer1 />
     </div>
   );
 }
-
-export default App;
-// ...existing code...
