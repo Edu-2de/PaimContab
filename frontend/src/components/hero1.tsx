@@ -126,9 +126,10 @@ function useContasAnimadas(qtd = 24, ativo = true) {
 
 interface Hero1Props {
   plansRef: RefObject<HTMLDivElement | null>;
+  briefRef: RefObject<HTMLDivElement | null>;
 }
 
-export default function Hero1({ plansRef }: Hero1Props) {
+export default function Hero1({ plansRef, briefRef }: Hero1Props) {
   const titulo = "Gestão M.E.I.";
   const tituloFull = Array.from(titulo);
   // const [decrypted, setDecrypted] = useState(decryptEffect(titulo, 0));
@@ -147,6 +148,13 @@ export default function Hero1({ plansRef }: Hero1Props) {
       plansRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
+
+  const scrollToBrief = () => {
+    if (briefRef?.current) {
+      briefRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
 
 
   // Controle de hover real (nunca deixa "travado")
@@ -534,14 +542,14 @@ export default function Hero1({ plansRef }: Hero1Props) {
             <FiUserCheck className="text-xl" />
             Consultoria
           </button>
-        <a
-          href="#simulador"
-          className="flex items-center justify-center gap-2 px-7 py-3 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-900 text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-100 hero-btn"
-          style={{ minWidth: "180px" }}
-        >
-          <FiTrendingUp className="text-xl" />
-          Simular Operação
-        </a>
+          <button
+            onClick={scrollToBrief}
+            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-900 text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-100 hero-btn"
+            style={{ minWidth: "180px" }}
+          >
+            <FiTrendingUp className="text-xl" />
+            Simular Operação
+          </button>
       </div>
     </div>
   </section>

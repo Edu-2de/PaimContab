@@ -10,14 +10,15 @@ import { useRef } from 'react';
 
 export default function App() {
   const plansRef = useRef<HTMLDivElement>(null);
+  const briefRef = useRef<HTMLDivElement>(null);
 
   return (
     <div>
       <Header />
-      <Hero1 plansRef={plansRef}/>
+      <Hero1 plansRef={plansRef} briefRef={briefRef} />
       <About />
       <Features />
-      <BriefExamples />
+      <BriefExamples briefRef={briefRef} />
       <Plans plansRef={plansRef} />
       <Footer1 />
     </div>

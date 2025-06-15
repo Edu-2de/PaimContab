@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, RefObject } from "react";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
 
 // Utilitário para formatar moeda brasileira
@@ -9,7 +9,11 @@ function formatCurrency(v: number) {
 
 type Row = { type: "Receita" | "Despesa"; desc: string; value: number };
 
-export default function BriefExamples() {
+interface BriefProps {
+  briefRef: RefObject<HTMLDivElement | null>;
+}
+
+export default function BriefExamples({ briefRef }: BriefProps) {
   const [data, setData] = useState<Row[]>([
     { type: "Receita", desc: "Serviços", value: 1500 },
     { type: "Despesa", desc: "Materiais", value: 400 },
@@ -50,7 +54,7 @@ export default function BriefExamples() {
   const saldoFinal = lucro - imposto;
 
   return (
-    <section className="w-full min-h-[80vh] bg-white flex flex-col items-center justify-center px-3 py-12">
+    <section ref={briefRef} className="w-full min-h-[80vh] bg-white flex flex-col items-center justify-center px-3 py-12">
       <div className="w-full max-w-6xl mx-auto flex flex-col items-center gap-7">
         <div className="w-full flex flex-col items-center mb-1 text-center">
           <h2 className="text-3xl md:text-4xl font-black text-neutral-900 tracking-tight mb-1">
