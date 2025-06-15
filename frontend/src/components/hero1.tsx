@@ -258,12 +258,12 @@ export default function Hero1() {
             <span className="block text-blue-950">Gestão M.E.I.</span>
           </h1>
           <p
-            className="text-gray-700 text-lg sm:text-2xl md:text-3xl mb-10 max-w-2xl font-light text-left"
+            className="text-gray-700 text-lg sm:text-2xl md:text-2xl mb-10 max-w-2xl font-light text-justify"
             style={{
               marginBottom: "2.3rem",
               lineHeight: 1.44,
               fontWeight: 400,
-              fontSize: "clamp(1.08rem, 2.3vw, 2.25rem)"
+              fontSize: "1.5vw"
             }}
           >
             Ferramentas e consultoria para administrar seu Microempreendedor Individual com eficiência e segurança.
