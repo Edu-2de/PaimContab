@@ -90,6 +90,7 @@ export default function Features() {
   );
   const [animating, setAnimating] = useState(false);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [isDark, setIsDark] = useState(false);
 
   function handleShuffle() {
     if (animating) return;
@@ -103,9 +104,15 @@ export default function Features() {
     }, 550);
   }
 
+  function handleToggleTheme() {
+    setIsDark((prev) => !prev);
+  }
+
   return (
     <section
-      className="relative w-full flex flex-col items-center bg-white dark:bg-neutral-950 py-16 px-2 transition-colors"
+      className={`relative w-full flex flex-col items-center transition-colors
+        ${isDark ? "bg-neutral-950" : "bg-white"}
+        py-16 px-2`}
       style={{ borderTop: "1.5px solid #e5e7eb" }}
     >
       {/* Subtle dots background */}
@@ -123,10 +130,10 @@ export default function Features() {
       </svg>
 
       <div className="max-w-2xl mx-auto text-center mb-12 relative z-10 px-2">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white mb-2">
+        <h2 className={`text-3xl sm:text-4xl font-extrabold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
           Nossos Diferenciais
         </h2>
-        <p className="text-gray-600 dark:text-gray-300 text-base sm:text-lg mt-2">
+        <p className={`text-base sm:text-lg mt-2 ${isDark ? "text-gray-300" : "text-gray-600"}`}>
           Um resumo dos pontos que tornam nossa consultoria única — focados em tecnologia, eficiência e o melhor da matemática aplicada ao seu negócio.
         </p>
       </div>
@@ -145,8 +152,8 @@ export default function Features() {
             <div
               key={feature.key}
               className={`
-                group relative rounded-3xl border border-neutral-200 dark:border-neutral-800
-                bg-white dark:bg-neutral-950 
+                group relative rounded-3xl border ${isDark ? "border-neutral-800" : "border-neutral-200"}
+                ${isDark ? "bg-neutral-950" : "bg-white"}
                 shadow-md hover:shadow-2xl transition-all
                 flex flex-col items-center justify-center px-6 py-12
                 overflow-hidden
@@ -171,23 +178,27 @@ export default function Features() {
             >
               {/* Ícone central */}
               <span className={`
-                flex items-center justify-center rounded-full border border-neutral-200 dark:border-neutral-800
-                bg-neutral-50 dark:bg-neutral-900
+                flex items-center justify-center rounded-full border
+                ${isDark ? "border-neutral-800 bg-neutral-900" : "border-neutral-200 bg-neutral-50"}
                 w-20 h-20 mb-4
                 transition
                 shadow
-                ${isHovered ? "scale-110 bg-white border-black text-black dark:bg-white dark:text-black dark:border-white shadow-2xl" : "text-neutral-900 dark:text-neutral-100"}
+                ${isHovered
+                  ? `scale-110 ${isDark ? "bg-white border-white text-black" : "bg-white border-black text-black"} shadow-2xl`
+                  : isDark
+                  ? "text-neutral-100"
+                  : "text-neutral-900"}
               `}>
                 <Icon
                   size={40}
-                  color={isHovered ? "#111" : undefined}
+                  color={isHovered ? "#111" : (isDark ? "#fff" : undefined)}
                   style={{ transition: "color 0.15s" }}
                 />
               </span>
-              <span className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-1">
+              <span className={`text-2xl font-extrabold tracking-tight mb-1 ${isDark ? "text-white" : "text-gray-900"}`}>
                 {feature.title}
               </span>
-              <span className="text-gray-500 dark:text-gray-300 text-base text-center font-normal mb-2">
+              <span className={`text-base text-center font-normal mb-2 ${isDark ? "text-gray-300" : "text-gray-500"}`}>
                 {feature.desc}
               </span>
               {/* Símbolo matemático, só um detalhe ao fundo */}
@@ -195,7 +206,7 @@ export default function Features() {
                 className={`
                   absolute left-1/2 bottom-6 -translate-x-1/2 select-none pointer-events-none font-mono font-extrabold
                   opacity-5
-                  text-black dark:text-white
+                  ${isDark ? "text-white" : "text-black"}
                   transition
                   group-hover:opacity-15
                   group-focus:opacity-15
@@ -213,7 +224,7 @@ export default function Features() {
               <span
                 className={`
                   absolute -inset-1 z-0 rounded-3xl pointer-events-none
-                  ${hoverIdx === i ? "bg-black/5 dark:bg-white/10 opacity-80 blur-[2px] scale-105" : ""}
+                  ${isHovered ? (isDark ? "bg-white/10" : "bg-black/5 opacity-80 blur-[2px] scale-105") : ""}
                   transition-all
                 `}
               />
@@ -222,8 +233,8 @@ export default function Features() {
         })}
       </div>
 
-      {/* Shuffle button */}
-      <div className="flex justify-center mt-14">
+      {/* Shuffle and Theme buttons */}
+      <div className="flex flex-wrap justify-center gap-5 mt-14">
         <button
           className={`
             relative px-8 py-3 rounded-full bg-white border border-black/20 text-black font-semibold text-lg
@@ -243,6 +254,37 @@ export default function Features() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M16 3h5v5m0 0l-8.59 8.59a2 2 0 01-2.83 0L7 13m13-5V3m0 5H16m-4 12h-5v-5m0 0l8.59-8.59a2 2 0 012.83 0L17 11m-9 8v2m0-2h5" />
           </svg>
           Trocar diferenciais
+        </button>
+        <button
+          className={`
+            relative px-8 py-3 rounded-full font-semibold text-lg
+            ${isDark
+              ? "bg-neutral-900 text-white border border-neutral-800 hover:bg-white hover:text-black hover:border-black"
+              : "bg-white text-black border border-black/20 hover:bg-black hover:text-white hover:border-black"}
+            transition-all shadow-md
+            flex items-center gap-2
+            focus:outline-none focus:ring-2 focus:ring-black/10
+            ring-inset
+          `}
+          onClick={handleToggleTheme}
+          type="button"
+          aria-label="Alternar cor de fundo"
+        >
+          {isDark ? (
+            <>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="5" stroke="currentColor" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            
+            </>
+          ) : (
+            <>
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+                <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 109.79 9.79z" />
+              </svg>
+            </>
+          )}
         </button>
       </div>
 

@@ -3,7 +3,9 @@ import Header3 from '@/components/header3';
 import Hero1 from '@/components/hero1';
 import Features from '@/components/features';
 import Footer1 from '@/components/footer1';
-
+import BriefExamples from '@/components/briefExamples';
+import Plans from '@/components/plans';
+import About from '@/components/about';
 // Remova imports e funções de alternância desnecessárias
 
 function App() {
@@ -11,8 +13,10 @@ function App() {
     <div>
       <Header3 />
       <Hero1 />
+      <About />
       <Features />
-     
+      <BriefExamples />
+      <Plans />
       <Footer1 />
     </div>
   );
