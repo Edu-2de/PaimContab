@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
+import { FiPlus, FiTrash2 } from "react-icons/fi";
 
-// Utilitário de formatação
+// Utilitário para formatar moeda brasileira
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -9,19 +10,11 @@ function formatCurrency(v: number) {
 type Row = { type: "Receita" | "Despesa"; desc: string; value: number };
 
 export default function BriefExamples() {
-  // Dados da planilha
   const [data, setData] = useState<Row[]>([
     { type: "Receita", desc: "Serviços", value: 1500 },
     { type: "Despesa", desc: "Materiais", value: 400 },
   ]);
   const [editIdx, setEditIdx] = useState<number | null>(null);
-
-  // Paleta neutra (ex: Tailwind Zinc/Stone)
-  const receitaColor = "text-zinc-700 bg-zinc-50";
-  const despesaColor = "text-stone-600 bg-stone-50";
-  const lucroColor = "text-stone-800 bg-stone-100";
-  const impostoColor = "text-zinc-500";
-  const saldoColor = "text-zinc-900 bg-zinc-100";
 
   // Adicionar linha
   function addRow(type: "Receita" | "Despesa") {
@@ -49,7 +42,7 @@ export default function BriefExamples() {
     setEditIdx(null);
   }
 
-  // Cálculos
+  // Cálculos automáticos
   const totalReceita = data.filter(x => x.type === "Receita").reduce((a, b) => a + b.value, 0);
   const totalDespesa = data.filter(x => x.type === "Despesa").reduce((a, b) => a + b.value, 0);
   const lucro = totalReceita - totalDespesa;
@@ -57,71 +50,78 @@ export default function BriefExamples() {
   const saldoFinal = lucro - imposto;
 
   return (
-    <section className="relative bg-neutral-50 w-full px-4 py-20 flex flex-col items-center">
-      <div className="max-w-5xl w-full mx-auto flex flex-col md:flex-row gap-10 md:gap-16 items-center justify-center">
-        {/* Lado esquerdo */}
-        <div className="flex-1 max-w-md mb-10 md:mb-0">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-neutral-800 mb-2">
-            Controle Simples e Neutro
+    <section className="w-full min-h-[80vh] bg-white flex flex-col items-center justify-center px-3 py-12">
+      <div className="w-full max-w-6xl mx-auto flex flex-col items-center gap-7">
+        <div className="w-full flex flex-col items-center mb-1 text-center">
+          <h2 className="text-3xl md:text-4xl font-black text-neutral-900 tracking-tight mb-1">
+            Planilha MEI Automatizada
           </h2>
-          <p className="text-neutral-600 text-base sm:text-lg mb-4 max-w-sm">
-            Gerencie receitas e despesas, veja lucros e impostos <b>em tempo real</b> numa planilha neutra e moderna.<br />
-            Adicione, edite ou remova itens rapidamente.
+          <br></br>
+          <p className="text-neutral-700 text-base md:text-lg font-medium mb-2 max-w-2xl">
+            Experimente uma demonstração prática de um dos materiais exclusivos do seu plano.
+            Você poderá baixar e utilizar esta planilha no Excel sempre que quiser, facilitando o controle de receitas e despesas do seu negócio.
           </p>
-          <ul className="text-neutral-600 text-sm pl-4 mb-2 list-disc">
-            <li>Visual super clean</li>
-            <li>Cores neutras e harmônicas</li>
-            <li>Adição e edição rápida de linhas</li>
-          </ul>
-          <div className="mt-4">
-            <span className="inline-block text-xs text-neutral-600 bg-neutral-200 rounded px-2 py-1">
-              <b>Exemplo interativo:</b> esta planilha é apenas uma demonstração e serve somente para testes.
-            </span>
-          </div>
-          <span className="text-xs text-neutral-500 bg-neutral-200 rounded px-2 py-1 mt-3 inline-block">
-            Material exclusivo para download aos participantes
-          </span>
         </div>
-
-        {/* Lado direito: planilha */}
-        <div className="flex-1 w-full max-w-2xl min-w-[320px]">
-          <div className="rounded-2xl border border-neutral-200 shadow-sm bg-white/95 overflow-x-auto">
-            <div className="flex justify-between items-center px-6 py-3 border-b border-neutral-100 bg-neutral-100/70">
-              <span className="text-neutral-700 font-semibold text-base tracking-tight">Planilha MEI</span>
-              <div className="flex gap-1">
-                <button
-                  className="rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 px-3 py-1 text-xs font-medium transition"
-                  onClick={() => addRow("Receita")}
-                  type="button"
-                >
-                  + Receita
-                </button>
-                <button
-                  className="rounded-full bg-stone-100 hover:bg-stone-200 text-stone-700 px-3 py-1 text-xs font-medium transition"
-                  onClick={() => addRow("Despesa")}
-                  type="button"
-                >
-                  + Despesa
-                </button>
-              </div>
+        <div className="w-full bg-white rounded-2xl shadow-xl border border-neutral-200 overflow-x-auto">
+          <div className="flex items-center justify-between px-6 py-4 bg-neutral-50 border-b border-neutral-200">
+            <div className="font-bold text-neutral-900 text-lg tracking-tight">Planilha</div>
+            <div className="flex gap-2">
+              <button
+                className="inline-flex items-center gap-1 rounded bg-neutral-900 hover:bg-neutral-700 text-white px-4 py-1.5 text-xs font-semibold shadow-sm transition"
+                onClick={() => addRow("Receita")}
+                type="button"
+                title="Adicionar receita"
+              >
+                <FiPlus /> Receita
+              </button>
+              <button
+                className="inline-flex items-center gap-1 rounded bg-white hover:bg-neutral-100 text-neutral-900 px-4 py-1.5 text-xs font-semibold shadow-sm border border-neutral-200 transition"
+                onClick={() => addRow("Despesa")}
+                type="button"
+                title="Adicionar despesa"
+              >
+                <FiPlus /> Despesa
+              </button>
             </div>
-            <table className="w-full min-w-[340px] text-sm">
+          </div>
+          <div className="w-full flex justify-center">
+            <table
+              className="text-sm font-mono w-full max-w-5xl"
+              style={{
+                borderCollapse: "separate",
+                borderSpacing: 0,
+                minWidth: 900,
+                maxWidth: 1200,
+                marginLeft: "auto",
+                marginRight: "auto",
+                tableLayout: "fixed",
+              }}
+            >
+              <colgroup>
+                <col style={{ width: "13%" }} />
+                <col style={{ width: "62%" }} />
+                <col style={{ width: "20%" }} />
+                <col style={{ width: "5%" }} />
+              </colgroup>
               <thead>
-                <tr className="text-neutral-400 uppercase text-xs tracking-wide">
-                  <th className="font-normal py-2 px-3 text-left w-[90px]">Tipo</th>
-                  <th className="font-normal py-2 px-3 text-left">Descrição</th>
-                  <th className="font-normal py-2 px-3 text-right w-[90px]">Valor</th>
-                  <th className="font-normal py-2 px-2"></th>
+                <tr className="bg-neutral-100 text-neutral-500 uppercase text-[11px]">
+                  <th className="font-semibold py-2 px-4 text-left border-b border-neutral-200 border-r">Tipo</th>
+                  <th className="font-semibold py-2 px-4 text-left border-b border-neutral-200 border-r">Descrição</th>
+                  <th className="font-semibold py-2 px-4 text-right border-b border-neutral-200 border-r">Valor</th>
+                  <th className="font-semibold py-2 px-2 border-b border-neutral-200"></th>
                 </tr>
               </thead>
               <tbody>
                 {data.map((row, idx) => (
-                  <tr key={idx}
-                    className={`border-b border-neutral-100 group transition
-                      ${editIdx === idx ? "bg-neutral-100/60" : "hover:bg-neutral-100/40"}`}>
-                    <td className={row.type === "Receita" ? receitaColor : despesaColor + " rounded-l"}>
+                  <tr
+                    key={idx}
+                    className={`group border-b border-neutral-200 transition duration-100
+                      ${editIdx === idx ? "bg-neutral-100/80" : "hover:bg-neutral-50"}
+                    `}
+                  >
+                    <td className="border-r border-neutral-200">
                       <select
-                        className="bg-transparent px-1 py-1 text-inherit focus:outline-none"
+                        className="bg-transparent px-1 py-1 focus:outline-none w-full text-neutral-900"
                         value={row.type}
                         onChange={e => handleRowChange(idx, "type", e.target.value as Row["type"])}
                         aria-label="Tipo"
@@ -131,10 +131,10 @@ export default function BriefExamples() {
                         <option value="Despesa">Despesa</option>
                       </select>
                     </td>
-                    <td>
+                    <td className="border-r border-neutral-200">
                       <input
                         type="text"
-                        className="w-full bg-transparent px-1 py-1 border-b border-dashed border-neutral-200 focus:border-zinc-400 focus:outline-none text-neutral-800 placeholder:text-neutral-400"
+                        className="w-full bg-transparent px-2 py-1 border-b border-dashed border-neutral-300 focus:border-neutral-900 focus:outline-none text-neutral-900 placeholder:text-neutral-400"
                         value={row.desc}
                         placeholder={row.type === "Receita" ? "Ex: Serviço, Venda..." : "Ex: Conta, Compra..."}
                         onFocus={() => setEditIdx(idx)}
@@ -144,10 +144,10 @@ export default function BriefExamples() {
                         tabIndex={0}
                       />
                     </td>
-                    <td>
+                    <td className="border-r border-neutral-200">
                       <input
                         type="number"
-                        className="w-24 bg-transparent px-2 py-1 border border-transparent rounded focus:border-zinc-400 text-right text-neutral-800 font-medium transition"
+                        className="w-full bg-transparent px-2 py-1 border border-transparent rounded focus:border-neutral-900 text-right text-neutral-900 font-medium transition"
                         value={row.value}
                         min={0}
                         step={10}
@@ -162,13 +162,11 @@ export default function BriefExamples() {
                       <button
                         onClick={() => removeRow(idx)}
                         aria-label="Remover linha"
-                        className="opacity-0 group-hover:opacity-100 transition px-2 text-neutral-300 hover:text-red-400"
+                        className="opacity-0 group-hover:opacity-100 transition px-1 text-neutral-400 hover:text-red-500"
                         tabIndex={0}
                         type="button"
                       >
-                        <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2.1} viewBox="0 0 24 24">
-                          <path d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
+                        <FiTrash2 size={18} />
                       </button>
                     </td>
                   </tr>
@@ -176,37 +174,35 @@ export default function BriefExamples() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={2} className={"py-2 px-3 font-medium " + receitaColor}>Total Receita</td>
-                  <td className={"py-2 px-3 text-right font-semibold " + receitaColor}>{formatCurrency(totalReceita)}</td>
+                  <td colSpan={2} className="py-2 px-4 text-right font-bold border-t border-neutral-200 bg-neutral-50 text-neutral-900 border-r">Total Receita</td>
+                  <td className="py-2 px-4 text-right font-bold border-t border-neutral-200 bg-neutral-50 text-neutral-900 border-r">{formatCurrency(totalReceita)}</td>
                   <td></td>
                 </tr>
                 <tr>
-                  <td colSpan={2} className={"py-2 px-3 font-medium " + despesaColor}>Total Despesa</td>
-                  <td className={"py-2 px-3 text-right font-semibold " + despesaColor}>{formatCurrency(totalDespesa)}</td>
+                  <td colSpan={2} className="py-2 px-4 text-right font-bold border-t border-neutral-200 bg-neutral-50 text-neutral-900 border-r">Total Despesa</td>
+                  <td className="py-2 px-4 text-right font-bold border-t border-neutral-200 bg-neutral-50 text-neutral-900 border-r">{formatCurrency(totalDespesa)}</td>
                   <td></td>
                 </tr>
                 <tr>
-                  <td colSpan={2} className={"py-2 px-3 font-medium " + lucroColor}>Lucro</td>
-                  <td className={"py-2 px-3 text-right font-semibold " + lucroColor}>{formatCurrency(lucro)}</td>
+                  <td colSpan={2} className="py-2 px-4 text-right font-bold border-t border-neutral-200 bg-neutral-50 text-neutral-900 border-r">Lucro</td>
+                  <td className="py-2 px-4 text-right font-bold border-t border-neutral-200 bg-neutral-50 text-neutral-900 border-r">{formatCurrency(lucro)}</td>
                   <td></td>
                 </tr>
                 <tr>
-                  <td colSpan={2} className={"py-2 px-3 font-medium " + impostoColor}>DAS (6%)</td>
-                  <td className={"py-2 px-3 text-right font-medium " + impostoColor}>{formatCurrency(imposto)}</td>
+                  <td colSpan={2} className="py-2 px-4 text-right border-t border-neutral-200 bg-white border-r text-neutral-500 font-medium">DAS (6%)</td>
+                  <td className="py-2 px-4 text-right border-t border-neutral-200 bg-white border-r text-neutral-500 font-medium">{formatCurrency(imposto)}</td>
                   <td></td>
                 </tr>
                 <tr>
-                  <td colSpan={2} className={"py-2 px-3 font-bold " + saldoColor + " border-t border-neutral-200"}>Saldo Final</td>
-                  <td className={"py-2 px-3 text-right font-extrabold " + saldoColor + " border-t border-neutral-200"}>
-                    {formatCurrency(saldoFinal)}
-                  </td>
-                  <td className={saldoColor + " border-t border-neutral-200"}></td>
+                  <td colSpan={2} className="py-3 px-4 text-right font-extrabold border-t-2 border-neutral-300 bg-neutral-100 border-r text-neutral-900">Saldo Final</td>
+                  <td className="py-3 px-4 text-right font-extrabold border-t-2 border-neutral-300 bg-neutral-100 border-r text-neutral-900">{formatCurrency(saldoFinal)}</td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
-            <div className="px-6 py-2 bg-neutral-50 text-xs text-neutral-400 text-center border-t border-neutral-100">
-              * Esta planilha é apenas um exemplo para testes e demonstração.
-            </div>
+          </div>
+          <div className="px-6 py-2 bg-neutral-50 text-xs text-neutral-500 border-t border-neutral-200 text-center">
+            * Planilha automatizada para simulação rápida. Edite, adicione ou remova linhas para testar. Depois, baixe para usar no Excel e torne o seu controle financeiro ainda mais eficiente!
           </div>
         </div>
       </div>
