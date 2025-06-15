@@ -121,7 +121,7 @@ export default function BriefExamples() {
                   >
                     <td className="border-r border-neutral-200">
                       <select
-                        className="bg-transparent px-1 py-1 text-inherit focus:outline-none w-full text-neutral-900"
+                        className="bg-transparent px-1 py-1 focus:outline-none w-full text-neutral-900"
                         value={row.type}
                         onChange={e => handleRowChange(idx, "type", e.target.value as Row["type"])}
                         aria-label="Tipo"
