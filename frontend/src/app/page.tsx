@@ -1,5 +1,5 @@
 // ...existing code...
-import Header3 from '@/components/header3';
+import Header from '@/components/header';
 import Hero1 from '@/components/hero1';
 import Features from '@/components/features';
 import Footer1 from '@/components/footer1';
@@ -11,7 +11,7 @@ import About from '@/components/about';
 function App() {
   return (
     <div>
-      <Header3 />
+      <Header />
       <Hero1 />
       <About />
       <Features />

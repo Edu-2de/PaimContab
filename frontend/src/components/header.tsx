@@ -43,16 +43,11 @@ const rightButtons = [
   {
     label: "Entrar",
     onClick: () => alert("Login..."),
-    style: "outline",
-  },
-  {
-    label: "Área do Aluno",
-    onClick: () => alert("Área do Aluno..."),
-    style: "solid",
-  },
+    style: "outline pointer-events-auto cursor-pointer",
+  }
 ];
 
-export default function AcademicHeader() {
+export default function Header() {
   // Estado para submenus abertos (desktop e mobile)
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   // Estado para menu mobile/tablet aberto
@@ -166,7 +161,7 @@ export default function AcademicHeader() {
         <div className="max-w-7xl mx-auto flex items-center h-20 px-4 md:px-8">
           {/* Logo */}
           <div className="font-bold text-2xl text-gray-900 mr-6 md:mr-14 select-none tracking-tight flex-shrink-0">
-            Logo
+            PaimContab
           </div>
           {/* Menu Desktop */}
           <nav className="flex-1 hidden lg:block">
@@ -174,13 +169,13 @@ export default function AcademicHeader() {
               {menuItems.map((item, idx) => (
                 <li
                   key={item.label}
-                  className="relative"
+                  className="relative "
                   onMouseEnter={() => handleMenuMouseEnter(idx)}
                   onMouseLeave={handleMenuMouseLeave}
                 >
                   <button
                     className={classNames(
-                      "flex items-center gap-1 px-2 py-2 font-medium text-gray-800 hover:text-black transition-colors",
+                      "flex items-center gap-1 px-2 py-2 font-medium text-gray-800 hover:text-black transition-colors cursor-pointer",
                       openMenu === idx && "text-black"
                     )}
                     type="button"
@@ -244,7 +239,8 @@ export default function AcademicHeader() {
                 <button
                   key={i}
                   onClick={btn.onClick}
-                  className="px-5 py-2 rounded bg-gray-900 text-white font-semibold shadow hover:bg-gray-700 transition"
+                  className="px-5 py-2 rounded bg-gray-900 text-white font-semibold shadow hover:bg-gray-700 transition cursor-pointer"
+                  
                 >
                   {btn.label}
                 </button>
@@ -252,7 +248,7 @@ export default function AcademicHeader() {
                 <button
                   key={i}
                   onClick={btn.onClick}
-                  className="px-5 py-2 rounded border border-gray-900 text-gray-900 font-semibold hover:bg-gray-100 transition"
+                  className="px-5 py-2 rounded border border-gray-900 text-gray-900 font-semibold hover:bg-gray-100 transition cursor-pointer"
                 >
                   {btn.label}
                 </button>
@@ -311,7 +307,7 @@ export default function AcademicHeader() {
         >
           <div className="flex items-center justify-between h-20 px-6 border-b border-gray-100">
             <span className="font-bold text-xl text-gray-900 select-none tracking-tight">
-              Logo
+              PaimContab
             </span>
             <button
               className="p-2 rounded hover:bg-gray-100 transition"
