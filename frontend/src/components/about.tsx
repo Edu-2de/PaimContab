@@ -278,7 +278,7 @@ export default function About() {
           </div>
         </div>
         {/* Navegação de slides embaixo e centralizada */}
-        <div className="flex items-center gap-4 mt-12 justify-center w-full">
+        <div className="flex items-center gap-4 mt-12 justify-center w-full ">
           <button
             aria-label="Anterior"
             onClick={() =>

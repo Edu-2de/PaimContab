@@ -252,7 +252,7 @@ export default function Features() {
           type="button"
         >
           <svg className="w-6 h-6 inline-block mr-2" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16 3h5v5m0 0l-8.59 8.59a2 2 0 01-2.83 0L7 13m13-5V3m0 5H16m-4 12h-5v-5m0 0l8.59-8.59a2 2 0 012.83 0L17 11m-9 8v2m0-2h5" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16 3h5v5m0 0l-8.59 8.59a2 2 0 01-2.83 0L7 13m13-5V3m0 5H16m-4 12h-5v-5m0 0l8.59-8.59a2 2 0 012.83 0L17 11m-9 8v2m0-2h5 " />
           </svg>
           Trocar diferenciais
         </button>
