@@ -42,7 +42,7 @@ const menuItems = [
 const rightButtons = [
   {
     label: "Entrar",
-    onClick: () => alert("Login..."),
+    onClick: () => (window.location.href = "/Login"),
     style: "outline pointer-events-auto cursor-pointer",
   }
 ];
