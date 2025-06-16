@@ -99,13 +99,23 @@ export default function LoginRegisterPage() {
       className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f7fafc] via-[#e3e8ee] to-[#cbd5e1] relative"
       style={{ fontFamily: "Inter, sans-serif" }}
     >
+      {/* X só na versão desktop */}
       <button
         onClick={handleBack}
         aria-label="Voltar para home"
-        className="absolute top-6 left-6 bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition z-20 cursor-pointer"
+        className="absolute top-6 left-6 bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition z-20 cursor-pointer hidden sm:inline-flex"
         style={{ border: "1.5px solid #e5e7eb" }}
       >
         <FiX className="text-2xl text-gray-500" />
+      </button>
+      {/* Seta só na versão mobile */}
+      <button
+        onClick={handleBack}
+        className="absolute top-6 left-6 bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition cursor-pointer sm:hidden"
+        style={{ border: "1.5px solid #e5e7eb" }}
+        aria-label="Voltar para home"
+      >
+        <FiArrowLeft className="text-xl text-gray-500" />
       </button>
       <div
         ref={containerRef}
@@ -254,14 +264,6 @@ export default function LoginRegisterPage() {
               : "Já tem conta? Entrar"}
           </button>
         </div>
-        <button
-          onClick={handleBack}
-          className="absolute top-6 left-6 sm:hidden bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition cursor-pointer"
-          style={{ border: "1.5px solid #e5e7eb" }}
-          aria-label="Voltar para home"
-        >
-          <FiArrowLeft className="text-xl text-gray-500" />
-        </button>
         <style>{`
           .switching-fluent {
             animation: fadeSwitchFluent 0.5s cubic-bezier(.45,1.75,.38,.9);
