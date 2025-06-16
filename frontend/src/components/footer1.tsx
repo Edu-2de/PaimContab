@@ -7,7 +7,7 @@ export default function Footer1() {
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center md:items-start justify-between gap-10">
         {/* Logo e descrição */}
         <div className="flex flex-col items-center md:items-start mb-8 md:mb-0">
-          <span className="text-2xl font-bold tracking-tight text-white mb-2 select-none">LOGO</span>
+          <span className="text-2xl font-bold tracking-tight text-white mb-2 select-none">PaimContab</span>
           <p className="text-neutral-400 text-sm max-w-xs text-center md:text-left">
             Cuidando da sua saúde com excelência e humanidade. Atendimento médico de alta qualidade e tecnologia de ponta.
           </p>
@@ -24,7 +24,7 @@ export default function Footer1() {
         <div className="flex flex-col gap-2 items-center md:items-start">
           <span className="uppercase text-xs text-neutral-400 font-semibold mb-2 tracking-widest">Contato</span>
           <span className="flex items-center gap-2 text-sm">
-            <FiMail className="text-neutral-400" /> contato@hospitalvida.com
+            <FiMail className="text-neutral-400" /> Paimcontec@gmail.com
           </span>
           <span className="flex items-center gap-2 text-sm">
             <FiPhone className="text-neutral-400" /> (11) 1234-5678
@@ -35,7 +35,7 @@ export default function Footer1() {
         </div>
       </div>
       <div className="mt-10 border-t border-neutral-800 pt-4 text-center text-xs text-neutral-500">
-        © {new Date().getFullYear()} LOGO. Todos os direitos reservados.
+        © {new Date().getFullYear()} PaimContab. Todos os direitos reservados.
       </div>
     </footer>
   );
