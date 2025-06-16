@@ -71,7 +71,7 @@ export default function BriefExamples({ briefRef }: BriefProps) {
             <div className="font-bold text-neutral-900 text-lg tracking-tight">Planilha</div>
             <div className="flex gap-2">
               <button
-                className="inline-flex items-center gap-1 rounded bg-neutral-900 hover:bg-neutral-700 text-white px-4 py-1.5 text-xs font-semibold shadow-sm transition"
+                className="inline-flex items-center gap-1 rounded bg-neutral-900 hover:bg-neutral-700 text-white px-4 py-1.5 text-xs font-semibold shadow-sm transition cursor-pointer"
                 onClick={() => addRow("Receita")}
                 type="button"
                 title="Adicionar receita"
@@ -79,7 +79,7 @@ export default function BriefExamples({ briefRef }: BriefProps) {
                 <FiPlus /> Receita
               </button>
               <button
-                className="inline-flex items-center gap-1 rounded bg-white hover:bg-neutral-100 text-neutral-900 px-4 py-1.5 text-xs font-semibold shadow-sm border border-neutral-200 transition"
+                className="inline-flex items-center gap-1 rounded bg-white hover:bg-neutral-100 text-neutral-900 px-4 py-1.5 text-xs font-semibold shadow-sm border border-neutral-200 transition cursor-pointer"
                 onClick={() => addRow("Despesa")}
                 type="button"
                 title="Adicionar despesa"
@@ -125,7 +125,7 @@ export default function BriefExamples({ briefRef }: BriefProps) {
                   >
                     <td className="border-r border-neutral-200">
                       <select
-                        className="bg-transparent px-1 py-1 focus:outline-none w-full text-neutral-900"
+                        className="bg-transparent px-1 py-1 focus:outline-none w-full text-neutral-900 cursor-pointer"
                         value={row.type}
                         onChange={e => handleRowChange(idx, "type", e.target.value as Row["type"])}
                         aria-label="Tipo"
@@ -151,7 +151,7 @@ export default function BriefExamples({ briefRef }: BriefProps) {
                     <td className="border-r border-neutral-200">
                       <input
                         type="number"
-                        className="w-full bg-transparent px-2 py-1 border border-transparent rounded focus:border-neutral-900 text-right text-neutral-900 font-medium transition"
+                        className="w-full bg-transparent px-2 py-1 border border-transparent rounded focus:border-neutral-900 text-right text-neutral-900 font-medium transition "
                         value={row.value}
                         min={0}
                         step={10}
@@ -166,7 +166,7 @@ export default function BriefExamples({ briefRef }: BriefProps) {
                       <button
                         onClick={() => removeRow(idx)}
                         aria-label="Remover linha"
-                        className="opacity-0 group-hover:opacity-100 transition px-1 text-neutral-400 hover:text-red-500"
+                        className="opacity-0 group-hover:opacity-100 transition px-1 text-neutral-400 hover:text-red-500 cursor-pointer"
                         tabIndex={0}
                         type="button"
                       >
