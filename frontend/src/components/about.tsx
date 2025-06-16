@@ -42,7 +42,7 @@ function Grifado({
       </span>
       <span
         className={`
-          pointer-events-none absolute z-[100] left-1/2 -translate-x-1/2
+          pointer-events-none absolute z-[999] left-1/2 -translate-x-1/2
           mt-7
           px-4 py-3 rounded-xl border border-neutral-200
           bg-white text-neutral-900 text-base font-medium shadow-xl
@@ -234,10 +234,14 @@ export default function About() {
   }
 
   return (
-    <section className="w-full flex justify-center py-20 px-2 sm:px-12 bg-white select-none relative min-h-[700px]">
+    <section className="w-full flex justify-center py-20 px-2 sm:px-12 bg-white select-none relative min-h-[700px]"
+      // Removido overflow: "hidden" do style!
+      style={{ minHeight: 700, position: "relative" }}
+    >
       <div
         className="w-full max-w-6xl flex flex-col items-center mx-auto relative"
-        style={{ minHeight: 700, position: "relative", overflow: "hidden" }}
+        // Não coloque overflow aqui também!
+        style={{ minHeight: 700, position: "relative" }}
       >
         {/* Título centralizado */}
         <div className="w-full flex justify-center relative mb-12">
@@ -274,7 +278,7 @@ export default function About() {
           </div>
         </div>
         {/* Navegação de slides embaixo e centralizada */}
-        <div className="flex items-center gap-4 mt-12 justify-center w-full">
+        <div className="flex items-center gap-4 mt-12 justify-center w-full ">
           <button
             aria-label="Anterior"
             onClick={() =>
@@ -283,7 +287,7 @@ export default function About() {
                 "left"
               )
             }
-            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40"
+            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40 cursor-pointer"
             disabled={slides.length <= 1 || isAnimating}
             tabIndex={0}
           >
@@ -300,7 +304,7 @@ export default function About() {
                 "right"
               )
             }
-            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40"
+            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40 cursor-pointer"
             disabled={slides.length <= 1 || isAnimating}
             tabIndex={0}
           >

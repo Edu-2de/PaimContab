@@ -199,7 +199,7 @@ export default function Plans({ plansRef }: PlansProps) {
                     hover:bg-neutral-800 active:scale-95
                     focus:outline-none focus:ring-2 ${ringAccent}
                     duration-200
-                    text-lg
+                    text-lg cursor-pointer
                   `}
                 >
                   Escolher plano
