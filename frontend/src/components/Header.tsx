@@ -123,6 +123,25 @@ export default function Header() {
     }
   };
 
+  // Para fechar o dropdown do usuário ao clicar fora
+  useEffect(() => {
+    if (!profileOpen) return;
+    function handleClick(e: MouseEvent) {
+      const dropdown = document.getElementById('user-profile-dropdown');
+      const button = document.getElementById('user-profile-btn');
+      if (
+        dropdown &&
+        !dropdown.contains(e.target as Node) &&
+        button &&
+        !button.contains(e.target as Node)
+      ) {
+        setProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [profileOpen]);
+
   return (
     <>
       {mobileMenuOpen && (
@@ -226,29 +245,49 @@ export default function Header() {
                 Entrar
               </button>
             ) : (
-              <div
-                className="relative flex items-center"
-                onMouseEnter={() => setProfileOpen(true)}
-                onMouseLeave={() => setProfileOpen(false)}
-              >
+              <div className="relative flex items-center">
                 <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition cursor-pointer"
+                  id="user-profile-btn"
+                  className="flex items-center gap-3 px-2 py-1 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 transition cursor-pointer shadow-sm"
                   type="button"
                   aria-haspopup="true"
                   aria-expanded={profileOpen}
+                  tabIndex={0}
+                  onClick={() => setProfileOpen((open) => !open)}
                 >
-                  <FiUser className="text-xl text-gray-700" />
-                  {user?.name && (
-                  <span className="font-medium text-gray-800">
-                      Olá, {user.name.split(" ")[0]}
+                  <span className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-500 font-bold text-lg shadow-sm">
+                    {user.name?.charAt(0).toUpperCase() || <FiUser />}
                   </span>
-                  )}
+                  <span className="flex flex-col text-left leading-tight">
+                    <span className="font-semibold text-gray-700 text-[15px]">{user.name.split(" ")[0]}</span>
+                    <span className="text-xs text-gray-400">Minha conta</span>
+                  </span>
+                  <svg
+                    className={classNames(
+                      "ml-1 w-4 h-4 text-gray-400 transition-transform duration-200",
+                      profileOpen ? "-rotate-180 -translate-y-0.5" : "rotate-0"
+                    )}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M19 9l-7 7-7-7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50 animate-fadein">
+                  <div
+                    id="user-profile-dropdown"
+                    className="absolute right-0 top-full mt-2 z-50 bg-white border border-gray-100 rounded-xl shadow-xl animate-fadein py-2 min-w-[160px]"
+                  >
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                      className="w-full text-left px-5 py-2 text-red-500 hover:bg-gray-50 hover:text-red-600 transition font-medium rounded"
                     >
                       Sair
                     </button>
@@ -390,25 +429,44 @@ export default function Header() {
                 Entrar
               </button>
             ) : (
-              <div
-                className="relative flex items-center"
-                onMouseEnter={() => setProfileOpen(true)}
-                onMouseLeave={() => setProfileOpen(false)}
-              >
+              <div className="relative w-full">
                 <button
-                  className="flex items-center gap-2 w-full px-4 py-3 rounded-full bg-gray-100 hover:bg-gray-200 transition cursor-pointer"
+                  className="flex items-center gap-3 w-full px-4 py-3 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 transition cursor-pointer shadow-sm"
                   type="button"
                   aria-haspopup="true"
                   aria-expanded={profileOpen}
+                  onClick={() => setProfileOpen(!profileOpen)}
                 >
-                  <FiUser className="text-xl text-gray-700" />
-                  <span className="font-medium text-gray-800">Olá, {user.name.split(" ")[0]}</span>
+                  <span className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-500 font-bold text-lg shadow-sm">
+                    {user.name?.charAt(0).toUpperCase() || <FiUser />}
+                  </span>
+                  <span className="flex flex-col text-left leading-tight">
+                    <span className="font-semibold text-gray-700 text-[15px]">{user.name.split(" ")[0]}</span>
+                    <span className="text-xs text-gray-400">Minha conta</span>
+                  </span>
+                  <svg
+                    className={classNames(
+                      "ml-1 w-4 h-4 text-gray-400 transition-transform duration-200",
+                      profileOpen ? "-rotate-180 -translate-y-0.5" : "rotate-0"
+                    )}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M19 9l-7 7-7-7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
                 {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50 animate-fadein">
+                  <div className="absolute right-0 left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-fadein py-2">
                     <button
                       onClick={handleLogout}
-                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                      className="w-full text-left px-5 py-2 text-red-500 hover:bg-gray-50 hover:text-red-600 transition font-medium rounded"
                     >
                       Sair
                     </button>
