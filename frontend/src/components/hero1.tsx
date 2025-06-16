@@ -249,7 +249,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
-  const contasBg = useContasAnimadas(isMobile ? 32 : 100, contasAtivas);
+  const contasBg = useContasAnimadas(isMobile ? 32 : 70, contasAtivas);
 
   // Estado para hover dos itens do fundo
   const [hoverContaKey, setHoverContaKey] = useState<string | null>(null);
