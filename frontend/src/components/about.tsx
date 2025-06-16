@@ -2,7 +2,7 @@
 import React, { useState, useRef } from "react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 
-// Tooltip com animação suave e deslocamento maior para baixo
+
 function Grifado({
   children,
   dicaKey,
@@ -235,15 +235,15 @@ export default function About() {
 
   return (
     <section className="w-full flex justify-center py-20 px-2 sm:px-12 bg-white select-none relative min-h-[700px]"
-      // Removido overflow: "hidden" do style!
+     
       style={{ minHeight: 700, position: "relative" }}
     >
       <div
         className="w-full max-w-6xl flex flex-col items-center mx-auto relative"
-        // Não coloque overflow aqui também!
+     
         style={{ minHeight: 700, position: "relative" }}
       >
-        {/* Título centralizado */}
+       
         <div className="w-full flex justify-center relative mb-12">
           <span
             className="font-extrabold text-3xl md:text-5xl text-neutral-800 tracking-tight text-center max-w-5xl w-full"
@@ -252,7 +252,7 @@ export default function About() {
             Consultoria para MEI com foco em resultado
           </span>
         </div>
-        {/* Texto principal */}
+  
         <div className="w-full flex justify-center relative">
           <div
             className={`
@@ -277,7 +277,7 @@ export default function About() {
             ))}
           </div>
         </div>
-        {/* Navegação de slides embaixo e centralizada */}
+    
         <div className="flex items-center gap-4 mt-12 justify-center w-full ">
           <button
             aria-label="Anterior"
@@ -312,7 +312,7 @@ export default function About() {
           </button>
         </div>
       </div>
-      {/* TailwindCSS keyframes para animações de slide */}
+     
       <style jsx global>{`
         @keyframes slide-in-right {
           0% { opacity: 0; transform: translateX(70px);}

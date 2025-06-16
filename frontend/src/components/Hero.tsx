@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback, RefObject } from "react";
 import { FiTrendingUp, FiUserCheck } from "react-icons/fi";
 
-// Efeito de descriptografar o título
+
 function decryptEffect(str: string, progress: number) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return Array.from(str)
@@ -14,7 +14,7 @@ function decryptEffect(str: string, progress: number) {
     .join("");
 }
 
-// Gerador de operações matemáticas/contábeis
+
 function gerarOperacao() {
   const contas = [
     "Receita", "Despesa", "Imposto", "Lucro",
@@ -36,7 +36,6 @@ function gerarOperacao() {
   return { conta, op, valor1, valor2, resultado };
 }
 
-// Embaralhador para animação das contas
 function embaralhar(str: string) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   return str
@@ -45,7 +44,6 @@ function embaralhar(str: string) {
     .join("");
 }
 
-// Distribui contas animadas de ambos os lados
 function useContasAnimadas(qtd = 24, ativo = true) {
   const [contas, setContas] = useState(() =>
     Array.from({ length: qtd }, (_, idx) => {
@@ -132,7 +130,7 @@ interface Hero1Props {
 export default function Hero1({ plansRef, briefRef }: Hero1Props) {
   const titulo = "Gestão M.E.I.";
   const tituloFull = Array.from(titulo);
-  // const [decrypted, setDecrypted] = useState(decryptEffect(titulo, 0));
+
   const [decryptStep, setDecryptStep] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [showFound, setShowFound] = useState(false);
@@ -157,7 +155,6 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
 
 
 
-  // Controle de hover real (nunca deixa "travado")
   const checkMouseIn = useCallback((event: MouseEvent) => {
     if (!titleRef.current) return;
     const rect = titleRef.current.getBoundingClientRect();
@@ -198,7 +195,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
-  // Onda percorre todo o título (inclusive espaços, acentos e ponto final)
+
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     let step = 0;
@@ -209,7 +206,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
         if (!finished) {
           step++;
           setDecryptStep(step);
-          // setDecrypted(decryptEffect(titulo, step));
+   
           if (step >= tituloFull.length) {
             finished = true;
             setShowFound(true);
@@ -220,7 +217,6 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
               finished = false;
               step = 0;
               setDecryptStep(0);
-              // setDecrypted(decryptEffect(titulo, 0));
             }, 4000);
           }
         }
@@ -235,7 +231,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
     // eslint-disable-next-line
   }, [titulo, isPaused]);
 
-  // Fundo matemático
+
   const [contasAtivas, setContasAtivas] = useState(true);
   const heroRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
@@ -251,7 +247,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
   const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
   const contasBg = useContasAnimadas(isMobile ? 32 : 70, contasAtivas);
 
-  // Estado para hover dos itens do fundo
+
   const [hoverContaKey, setHoverContaKey] = useState<string | null>(null);
 
 
@@ -385,7 +381,6 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
       background: "linear-gradient(110deg, #f7fafc 55%, #e3e8ee 85%, #cbd5e1 100%)",
     }}
   >
-    {/* SVG textura de fundo: bolinhas discretas */}
     <svg
       className="absolute inset-0 w-full h-full z-0 pointer-events-none"
       style={{ opacity: 0.3, filter: "blur(1.2px)" }}
@@ -398,7 +393,6 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
       </defs>
       <rect width="100%" height="100%" fill="url(#tinyDots)" />
     </svg>
-    {/* Degradê dos dois lados IGUAIS */}
     <div className="absolute bottom-[-120px] left-[-90px] w-[420px] h-[420px] rounded-full z-0 pointer-events-none"
       style={{
         background: "radial-gradient(circle at 60% 40%, #e0e7ef 55%, transparent 100%)",
@@ -413,7 +407,6 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
         opacity: 0.60,
       }}
     />
-    {/* Contas animadas no fundo, agora com hover destacado */}
     <div className="absolute inset-0 w-full h-full pointer-events-none z-0">
       {contasBg.map((item) => (
         <span
@@ -507,8 +500,6 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
         }
       }
     `}</style>
-
-    {/* TÍTULO PRINCIPAL COM EFEITO DE DESCRIPTOGRAFAR */}
     <div className="relative z-10 w-full max-w-3xl mx-auto flex flex-col items-center justify-center text-center px-2">
       <h1
         className="font-extrabold tracking-tight leading-tight drop-shadow hero-title"

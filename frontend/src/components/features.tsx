@@ -5,7 +5,7 @@ import {
   FiUsers, FiBriefcase, FiClock, FiActivity, FiCheckCircle
 } from "react-icons/fi";
 
-// Pool of possible features (icon, title, symbol, description)
+
 const ALL_FEATURES = [
   {
     icon: FiAward,
@@ -85,7 +85,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function Features() {
-  // Preto como padrão
+
   const [isDark, setIsDark] = useState(true);
   const [features, setFeatures] = useState(() =>
     shuffle(ALL_FEATURES).slice(0, 4).map(f => ({ ...f, key: Math.random().toString(36) }))
@@ -139,7 +139,7 @@ export default function Features() {
         </p>
       </div>
 
-      {/* Cards grid */}
+   
       <div
         className={`
           grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 max-w-5xl mx-auto relative z-10 features-section-grid
@@ -177,7 +177,7 @@ export default function Features() {
                 transition: "box-shadow 0.25s, background 0.18s, border 0.18s"
               }}
             >
-              {/* Ícone central */}
+    
               <span className={`
                 flex items-center justify-center rounded-full border
                 ${isDark ? "border-neutral-800 bg-neutral-900" : "border-neutral-200 bg-neutral-50"}
@@ -202,7 +202,7 @@ export default function Features() {
               <span className={`text-base text-center font-normal mb-2 ${isDark ? "text-gray-300" : "text-gray-500"}`}>
                 {feature.desc}
               </span>
-              {/* Símbolo matemático, só um detalhe ao fundo */}
+        
               <span
                 className={`
                   absolute left-1/2 bottom-6 -translate-x-1/2 select-none pointer-events-none font-mono font-extrabold
@@ -221,7 +221,7 @@ export default function Features() {
               >
                 {feature.symbol}
               </span>
-              {/* Efeito extra de hover */}
+        
               <span
                 className={`
                   absolute -inset-1 z-0 rounded-3xl pointer-events-none
@@ -234,7 +234,6 @@ export default function Features() {
         })}
       </div>
 
-      {/* Shuffle and Theme buttons */}
       <div className="flex flex-wrap justify-center gap-5 mt-14">
         <button
           className={`
@@ -288,7 +287,6 @@ export default function Features() {
         </button>
       </div>
 
-      {/* Shuffle fade animation */}
       <style>{`
         @keyframes shuffleFade {
           0% { opacity: 1; transform: scale(1) rotate(0deg);}

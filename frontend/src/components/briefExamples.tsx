@@ -2,7 +2,7 @@
 import { useState, RefObject } from "react";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
 
-// Utilitário para formatar moeda brasileira
+
 function formatCurrency(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
@@ -20,13 +20,12 @@ export default function BriefExamples({ briefRef }: BriefProps) {
   ]);
   const [editIdx, setEditIdx] = useState<number | null>(null);
 
-  // Adicionar linha
+
   function addRow(type: "Receita" | "Despesa") {
     setData(d => [...d, { type, desc: "", value: 0 }]);
     setEditIdx(data.length);
   }
 
-  // Editar célula
   function handleRowChange(idx: number, key: keyof Row, v: string | number) {
     setData(d =>
       d.map((row, i) =>
@@ -40,13 +39,11 @@ export default function BriefExamples({ briefRef }: BriefProps) {
     );
   }
 
-  // Remover linha
   function removeRow(idx: number) {
     setData(d => d.filter((_, i) => i !== idx));
     setEditIdx(null);
   }
 
-  // Cálculos automáticos
   const totalReceita = data.filter(x => x.type === "Receita").reduce((a, b) => a + b.value, 0);
   const totalDespesa = data.filter(x => x.type === "Despesa").reduce((a, b) => a + b.value, 0);
   const lucro = totalReceita - totalDespesa;

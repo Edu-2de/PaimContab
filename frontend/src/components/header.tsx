@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import classNames from "classnames";
 
-// Menu principal com submenus
+
 const menuItems = [
   {
     label: "Sobre",
@@ -38,7 +38,7 @@ const menuItems = [
   },
 ];
 
-// Botões à direita do header
+
 const rightButtons = [
   {
     label: "Entrar",
@@ -48,26 +48,20 @@ const rightButtons = [
 ];
 
 export default function Header() {
-  // Estado para submenus abertos (desktop e mobile)
   const [openMenu, setOpenMenu] = useState<number | null>(null);
-  // Estado para menu mobile/tablet aberto
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // Header já está com fundo sólido?
   const [solid, setSolid] = useState(false);
-
-  // Referência do header para detectar clique fora (desktop)
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // Fecha submenu ao clicar fora do header (apenas desktop)
+ 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      // Só fecha se não for o menu lateral aberto
+
       if (
         headerRef.current &&
         !headerRef.current.contains(event.target as Node)
       ) {
         setOpenMenu(null);
-        // Não fecha o menu lateral aqui!
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -75,13 +69,9 @@ export default function Header() {
       document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Detecta se é mobile/tablet para mostrar o drawer sempre (não invisível)
-  // (Removido: isMobileOrTablet não era utilizado)
-
-  // Efeito do scroll para mudar o fundo do header
   useEffect(() => {
     function onScroll() {
-      // Se menu mobile/tablet está aberto, sempre sólido
+
       if (mobileMenuOpen) {
         setSolid(true);
       } else {
@@ -93,7 +83,6 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [mobileMenuOpen]);
 
-  // Funções para hover de submenu (desktop)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const handleMenuMouseLeave = () => {
     timeoutRef.current = setTimeout(() => setOpenMenu(null), 100);
@@ -109,7 +98,6 @@ export default function Header() {
     timeoutRef.current = setTimeout(() => setOpenMenu(null), 100);
   };
 
-  // Funções para mobile/tablet: abrir/fechar submenus
   const [mobileOpenSubmenus, setMobileOpenSubmenus] = useState<{ [k: number]: boolean }>({});
   const handleMobileSubmenuToggle = (idx: number) => {
     setMobileOpenSubmenus((prev) => ({
@@ -118,12 +106,11 @@ export default function Header() {
     }));
   };
 
-  // Corrige: overlay só fecha o menu se clicar fora do drawer
+
   const overlayRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Se clicar no overlay mas não no drawer, fecha
     if (
       drawerRef.current &&
       !drawerRef.current.contains(e.target as Node)
@@ -134,7 +121,6 @@ export default function Header() {
 
   return (
     <>
-      {/* Overlay cobrindo toda a tela, inclusive o header, quando o menu está aberto */}
       {mobileMenuOpen && (
         <div
           ref={overlayRef}
@@ -152,18 +138,14 @@ export default function Header() {
           solid
             ? "bg-white/80 backdrop-blur-md shadow border-b border-gray-200"
             : "bg-transparent",
-          // Quando o menu está aberto, z-30 para ficar atrás do drawer (z-50) e do overlay (z-40)
           mobileMenuOpen ? "z-30" : "z-40"
         )}
         style={{ backdropFilter: solid ? "blur(8px)" : undefined }}
       >
-        {/* Linha superior */}
         <div className="max-w-7xl mx-auto flex items-center h-20 px-4 md:px-8">
-          {/* Logo */}
           <div className="font-bold text-2xl text-gray-900 mr-6 md:mr-14 select-none tracking-tight flex-shrink-0">
             PaimContab
           </div>
-          {/* Menu Desktop */}
           <nav className="flex-1 hidden lg:block">
             <ul className="flex space-x-8">
               {menuItems.map((item, idx) => (
@@ -206,7 +188,6 @@ export default function Header() {
                       </svg>
                     )}
                   </button>
-                  {/* Submenu Desktop */}
                   {item.submenu && openMenu === idx && (
                     <div
                       className="absolute left-0 top-full mt-2 z-30 bg-white border border-gray-200 rounded-md min-w-[180px] shadow-xl animate-fadein"
@@ -232,7 +213,6 @@ export default function Header() {
               ))}
             </ul>
           </nav>
-          {/* Botões à direita - desktop */}
           <div className="hidden lg:flex items-center space-x-4 ml-8">
             {rightButtons.map((btn, i) =>
               btn.style === "solid" ? (
@@ -255,13 +235,11 @@ export default function Header() {
               )
             )}
           </div>
-          {/* Botão menu mobile/tablet */}
           <button
             className="lg:hidden ml-auto p-2 rounded hover:bg-gray-100 transition"
             aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
             onClick={() => setMobileMenuOpen((open) => !open)}
           >
-            {/* Ícone do menu hamburguer ou X */}
             {mobileMenuOpen ? (
               <svg
                 className="w-7 h-7 text-gray-900"
@@ -295,7 +273,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Menu Mobile/Tablet - Drawer */}
       {mobileMenuOpen && (
         <nav
           ref={drawerRef}
@@ -329,7 +306,6 @@ export default function Header() {
               </svg>
             </button>
           </div>
-          {/* Menu Mobile/Tablet */}
           <ul className="py-4 px-2">
             {menuItems.map((item, idx) => (
               <li key={item.label} className="mb-2">
@@ -339,7 +315,6 @@ export default function Header() {
                   aria-expanded={!!mobileOpenSubmenus[idx]}
                   onClick={() => handleMobileSubmenuToggle(idx)}
                   tabIndex={0}
-                  // Corrige: não fecha o menu ao clicar para abrir submenu
                   type="button"
                 >
                   <span>{item.label}</span>
@@ -363,7 +338,6 @@ export default function Header() {
                     </svg>
                   )}
                 </button>
-                {/* Submenu Mobile/Tablet */}
                 {item.submenu && mobileOpenSubmenus[idx] && (
                   <ul className="pl-5 pr-3 pb-3 pt-1 animate-fadein">
                     {item.submenu.map((subitem) => (
@@ -382,7 +356,6 @@ export default function Header() {
               </li>
             ))}
           </ul>
-          {/* Botões mobile/tablet */}
           <div className="px-4 pb-6 pt-2 flex flex-col space-y-3">
             {rightButtons.map((btn, i) =>
               btn.style === "solid" ? (
@@ -412,7 +385,6 @@ export default function Header() {
           </div>
         </nav>
       )}
-      {/* Animação fade-in para submenu */}
       <style jsx>{`
         @keyframes fadein {
           from {

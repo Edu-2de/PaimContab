@@ -2,7 +2,6 @@
 import { useState, RefObject } from "react";
 import { HiCheckCircle, HiOutlineChevronRight, HiSparkles } from "react-icons/hi2";
 
-// Cores neutras e modernas
 const accent = "#23272f";
 const accentStrong = "#010409";
 const bgHighlight = "bg-[#f7f7fa]";
@@ -68,7 +67,6 @@ export default function Plans({ plansRef }: PlansProps) {
 
   return (
     <section ref={plansRef} className="relative w-full min-h-[70vh] px-4 py-20 flex flex-col items-center justify-center bg-gradient-to-br from-neutral-50 via-white to-neutral-200 transition">
-      {/* Fundo geométrico animado, sutil */}
       <div className="absolute inset-0 pointer-events-none z-0">
         <svg width="100%" height="100%" className="absolute inset-0" style={{opacity: 0.13}}>
           <defs>
@@ -134,7 +132,6 @@ export default function Plans({ plansRef }: PlansProps) {
               onFocus={() => setHovered(idx)}
               onBlur={() => setHovered(null)}
             >
-              {/* Selo destaque */}
               {(plan.badge || isHighlight) && (
                 <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-1 z-20">
                   <span
@@ -156,7 +153,6 @@ export default function Plans({ plansRef }: PlansProps) {
                   </span>
                 </div>
               )}
-              {/* Nome e preço */}
               <div className="flex flex-col items-center w-full relative">
                 <span
                   className={`
@@ -177,7 +173,6 @@ export default function Plans({ plansRef }: PlansProps) {
                 </span>
                 <span className="mt-2 text-[15px] text-neutral-500 text-center min-h-[44px]">{plan.desc}</span>
               </div>
-              {/* Detalhes interativos */}
               <div
                 className={`mt-9 w-full transition-all duration-300
                   ${isHovered ? "opacity-100 translate-y-0 pointer-events-auto visible" : "opacity-0 translate-y-2 h-0 overflow-hidden pointer-events-none"}
@@ -206,7 +201,6 @@ export default function Plans({ plansRef }: PlansProps) {
                   <HiOutlineChevronRight className="w-5 h-5 text-white" />
                 </button>
               </div>
-              {/* Dica para interação */}
               {!isHovered && (
                 <div className="absolute left-0 right-0 bottom-6 flex justify-center opacity-80 pointer-events-none select-none">
                   <span className="bg-neutral-200 text-neutral-700 text-xs px-3 py-1 rounded-full shadow-sm transition-all">
@@ -218,7 +212,6 @@ export default function Plans({ plansRef }: PlansProps) {
           );
         })}
       </div>
-      {/* Ornamento geométrico flutuante */}
       <div className="pointer-events-none absolute z-0 right-0 top-0 w-[180px] h-[180px] md:w-[210px] md:h-[210px] opacity-30">
         <svg width="100%" height="100%">
           <rect
