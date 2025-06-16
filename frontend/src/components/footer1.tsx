@@ -37,6 +37,8 @@ export default function Footer1() {
       <div className="mt-10 border-t border-neutral-800 pt-4 text-center text-xs text-neutral-500">
         © {new Date().getFullYear()} PaimContab. Todos os direitos reservados.
       </div>
+        <span className="text-neutral-400">Desenvolvido por Eduardo Paim</span>
+
     </footer>
   );
 }
