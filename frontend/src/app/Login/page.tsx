@@ -7,9 +7,21 @@ const siteName = "PaimContab";
 export default function LoginRegisterPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Form states
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
+  const [confirm, setConfirm] = useState("");
+
   function handleSwitch() {
+    setError(null);
+    setName("");
+    setEmail("");
+    setPass("");
+    setConfirm("");
     if (containerRef.current) {
       containerRef.current.classList.add("switching-fluent");
       setTimeout(() => {
@@ -27,10 +39,49 @@ export default function LoginRegisterPage() {
     window.location.href = "/";
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => setLoading(false), 1200); // Simulação
+    setError(null);
+
+    try {
+      if (mode === "register") {
+        if (pass !== confirm) {
+          setError("As senhas não coincidem.");
+          setLoading(false);
+          return;
+        }
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, email, password: pass }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || "Erro ao registrar.");
+        } else {
+          setMode("login");
+          setError("Cadastro realizado! Faça login.");
+        }
+      } else {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password: pass }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data.message || "E-mail ou senha inválidos.");
+        } else {
+          // Exemplo: salvar token/localStorage, redirecionar, etc
+          // localStorage.setItem("token", data.token);
+          window.location.href = "/";
+        }
+      }
+    } catch {
+      setError("Erro de conexão.");
+    }
+    setLoading(false);
   }
 
   return (
@@ -83,6 +134,8 @@ export default function LoginRegisterPage() {
                 type="text"
                 placeholder="Seu nome"
                 required
+                value={name}
+                onChange={e => setName(e.target.value)}
                 className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
                 style={{ fontSize: "1.08rem" }}
               />
@@ -94,6 +147,8 @@ export default function LoginRegisterPage() {
               type="email"
               placeholder="E-mail"
               required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
               className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
               style={{ fontSize: "1.08rem" }}
             />
@@ -104,6 +159,8 @@ export default function LoginRegisterPage() {
               type="password"
               placeholder="Senha"
               required
+              value={pass}
+              onChange={e => setPass(e.target.value)}
               className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
               style={{ fontSize: "1.08rem" }}
             />
@@ -115,10 +172,15 @@ export default function LoginRegisterPage() {
                 type="password"
                 placeholder="Confirmar senha"
                 required
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
                 className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
                 style={{ fontSize: "1.08rem" }}
               />
             </div>
+          )}
+          {error && (
+            <div className="text-red-600 text-sm text-center">{error}</div>
           )}
           <button
             type="submit"
