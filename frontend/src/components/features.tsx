@@ -244,7 +244,7 @@ export default function Features() {
             flex items-center gap-2
             disabled:opacity-60
             focus:outline-none focus:ring-2 focus:ring-black/10
-            ring-inset
+            ring-inset cursor-pointer
           `}
           onClick={handleShuffle}
           disabled={animating}
@@ -265,7 +265,7 @@ export default function Features() {
             transition-all shadow-md
             flex items-center gap-2
             focus:outline-none focus:ring-2 focus:ring-black/10
-            ring-inset
+            ring-inset cursor-pointer
           `}
           onClick={handleToggleTheme}
           type="button"
