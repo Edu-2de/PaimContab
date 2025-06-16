@@ -48,15 +48,20 @@ export default function Header() {
   const [user, setUser] = useState<{ name: string } | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
 
+  // Para controlar dropdown mobile separado do desktop
+  const [mobileProfileOpen, setMobileProfileOpen] = useState(false);
+
   useEffect(() => {
     const stored = localStorage.getItem("user");
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
-  function handleLogout() {
+  function handleLogout(isMobile = false) {
     localStorage.removeItem("user");
     setUser(null);
     setProfileOpen(false);
+    setMobileProfileOpen(false);
+    if (isMobile) setMobileMenuOpen(false);
     window.location.href = "/";
   }
 
@@ -120,10 +125,11 @@ export default function Header() {
       !drawerRef.current.contains(e.target as Node)
     ) {
       setMobileMenuOpen(false);
+      setMobileProfileOpen(false);
     }
   };
 
-  // Para fechar o dropdown do usuário ao clicar fora
+  // Para fechar o dropdown do usuário ao clicar fora (desktop)
   useEffect(() => {
     if (!profileOpen) return;
     function handleClick(e: MouseEvent) {
@@ -141,6 +147,25 @@ export default function Header() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [profileOpen]);
+
+  // Para fechar o dropdown do usuário ao clicar fora (mobile)
+  useEffect(() => {
+    if (!mobileProfileOpen) return;
+    function handleClick(e: MouseEvent) {
+      const dropdown = document.getElementById('user-profile-dropdown-mobile');
+      const button = document.getElementById('user-profile-btn-mobile');
+      if (
+        dropdown &&
+        !dropdown.contains(e.target as Node) &&
+        button &&
+        !button.contains(e.target as Node)
+      ) {
+        setMobileProfileOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [mobileProfileOpen]);
 
   return (
     <>
@@ -286,7 +311,7 @@ export default function Header() {
                     className="absolute right-0 top-full mt-2 z-50 bg-white border border-gray-100 rounded-xl shadow-xl animate-fadein py-2 min-w-[160px]"
                   >
                     <button
-                      onClick={handleLogout}
+                      onClick={() => handleLogout(false)}
                       className="w-full text-left px-5 py-2 text-red-500 hover:bg-gray-50 hover:text-red-600 transition font-medium rounded"
                     >
                       Sair
@@ -299,7 +324,10 @@ export default function Header() {
           <button
             className="lg:hidden ml-auto p-2 rounded hover:bg-gray-100 transition"
             aria-label={mobileMenuOpen ? "Fechar menu" : "Abrir menu"}
-            onClick={() => setMobileMenuOpen((open) => !open)}
+            onClick={() => {
+              setMobileMenuOpen((open) => !open);
+              setMobileProfileOpen(false);
+            }}
           >
             {mobileMenuOpen ? (
               <svg
@@ -350,7 +378,10 @@ export default function Header() {
             <button
               className="p-2 rounded hover:bg-gray-100 transition"
               aria-label="Fechar menu"
-              onClick={() => setMobileMenuOpen(false)}
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setMobileProfileOpen(false);
+              }}
             >
               <svg
                 className="w-7 h-7 text-gray-900"
@@ -423,6 +454,7 @@ export default function Header() {
                 onClick={() => {
                   window.location.href = "/Login";
                   setMobileMenuOpen(false);
+                  setMobileProfileOpen(false);
                 }}
                 className="w-full px-5 py-3 rounded border border-gray-900 text-gray-900 font-semibold hover:bg-gray-100 transition cursor-pointer"
               >
@@ -431,11 +463,12 @@ export default function Header() {
             ) : (
               <div className="relative w-full">
                 <button
+                  id="user-profile-btn-mobile"
                   className="flex items-center gap-3 w-full px-4 py-3 rounded-full bg-gray-50 hover:bg-gray-100 border border-gray-200 transition cursor-pointer shadow-sm"
                   type="button"
                   aria-haspopup="true"
-                  aria-expanded={profileOpen}
-                  onClick={() => setProfileOpen(!profileOpen)}
+                  aria-expanded={mobileProfileOpen}
+                  onClick={() => setMobileProfileOpen((open) => !open)}
                 >
                   <span className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 text-gray-500 font-bold text-lg shadow-sm">
                     {user.name?.charAt(0).toUpperCase() || <FiUser />}
@@ -447,7 +480,7 @@ export default function Header() {
                   <svg
                     className={classNames(
                       "ml-1 w-4 h-4 text-gray-400 transition-transform duration-200",
-                      profileOpen ? "-rotate-180 -translate-y-0.5" : "rotate-0"
+                      mobileProfileOpen ? "-rotate-180 -translate-y-0.5" : "rotate-0"
                     )}
                     fill="none"
                     stroke="currentColor"
@@ -462,10 +495,13 @@ export default function Header() {
                     />
                   </svg>
                 </button>
-                {profileOpen && (
-                  <div className="absolute right-0 left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-fadein py-2">
+                {mobileProfileOpen && (
+                  <div
+                    id="user-profile-dropdown-mobile"
+                    className="absolute right-0 left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-fadein py-2"
+                  >
                     <button
-                      onClick={handleLogout}
+                      onClick={() => handleLogout(true)}
                       className="w-full text-left px-5 py-2 text-red-500 hover:bg-gray-50 hover:text-red-600 transition font-medium rounded"
                     >
                       Sair
