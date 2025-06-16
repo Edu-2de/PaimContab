@@ -1,11 +1,11 @@
 "use client";
-import Header from '@/components/header';
-import Hero1 from '@/components/hero1';
-import Features from '@/components/features';
-import Footer1 from '@/components/footer1';
-import BriefExamples from '@/components/briefExamples';
-import Plans from '@/components/plans';
-import About from '@/components/about';
+import Header from '@/components/Header';
+import Hero1 from '@/components/Hero';
+import Features from '@/components/Features';
+import Footer1 from '@/components/Footer';
+import BriefExamples from '@/components/BriefExamples';
+import Plans from '@/components/Plans';
+import About from '@/components/About';
 import { useRef } from 'react';
 
 export default function App() {
