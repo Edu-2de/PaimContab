@@ -24,7 +24,7 @@ export default function Footer1() {
         <div className="flex flex-col gap-2 items-center md:items-start">
           <span className="uppercase text-xs text-neutral-400 font-semibold mb-2 tracking-widest">Contato</span>
           <span className="flex items-center gap-2 text-sm">
-            <FiMail className="text-neutral-400" /> paimcontec@gmail.com
+            <FiMail className="text-neutral-400" /> Paimcontec@gmail.com
           </span>
           <span className="flex items-center gap-2 text-sm">
             <FiPhone className="text-neutral-400" /> (11) 1234-5678

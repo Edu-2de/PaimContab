@@ -151,7 +151,7 @@ export default function BriefExamples({ briefRef }: BriefProps) {
                     <td className="border-r border-neutral-200">
                       <input
                         type="number"
-                        className="w-full bg-transparent px-2 py-1 border border-transparent rounded focus:border-neutral-900 text-right text-neutral-900 font-medium transition"
+                        className="w-full bg-transparent px-2 py-1 border border-transparent rounded focus:border-neutral-900 text-right text-neutral-900 font-medium transition "
                         value={row.value}
                         min={0}
                         step={10}

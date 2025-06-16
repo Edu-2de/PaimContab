@@ -249,7 +249,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   const isMobile = typeof window !== "undefined" ? window.innerWidth < 768 : false;
-  const contasBg = useContasAnimadas(isMobile ? 32 : 100, contasAtivas);
+  const contasBg = useContasAnimadas(isMobile ? 32 : 70, contasAtivas);
 
   // Estado para hover dos itens do fundo
   const [hoverContaKey, setHoverContaKey] = useState<string | null>(null);
@@ -536,7 +536,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
       <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
           <button
             onClick={scrollToPlans}
-            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-300 hero-btn"
+            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full bg-gray-900 hover:bg-gray-800 text-white text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-300 hero-btn cursor-pointer"
             style={{ boxShadow: "0 3px 16px 0 #3341550b", minWidth: "180px" }}
           >
             <FiUserCheck className="text-xl" />
@@ -544,7 +544,7 @@ export default function Hero1({ plansRef, briefRef }: Hero1Props) {
           </button>
           <button
             onClick={scrollToBrief}
-            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-900 text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-100 hero-btn"
+            className="flex items-center justify-center gap-2 px-7 py-3 rounded-full border border-gray-300 bg-white hover:bg-gray-100 text-gray-900 text-lg font-semibold shadow transition focus:outline-none focus:ring-2 focus:ring-gray-100 hero-btn cursor-pointer"
             style={{ minWidth: "180px" }}
           >
             <FiTrendingUp className="text-xl" />
