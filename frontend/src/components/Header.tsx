@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import classNames from "classnames";
-
+import { FiUser } from "react-icons/fi";
 
 const menuItems = [
   {
@@ -38,30 +38,36 @@ const menuItems = [
   },
 ];
 
-
-const rightButtons = [
-  {
-    label: "Entrar",
-    onClick: () => alert("Login..."),
-    style: "outline pointer-events-auto cursor-pointer",
-  }
-];
-
 export default function Header() {
   const [openMenu, setOpenMenu] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [solid, setSolid] = useState(false);
   const headerRef = useRef<HTMLDivElement>(null);
 
- 
+  // Autenticação
+  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem("user");
+    if (stored) setUser(JSON.parse(stored));
+  }, []);
+
+  function handleLogout() {
+    localStorage.removeItem("user");
+    setUser(null);
+    setProfileOpen(false);
+    window.location.href = "/";
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-
       if (
         headerRef.current &&
         !headerRef.current.contains(event.target as Node)
       ) {
         setOpenMenu(null);
+        setProfileOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -71,7 +77,6 @@ export default function Header() {
 
   useEffect(() => {
     function onScroll() {
-
       if (mobileMenuOpen) {
         setSolid(true);
       } else {
@@ -105,7 +110,6 @@ export default function Header() {
       [idx]: !prev[idx],
     }));
   };
-
 
   const overlayRef = useRef<HTMLDivElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -214,25 +218,43 @@ export default function Header() {
             </ul>
           </nav>
           <div className="hidden lg:flex items-center space-x-4 ml-8">
-            {rightButtons.map((btn, i) =>
-              btn.style === "solid" ? (
+            {!user ? (
+              <button
+                onClick={() => (window.location.href = "/Login")}
+                className="px-5 py-2 rounded border border-gray-900 text-gray-900 font-semibold hover:bg-gray-100 transition cursor-pointer"
+              >
+                Entrar
+              </button>
+            ) : (
+              <div
+                className="relative flex items-center"
+                onMouseEnter={() => setProfileOpen(true)}
+                onMouseLeave={() => setProfileOpen(false)}
+              >
                 <button
-                  key={i}
-                  onClick={btn.onClick}
-                  className="px-5 py-2 rounded bg-gray-900 text-white font-semibold shadow hover:bg-gray-700 transition cursor-pointer"
-                  
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition cursor-pointer"
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded={profileOpen}
                 >
-                  {btn.label}
+                  <FiUser className="text-xl text-gray-700" />
+                  {user?.name && (
+                  <span className="font-medium text-gray-800">
+                      Olá, {user.name.split(" ")[0]}
+                  </span>
+                  )}
                 </button>
-              ) : (
-                <button
-                  key={i}
-                  onClick={btn.onClick}
-                  className="px-5 py-2 rounded border border-gray-900 text-gray-900 font-semibold hover:bg-gray-100 transition cursor-pointer"
-                >
-                  {btn.label}
-                </button>
-              )
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50 animate-fadein">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                    >
+                      Sair
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
           <button
@@ -357,30 +379,42 @@ export default function Header() {
             ))}
           </ul>
           <div className="px-4 pb-6 pt-2 flex flex-col space-y-3">
-            {rightButtons.map((btn, i) =>
-              btn.style === "solid" ? (
+            {!user ? (
+              <button
+                onClick={() => {
+                  window.location.href = "/Login";
+                  setMobileMenuOpen(false);
+                }}
+                className="w-full px-5 py-3 rounded border border-gray-900 text-gray-900 font-semibold hover:bg-gray-100 transition cursor-pointer"
+              >
+                Entrar
+              </button>
+            ) : (
+              <div
+                className="relative flex items-center"
+                onMouseEnter={() => setProfileOpen(true)}
+                onMouseLeave={() => setProfileOpen(false)}
+              >
                 <button
-                  key={i}
-                  onClick={() => {
-                    btn.onClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full px-5 py-3 rounded bg-gray-900 text-white font-semibold shadow hover:bg-gray-700 transition"
+                  className="flex items-center gap-2 w-full px-4 py-3 rounded-full bg-gray-100 hover:bg-gray-200 transition cursor-pointer"
+                  type="button"
+                  aria-haspopup="true"
+                  aria-expanded={profileOpen}
                 >
-                  {btn.label}
+                  <FiUser className="text-xl text-gray-700" />
+                  <span className="font-medium text-gray-800">Olá, {user.name.split(" ")[0]}</span>
                 </button>
-              ) : (
-                <button
-                  key={i}
-                  onClick={() => {
-                    btn.onClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full px-5 py-3 rounded border border-gray-900 text-gray-900 font-semibold hover:bg-gray-100 transition"
-                >
-                  {btn.label}
-                </button>
-              )
+                {profileOpen && (
+                  <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-lg z-50 animate-fadein">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition cursor-pointer"
+                    >
+                      Sair
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </nav>
