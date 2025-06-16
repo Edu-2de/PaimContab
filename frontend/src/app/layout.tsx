@@ -25,8 +25,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" type="image/png" href="/svgLogoPequeno.png" />
-        <link rel="shortcut icon" type="image/png" href="/svgLogoPequeno.png" />
+        <link rel="icon" type="image/png" href="/svgLogoPequenoBranco.png" />
+        <link rel="shortcut icon" type="image/png" href="/svgLogoPequenoBranco.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
