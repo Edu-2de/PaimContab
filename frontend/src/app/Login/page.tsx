@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
-import { FiUser, FiMail, FiLock, FiArrowLeft, FiX } from "react-icons/fi";
+import { FiUser, FiMail, FiLock, FiArrowLeft, FiX, FiEye, FiEyeOff } from "react-icons/fi";
 
 const siteName = "PaimContab";
 
@@ -15,6 +15,10 @@ export default function LoginRegisterPage() {
   const [email, setEmail] = useState("");
   const [pass, setPass] = useState("");
   const [confirm, setConfirm] = useState("");
+
+  // Password visibility (sincronizado)
+  const [showPassword, setShowPassword] = useState(false);
+  const [eyeAnim, setEyeAnim] = useState(false);
 
   function handleSwitch() {
     setError(null);
@@ -73,8 +77,6 @@ export default function LoginRegisterPage() {
         if (!res.ok) {
           setError(data.message || "E-mail ou senha inválidos.");
         } else {
-          // Exemplo: salvar token/localStorage, redirecionar, etc
-          // localStorage.setItem("token", data.token);
           localStorage.setItem("user", JSON.stringify(data.user));
           window.location.href = "/";
         }
@@ -85,18 +87,35 @@ export default function LoginRegisterPage() {
     setLoading(false);
   }
 
+  // Função para animar e sincronizar o olho
+  function handleEyeClick() {
+    setEyeAnim(true);
+    setShowPassword((v) => !v);
+    setTimeout(() => setEyeAnim(false), 320);
+  }
+
   return (
     <div
       className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f7fafc] via-[#e3e8ee] to-[#cbd5e1] relative"
       style={{ fontFamily: "Inter, sans-serif" }}
     >
+      {/* X só na versão desktop */}
       <button
         onClick={handleBack}
         aria-label="Voltar para home"
-        className="absolute top-6 left-6 bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition z-20 cursor-pointer"
+        className="absolute top-6 left-6 bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition z-20 cursor-pointer hidden sm:inline-flex"
         style={{ border: "1.5px solid #e5e7eb" }}
       >
         <FiX className="text-2xl text-gray-500" />
+      </button>
+      {/* Seta só na versão mobile */}
+      <button
+        onClick={handleBack}
+        className="absolute top-6 left-6 bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition cursor-pointer sm:hidden"
+        style={{ border: "1.5px solid #e5e7eb" }}
+        aria-label="Voltar para home"
+      >
+        <FiArrowLeft className="text-xl text-gray-500" />
       </button>
       <div
         ref={containerRef}
@@ -137,7 +156,7 @@ export default function LoginRegisterPage() {
                 required
                 value={name}
                 onChange={e => setName(e.target.value)}
-                className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+                className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition input-text-black"
                 style={{ fontSize: "1.08rem" }}
               />
             </div>
@@ -150,34 +169,60 @@ export default function LoginRegisterPage() {
               required
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+              className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition input-text-black"
               style={{ fontSize: "1.08rem" }}
             />
           </div>
           <div className="relative">
             <FiLock className="absolute left-3 top-3 text-gray-400" />
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Senha"
               required
               value={pass}
               onChange={e => setPass(e.target.value)}
-              className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+              className="pl-10 pr-10 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition input-text-black"
               style={{ fontSize: "1.08rem" }}
             />
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              onClick={handleEyeClick}
+              className={`absolute right-3 top-2.5 p-1 rounded-full transition cursor-pointer bg-transparent border-none outline-none flex items-center justify-center eye-btn ${eyeAnim ? "eye-anim" : ""}`}
+            >
+              {showPassword ? (
+                <FiEyeOff className="text-xl text-gray-400 transition-all" />
+              ) : (
+                <FiEye className="text-xl text-gray-400 transition-all" />
+              )}
+            </button>
           </div>
           {mode === "register" && (
             <div className="relative">
               <FiLock className="absolute left-3 top-3 text-gray-400" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Confirmar senha"
                 required
                 value={confirm}
                 onChange={e => setConfirm(e.target.value)}
-                className="pl-10 pr-3 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition"
+                className="pl-10 pr-10 py-2 rounded-lg border border-gray-200 w-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-100 transition input-text-black"
                 style={{ fontSize: "1.08rem" }}
               />
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                onClick={handleEyeClick}
+                className={`absolute right-3 top-2.5 p-1 rounded-full transition cursor-pointer bg-transparent border-none outline-none flex items-center justify-center eye-btn ${eyeAnim ? "eye-anim" : ""}`}
+              >
+                {showPassword ? (
+                  <FiEyeOff className="text-xl text-gray-400 transition-all" />
+                ) : (
+                  <FiEye className="text-xl text-gray-400 transition-all" />
+                )}
+              </button>
             </div>
           )}
           {error && (
@@ -219,14 +264,6 @@ export default function LoginRegisterPage() {
               : "Já tem conta? Entrar"}
           </button>
         </div>
-        <button
-          onClick={handleBack}
-          className="absolute top-6 left-6 sm:hidden bg-white/80 hover:bg-gray-100 rounded-full p-2 shadow transition cursor-pointer"
-          style={{ border: "1.5px solid #e5e7eb" }}
-          aria-label="Voltar para home"
-        >
-          <FiArrowLeft className="text-xl text-gray-500" />
-        </button>
         <style>{`
           .switching-fluent {
             animation: fadeSwitchFluent 0.5s cubic-bezier(.45,1.75,.38,.9);
@@ -236,6 +273,28 @@ export default function LoginRegisterPage() {
             30% { opacity: 0.1; transform: scale(0.97) translateY(10px);}
             60% { opacity: 0.1; transform: scale(1.03) translateY(-10px);}
             100% { opacity: 1; transform: scale(1);}
+          }
+          /* Placeholder cinza, texto digitado preto */
+          .input-text-black::placeholder {
+            color: #a3a3a3 !important;
+            opacity: 1;
+          }
+          .input-text-black {
+            color: #23272f !important;
+          }
+          .eye-btn {
+            transition: background 0.18s, transform 0.25s;
+          }
+          .eye-btn:active {
+            background: #e5e7eb;
+          }
+          .eye-anim {
+            animation: eyePop 0.32s cubic-bezier(.45,1.75,.38,.9);
+          }
+          @keyframes eyePop {
+            0% { transform: scale(1);}
+            40% { transform: scale(1.18);}
+            100% { transform: scale(1);}
           }
         `}</style>
       </div>
