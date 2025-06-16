@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Usuário
+model User {
+  id             String         @id @default(uuid())
+  email          String         @unique
+  password       String
+  name           String
+  avatarUrl      String?
+  isActive       Boolean        @default(true)
+  role           String         @default("customer")
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  subscriptions  Subscription[]
+  ConsultingSession ConsultingSession[]
+}
+
+// Plano de assinatura
+model Plan {
+  id          String          @id @default(uuid())
+  name        String          // Ex: Básico, Intermediário, Avançado
+  price       Decimal         // Valor mensal
+  description String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  subscriptions Subscription[]
+}
+
+// Assinatura do usuário
+model Subscription {
+  id         String    @id @default(uuid())
+  user       User      @relation(fields: [userId], references: [id])
+  userId     String
+  plan       Plan      @relation(fields: [planId], references: [id])
+  planId     String
+  startDate  DateTime  @default(now())
+  endDate    DateTime?
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+
+model ConsultingSession {
+  id            String      @id @default(uuid())
+  user          User        @relation(fields: [userId], references: [id])
+  userId        String
+  scheduledAt   DateTime    // Data e hora agendada
+  duration      Int         // Duração em minutos
+  status        String      // Ex: "scheduled", "completed", "cancelled"
+  notes         String?     // Observações do consultor ou usuário
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
