@@ -87,7 +87,7 @@ export default function BriefExamples({ briefRef }: BriefProps) {
           </div>
 
           {/* TABELA PARA DESKTOP */}
-          <div className="w-full flex justify-center hidden md:flex">
+          <div className="w-full justify-center hidden md:flex">
             <table
               className="text-sm font-mono w-full max-w-5xl"
               style={{

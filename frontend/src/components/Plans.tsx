@@ -76,9 +76,7 @@ export default function Plans({ plansRef }: PlansProps) {
             </linearGradient>
           </defs>
           <rect width="100%" height="100%" fill="url(#g1)" />
-          <circle cx="10%" cy="20%" r="90" fill="#e0e1e7" />
-          <circle cx="85%" cy="15%" r="60" fill="#e0e1e7" />
-          <circle cx="50%" cy="90%" r="110" fill="#e0e1e7" />
+     
         </svg>
       </div>
       <div className="max-w-2xl mx-auto text-center mb-12 relative z-10">
@@ -211,20 +209,6 @@ export default function Plans({ plansRef }: PlansProps) {
             </div>
           );
         })}
-      </div>
-      <div className="pointer-events-none absolute z-0 right-0 top-0 w-[180px] h-[180px] md:w-[210px] md:h-[210px] opacity-30">
-        <svg width="100%" height="100%">
-          <rect
-            x="30"
-            y="30"
-            width="120"
-            height="120"
-            rx="35"
-            fill="#ebeef4"
-            stroke="#d1d5db"
-            strokeWidth="2"
-          />
-        </svg>
       </div>
     </section>
   );
