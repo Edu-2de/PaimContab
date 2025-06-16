@@ -287,7 +287,7 @@ export default function About() {
                 "left"
               )
             }
-            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40"
+            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40 cursor-pointer"
             disabled={slides.length <= 1 || isAnimating}
             tabIndex={0}
           >
@@ -304,7 +304,7 @@ export default function About() {
                 "right"
               )
             }
-            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40"
+            className="rounded-full p-2 border border-neutral-200 bg-white hover:bg-neutral-50 transition disabled:opacity-40 cursor-pointer"
             disabled={slides.length <= 1 || isAnimating}
             tabIndex={0}
           >
