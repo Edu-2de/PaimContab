@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { HiArrowRight, HiArrowLeft, HiCheckCircle, HiSparkles, HiPlay } from "react-icons/hi2";
+import { HiArrowRight, HiArrowLeft, HiCheckCircle, HiSparkles, HiPlay, HiExclamationTriangle } from "react-icons/hi2";
 
 interface Question {
   id: string;
@@ -99,6 +99,9 @@ export default function SetupEmpresa() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
+  const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  
   interface User {
     id: string;
     [key: string]: unknown;
@@ -127,8 +130,17 @@ export default function SetupEmpresa() {
     }
   }, []);
 
-  const currentQuestion = questions[currentStep];
+  // Definir currentQuestion de forma segura
+  const currentQuestion = questions[currentStep] || questions[0];
   const progress = ((currentStep + 1) / questions.length) * 100;
+
+  // Limpar erro quando o usuário responder - com verificação de segurança
+  useEffect(() => {
+    if (currentQuestion && answers[currentQuestion.id]) {
+      setShowError(false);
+      setErrorMessage("");
+    }
+  }, [answers, currentQuestion]);
 
   const handleAnswer = (value: unknown) => {
     setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
@@ -143,13 +155,26 @@ export default function SetupEmpresa() {
   };
 
   const nextStep = () => {
+    // Verificação de segurança
+    if (!currentQuestion) return;
+
+    // Verificar se a pergunta é obrigatória e não foi respondida
     if (currentQuestion.required && !answers[currentQuestion.id]) {
-      // Animação de shake nos campos obrigatórios
+      // Mostrar erro
+      setShowError(true);
+      setErrorMessage("Esta pergunta é obrigatória!");
+      
+      // Animação de shake no input
       const element = document.querySelector(".question-input");
       element?.classList.add("shake");
       setTimeout(() => element?.classList.remove("shake"), 600);
+      
       return;
     }
+
+    // Limpar erros antes de continuar
+    setShowError(false);
+    setErrorMessage("");
 
     setAnimating(true);
     setTimeout(() => {
@@ -164,6 +189,9 @@ export default function SetupEmpresa() {
 
   const prevStep = () => {
     if (currentStep > 0) {
+      setShowError(false);
+      setErrorMessage("");
+      
       setAnimating(true);
       setTimeout(() => {
         setCurrentStep(currentStep - 1);
@@ -222,11 +250,20 @@ export default function SetupEmpresa() {
   };
 
   const renderInput = () => {
+    // Verificação de segurança
+    if (!currentQuestion) return null;
+
     const rawValue = answers[currentQuestion.id];
     const value =
       typeof rawValue === "string" || typeof rawValue === "number" || Array.isArray(rawValue) || rawValue === undefined
         ? rawValue
         : "";
+
+    const inputClassName = `question-input w-full px-6 py-5 text-xl border rounded-xl focus:outline-none transition-all bg-white text-slate-800 placeholder-slate-400 shadow-sm ${
+      showError 
+        ? "border-red-400 focus:border-red-500 bg-red-50" 
+        : "border-slate-200 focus:border-slate-400"
+    }`;
 
     switch (currentQuestion.type) {
       case "text":
@@ -236,7 +273,7 @@ export default function SetupEmpresa() {
             value={value}
             onChange={(e) => handleAnswer(e.target.value)}
             placeholder={currentQuestion.placeholder}
-            className="question-input w-full px-6 py-5 text-xl border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all bg-white text-slate-800 placeholder-slate-400 shadow-sm"
+            className={inputClassName}
             autoFocus
           />
         );
@@ -248,7 +285,7 @@ export default function SetupEmpresa() {
             value={value}
             onChange={(e) => handleAnswer(Number(e.target.value))}
             placeholder={currentQuestion.placeholder}
-            className="question-input w-full px-6 py-5 text-xl border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all bg-white text-slate-800 placeholder-slate-400 shadow-sm"
+            className={inputClassName}
             autoFocus
           />
         );
@@ -259,7 +296,7 @@ export default function SetupEmpresa() {
             type="date"
             value={value}
             onChange={(e) => handleAnswer(e.target.value)}
-            className="question-input w-full px-6 py-5 text-xl border border-slate-200 rounded-xl focus:border-slate-400 focus:outline-none transition-all bg-white text-slate-800 shadow-sm"
+            className={inputClassName}
             autoFocus
           />
         );
@@ -274,6 +311,8 @@ export default function SetupEmpresa() {
                 className={`w-full p-5 text-left rounded-xl border transition-all duration-300 transform hover:scale-[1.02] ${
                   value === option
                     ? "border-slate-600 bg-slate-50 text-slate-900 shadow-md"
+                    : showError
+                    ? "border-red-200 bg-white hover:border-red-300 hover:shadow-sm text-slate-700"
                     : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm text-slate-700"
                 }`}
               >
@@ -345,6 +384,18 @@ export default function SetupEmpresa() {
     );
   }
 
+  // Verificação adicional antes de renderizar o questionário
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Carregando perguntas...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200">
       {/* Header com progresso */}
@@ -389,10 +440,20 @@ export default function SetupEmpresa() {
           </div>
 
           {/* Input */}
-          <div className="mb-12">{renderInput()}</div>
+          <div className="mb-6">{renderInput()}</div>
+
+          {/* Mensagem de erro */}
+          {showError && (
+            <div className="mb-8 flex items-center justify-center">
+              <div className="flex items-center gap-2 px-4 py-3 bg-red-100 border border-red-200 rounded-lg text-red-700 animate-bounce">
+                <HiExclamationTriangle className="w-5 h-5" />
+                <span className="text-sm font-medium">{errorMessage}</span>
+              </div>
+            </div>
+          )}
 
           {/* Botões de navegação */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mt-12">
             <button
               onClick={prevStep}
               disabled={currentStep === 0}
@@ -438,8 +499,8 @@ export default function SetupEmpresa() {
         
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-          20%, 40%, 60%, 80% { transform: translateX(5px); }
+          10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+          20%, 40%, 60%, 80% { transform: translateX(8px); }
         }
       `}</style>
     </div>

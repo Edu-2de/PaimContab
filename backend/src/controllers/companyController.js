@@ -2,43 +2,120 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 exports.createCompany = async (req, res) => {
-  const { userId } = req.params;
-  const companyData = req.body;
-
   try {
+    const { userId } = req.params;
+    const {
+      companyName,
+      businessSegment,
+      mainActivity,
+      businessType,
+      cnpj,
+      monthlyRevenue,
+      foundationDate,
+      city,
+      state,
+      employeeCount
+    } = req.body;
+
+    console.log('Dados recebidos:', {
+      userId,
+      companyName,
+      businessSegment,
+      mainActivity,
+      businessType,
+      cnpj,
+      monthlyRevenue,
+      foundationDate,
+      city,
+      state,
+      employeeCount
+    });
+
+    // Verificar se o usuário existe
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    // Verificar se já existe empresa para este usuário
     const existingCompany = await prisma.company.findUnique({
       where: { userId }
     });
 
-    if (existingCompany) {
-      return res.status(400).json({ message: 'Usuário já possui uma empresa cadastrada' });
+    // Converter foundationDate para DateTime ISO se fornecido
+    let foundationDateISO = null;
+    if (foundationDate && foundationDate.trim() !== '') {
+      try {
+        // Criar uma data ISO válida (adicionar horário se necessário)
+        const dateObj = new Date(foundationDate + 'T00:00:00.000Z');
+        if (!isNaN(dateObj.getTime())) {
+          foundationDateISO = dateObj.toISOString();
+        }
+      } catch (error) {
+        console.log('Erro ao converter data:', error);
+        foundationDateISO = null;
+      }
     }
 
-    const company = await prisma.company.create({
-      data: {
-        ...companyData,
-        userId
-      }
+    console.log('Data convertida:', foundationDateISO);
+
+    const companyData = {
+      companyName: companyName || null,
+      businessSegment: businessSegment || null,
+      mainActivity: mainActivity || null,
+      businessType: businessType || null,
+      cnpj: (cnpj && cnpj.trim() !== '') ? cnpj : null,
+      monthlyRevenue: monthlyRevenue ? parseFloat(monthlyRevenue) : null,
+      foundationDate: foundationDateISO,
+      city: city || null,
+      state: state || null,
+      employeeCount: employeeCount ? parseInt(employeeCount) : 0,
+      userId
+    };
+
+    let company;
+
+    if (existingCompany) {
+      // Atualizar empresa existente
+      company = await prisma.company.update({
+        where: { userId },
+        data: {
+          ...companyData,
+          updatedAt: new Date()
+        }
+      });
+      console.log('Empresa atualizada:', company);
+    } else {
+      // Criar nova empresa
+      company = await prisma.company.create({
+        data: companyData
+      });
+      console.log('Empresa criada:', company);
+    }
+
+    res.status(200).json({
+      message: 'Empresa salva com sucesso',
+      company
     });
 
-    res.status(201).json(company);
   } catch (error) {
-    console.error('Erro ao criar empresa:', error);
-    res.status(500).json({ message: 'Erro interno do servidor', error: error.message });
+    console.error('Erro ao salvar empresa:', error);
+    res.status(500).json({
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
   }
 };
 
 exports.getCompanyByUser = async (req, res) => {
-  const { userId } = req.params;
-
   try {
+    const { userId } = req.params;
+
     const company = await prisma.company.findUnique({
-      where: { userId },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true }
-        }
-      }
+      where: { userId }
     });
 
     if (!company) {
@@ -46,9 +123,13 @@ exports.getCompanyByUser = async (req, res) => {
     }
 
     res.json(company);
+
   } catch (error) {
     console.error('Erro ao buscar empresa:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    res.status(500).json({
+      message: 'Erro interno do servidor',
+      error: error.message
+    });
   }
 };
 

@@ -20,7 +20,7 @@ model User {
   updatedAt      DateTime       @updatedAt
   subscriptions  Subscription[]
   ConsultingSession ConsultingSession[]
-  Company Company[]
+  Company Company?
 }
 
 model Company {

@@ -4,7 +4,7 @@ const companyController = require('../controllers/companyController');
 const authenticateToken = require('../middleware/authMiddleware');
 const requireAdmin = require('../middleware/adminMiddleware');
 
-router.post('/user/:userId', authenticateToken, companyController.createCompany);
+router.post('/user/:userId', companyController.createCompany);
 router.get('/user/:userId', authenticateToken, companyController.getCompanyByUser);
 router.put('/:id', authenticateToken, companyController.updateCompany);
 router.delete('/:id', authenticateToken, companyController.deleteCompany);
