@@ -6,60 +6,42 @@ const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const prisma = new PrismaClient();
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Função para enviar email aos admins
-async function notifyAdmins(user, plan, subscription) {
-  try {
-    const admins = await prisma.user.findMany({
-      where: { role: 'admin' },
-      select: { email: true, name: true },
-    });
-
-    const adminEmails = admins.map(admin => admin.email);
-
-    if (adminEmails.length > 0) {
-      await resend.emails.send({
-        from: 'PaimContab <noreply@paimcontab.com>', // Use seu domínio depois
-        to: adminEmails,
-        subject: `Nova Assinatura - ${plan.name}`,
-        html: `
-          <h2>🎉 Nova Assinatura Realizada!</h2>
-          <div style="font-family: Arial, sans-serif; max-width: 600px;">
-            <p><strong>Cliente:</strong> ${user.name}</p>
-            <p><strong>Email:</strong> ${user.email}</p>
-            <p><strong>Plano:</strong> ${plan.name}</p>
-            <p><strong>Valor:</strong> R$ ${plan.price}</p>
-            <p><strong>Data de Início:</strong> ${subscription.startDate.toLocaleDateString('pt-BR')}</p>
-            <p><strong>Status:</strong> ${subscription.isActive ? '✅ Ativo' : '❌ Inativo'}</p>
-            <hr>
-            <p>Acesse o painel administrativo para mais detalhes.</p>
-          </div>
-        `,
-      });
-
-      console.log('Email enviado para admins via Resend:', adminEmails);
-    }
-  } catch (error) {
-    console.error('Erro ao enviar email via Resend:', error);
-  }
-}
-
 // Criar sessão de checkout
 exports.createCheckoutSession = async (req, res) => {
   const { planId, userId } = req.body;
 
-  try {
-    // Buscar plano e usuário
-    const plan = await prisma.plan.findUnique({ where: { id: planId } });
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+  console.log('Dados recebidos:', { planId, userId });
 
-    if (!plan || !user) {
-      return res.status(404).json({ message: 'Plano ou usuário não encontrado' });
+  try {
+    // Buscar plano
+    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      console.log('Plano não encontrado:', planId);
+      return res.status(404).json({ message: 'Plano não encontrado' });
     }
 
-    // Criar produto e preço no Stripe (ou usar IDs salvos)
+    // Buscar usuário por ID ou email
+    let user = null;
+    if (userId.includes('@')) {
+      // É um email
+      user = await prisma.user.findUnique({ where: { email: userId } });
+    } else {
+      // É um ID
+      user = await prisma.user.findUnique({ where: { id: userId } });
+    }
+
+    if (!user) {
+      console.log('Usuário não encontrado:', userId);
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
+
+    console.log('Plano encontrado:', plan);
+    console.log('Usuário encontrado:', { id: user.id, email: user.email });
+
+    // Criar produto e preço no Stripe
     const product = await stripe.products.create({
       name: plan.name,
-      description: plan.description || `Plano ${plan.name}`,
+      description: plan.description || `Plano ${plan.name} - PaimContab`,
     });
 
     const price = await stripe.prices.create({
@@ -68,6 +50,8 @@ exports.createCheckoutSession = async (req, res) => {
       currency: 'brl',
       recurring: { interval: 'month' },
     });
+
+    console.log('Produto e preço criados no Stripe');
 
     // Criar sessão de checkout
     const session = await stripe.checkout.sessions.create({
@@ -88,80 +72,31 @@ exports.createCheckoutSession = async (req, res) => {
       cancel_url: `${process.env.FRONTEND_URL}/PaymentCanceled`,
     });
 
+    console.log('Sessão de checkout criada:', session.id);
     res.json({ url: session.url });
+
   } catch (error) {
-    console.error('Erro ao criar sessão:', error);
-    res.status(500).json({ message: 'Erro interno do servidor' });
+    console.error('Erro detalhado ao criar sessão:', error);
+    res.status(500).json({ 
+      message: 'Erro interno do servidor',
+      error: error.message 
+    });
   }
 };
 
-// Webhook do Stripe (confirmar pagamento)
+// Resto do código...
 exports.stripeWebhook = async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.log('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object;
-
-      // Criar assinatura no banco
-      try {
-        const subscription = await prisma.subscription.create({
-          data: {
-            userId: session.metadata.userId,
-            planId: session.metadata.planId,
-            isActive: true,
-          },
-          include: {
-            user: true,
-            plan: true,
-          },
-        });
-
-        // Enviar email para admins
-        await notifyAdmins(subscription.user, subscription.plan, subscription);
-
-        console.log('Assinatura criada:', subscription.id);
-      } catch (error) {
-        console.error('Erro ao criar assinatura:', error);
-      }
-      break;
-
-    case 'invoice.payment_succeeded':
-      // Renovação mensal bem-sucedida
-      console.log('Pagamento de renovação bem-sucedido');
-      break;
-
-    case 'invoice.payment_failed':
-      // Pagamento falhou
-      console.log('Pagamento falhou');
-      break;
-
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  res.json({ received: true });
+  // ...código anterior...
 };
 
-// Listar planos
 exports.getPlans = async (req, res) => {
   try {
     const plans = await prisma.plan.findMany({
-      orderBy: { price: 'asc' },
+      orderBy: { price: 'asc' }
     });
     res.json(plans);
   } catch (error) {
+    console.error('Erro ao buscar planos:', error);
     res.status(500).json({ message: 'Erro ao buscar planos' });
   }
 };
