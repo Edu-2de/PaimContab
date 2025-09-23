@@ -1,11 +1,10 @@
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || "mysecret"; // Recomenda-se usar variável de ambiente
+const JWT_SECRET = process.env.JWT_SECRET || 'mysecret';
 
-// Middleware para verificar se o usuário está autenticado
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
-  // Espera o header no formato: "Bearer <token>"
+
   const token = authHeader && authHeader.split(' ')[1];
 
   if (!token) {
@@ -16,7 +15,7 @@ function authenticateToken(req, res, next) {
     if (err) {
       return res.status(403).json({ message: 'Invalid or expired token' });
     }
-    req.user = user; // user: { userId, email, ... }
+    req.user = user;
     next();
   });
 }
