@@ -69,7 +69,8 @@ export default function LoginRegisterPage() {
           // Verificar se data.user existe antes de salvar
           if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
-            console.log('Usuário salvo no localStorage'); // Debug
+            // No registro, não temos token ainda, usuário precisará fazer login
+            console.log('Usuário registrado e salvo no localStorage'); // Debug
             window.location.href = '/setup-company';
           } else {
             setError('Erro: dados do usuário não retornados.');
@@ -86,6 +87,8 @@ export default function LoginRegisterPage() {
           setError(data.message || 'E-mail ou senha inválidos.');
         } else {
           localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('token', data.token);
+          console.log('Token salvo:', data.token);
           window.location.href = '/';
         }
       }

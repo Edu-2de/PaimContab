@@ -6,10 +6,16 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     
+    // Extrair o token do corpo da requisição
+    const { token, ...paymentData } = body;
+    
     const response = await fetch(`${apiUrl}/api/payment/create-checkout`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
+      body: JSON.stringify(paymentData),
     });
     
     const data = await response.json();

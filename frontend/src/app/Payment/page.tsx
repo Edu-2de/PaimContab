@@ -39,6 +39,14 @@ function PaymentContent() {
   const handlePayment = async () => {
     if (!user || !plan) return;
 
+    // Verificar se há token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Sessão expirada. Faça login novamente.');
+      window.location.href = '/Login';
+      return;
+    }
+
     setLoading(true);
     try {
       console.log('Enviando dados:', { planId: plan.id, userId: user.id || user.email });
@@ -52,6 +60,7 @@ function PaymentContent() {
         body: JSON.stringify({
           planId: plan.id,
           userId: user.id || user.email,
+          token: token, // Enviar o token
         }),
       });
 
