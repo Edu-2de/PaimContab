@@ -41,25 +41,40 @@ function PaymentContent() {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/payment/create-checkout', {
+      console.log('Enviando dados:', { planId: plan.id, userId: user.id || user.email });
+
+      // MUDANÇA AQUI: usar sua rota API do Next.js
+      const response = await fetch('/api/payment/create-checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           planId: plan.id,
-          userId: user.id || user.email, // Ajuste conforme sua estrutura
+          userId: user.id || user.email,
         }),
       });
 
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error('Erro do servidor:', errorData);
+        throw new Error(`Erro ${response.status}: ${errorData}`);
+      }
+
       const data = await response.json();
+      console.log('Resposta do servidor:', data);
+
       if (data.url) {
         // Redireciona para o Stripe
         window.location.href = data.url;
       } else {
-        alert('Erro ao criar sessão de pagamento');
+        throw new Error('URL de checkout não retornada');
       }
     } catch (error) {
-      console.error('Erro:', error);
-      alert('Erro ao processar pagamento');
+      console.error('Erro completo:', error);
+      alert(`Erro ao processar pagamento: ${error instanceof Error ? error.message : String(error)}`);
     }
     setLoading(false);
   };
