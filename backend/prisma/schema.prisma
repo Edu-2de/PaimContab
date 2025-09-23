@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Usuário
+
 model User {
   id             String         @id @default(uuid())
   email          String         @unique
@@ -20,20 +20,53 @@ model User {
   updatedAt      DateTime       @updatedAt
   subscriptions  Subscription[]
   ConsultingSession ConsultingSession[]
+  Company Company?
 }
 
-// Plano de assinatura
+model Company {
+  id                String    @id @default(uuid())
+  user              User      @relation(fields: [userId], references: [id])
+  userId            String    @unique 
+  companyName       String    
+  legalName         String?   
+  cnpj              String?   @unique 
+  businessType      String    @default("MEI") 
+  mainActivity      String?   
+  secondaryActivity String?   
+  businessSegment   String?   
+  address           String?
+  addressNumber     String?
+  complement        String?
+  neighborhood      String?
+  city              String?
+  state             String?
+  zipCode           String?
+  businessPhone     String?
+  businessEmail     String?
+  website           String?
+  taxRegime         String?   
+  monthlyRevenue    Float?    
+  employeeCount     Int       @default(0) 
+  foundationDate    DateTime? 
+  isActive          Boolean   @default(true)
+  notes             String?   
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+
+
 model Plan {
   id          String          @id @default(uuid())
-  name        String          // Ex: Básico, Intermediário, Avançado
-  price       Decimal         // Valor mensal
+  name        String          
+  price       Float         
   description String?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   subscriptions Subscription[]
 }
 
-// Assinatura do usuário
+
 model Subscription {
   id         String    @id @default(uuid())
   user       User      @relation(fields: [userId], references: [id])
@@ -52,10 +85,10 @@ model ConsultingSession {
   id            String      @id @default(uuid())
   user          User        @relation(fields: [userId], references: [id])
   userId        String
-  scheduledAt   DateTime    // Data e hora agendada
-  duration      Int         // Duração em minutos
-  status        String      // Ex: "scheduled", "completed", "cancelled"
-  notes         String?     // Observações do consultor ou usuário
+  scheduledAt   DateTime    
+  duration      Int         
+  status        String      
+  notes         String?     
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
