@@ -1,52 +1,45 @@
 const Stripe = require('stripe');
 const { PrismaClient } = require('@prisma/client');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const prisma = new PrismaClient();
-
-// Configurar nodemailer (ajuste conforme seu provedor de email)
-const transporter = nodemailer.createTransporter({
-  service: 'gmail', // ou outro provedor
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Função para enviar email aos admins
 async function notifyAdmins(user, plan, subscription) {
   try {
     const admins = await prisma.user.findMany({
       where: { role: 'admin' },
-      select: { email: true, name: true }
+      select: { email: true, name: true },
     });
 
     const adminEmails = admins.map(admin => admin.email);
-    
+
     if (adminEmails.length > 0) {
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
+      await resend.emails.send({
+        from: 'PaimContab <noreply@paimcontab.com>', // Use seu domínio depois
         to: adminEmails,
         subject: `Nova Assinatura - ${plan.name}`,
         html: `
-          <h2>Nova Assinatura Realizada!</h2>
-          <p><strong>Cliente:</strong> ${user.name}</p>
-          <p><strong>Email:</strong> ${user.email}</p>
-          <p><strong>Plano:</strong> ${plan.name}</p>
-          <p><strong>Valor:</strong> R$ ${plan.price}</p>
-          <p><strong>Data de Início:</strong> ${subscription.startDate.toLocaleDateString('pt-BR')}</p>
-          <p><strong>Status:</strong> ${subscription.isActive ? 'Ativo' : 'Inativo'}</p>
-          <hr>
-          <p>Acesse o painel administrativo para mais detalhes.</p>
-        `
-      };
+          <h2>🎉 Nova Assinatura Realizada!</h2>
+          <div style="font-family: Arial, sans-serif; max-width: 600px;">
+            <p><strong>Cliente:</strong> ${user.name}</p>
+            <p><strong>Email:</strong> ${user.email}</p>
+            <p><strong>Plano:</strong> ${plan.name}</p>
+            <p><strong>Valor:</strong> R$ ${plan.price}</p>
+            <p><strong>Data de Início:</strong> ${subscription.startDate.toLocaleDateString('pt-BR')}</p>
+            <p><strong>Status:</strong> ${subscription.isActive ? '✅ Ativo' : '❌ Inativo'}</p>
+            <hr>
+            <p>Acesse o painel administrativo para mais detalhes.</p>
+          </div>
+        `,
+      });
 
-      await transporter.sendMail(mailOptions);
-      console.log('Email enviado para admins:', adminEmails);
+      console.log('Email enviado para admins via Resend:', adminEmails);
     }
   } catch (error) {
-    console.error('Erro ao enviar email para admins:', error);
+    console.error('Erro ao enviar email via Resend:', error);
   }
 }
 
@@ -91,8 +84,8 @@ exports.createCheckoutSession = async (req, res) => {
         userId: user.id,
         planId: plan.id,
       },
-      success_url: `${process.env.FRONTEND_URL}/pagamento/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/pagamento/cancelado`,
+      success_url: `${process.env.FRONTEND_URL}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/PaymentCanceled`,
     });
 
     res.json({ url: session.url });
@@ -120,7 +113,7 @@ exports.stripeWebhook = async (req, res) => {
   switch (event.type) {
     case 'checkout.session.completed':
       const session = event.data.object;
-      
+
       // Criar assinatura no banco
       try {
         const subscription = await prisma.subscription.create({
@@ -132,12 +125,12 @@ exports.stripeWebhook = async (req, res) => {
           include: {
             user: true,
             plan: true,
-          }
+          },
         });
 
         // Enviar email para admins
         await notifyAdmins(subscription.user, subscription.plan, subscription);
-        
+
         console.log('Assinatura criada:', subscription.id);
       } catch (error) {
         console.error('Erro ao criar assinatura:', error);
@@ -165,7 +158,7 @@ exports.stripeWebhook = async (req, res) => {
 exports.getPlans = async (req, res) => {
   try {
     const plans = await prisma.plan.findMany({
-      orderBy: { price: 'asc' }
+      orderBy: { price: 'asc' },
     });
     res.json(plans);
   } catch (error) {
