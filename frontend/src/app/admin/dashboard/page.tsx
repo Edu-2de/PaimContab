@@ -65,8 +65,6 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [showUserModal, setShowUserModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -171,38 +169,6 @@ export default function AdminPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     loadUsers(1, search);
-  };
-
-  const viewUserDetails = async (userId: string) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        window.location.href = '/Login';
-        return;
-      }
-
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        window.location.href = '/Login';
-        return;
-      }
-
-      if (response.ok) {
-        const userData = await response.json();
-        setSelectedUser(userData);
-        setShowUserModal(true);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar detalhes do usuário:', error);
-    }
   };
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
@@ -372,11 +338,10 @@ export default function AdminPage() {
                     <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       type="text"
-
                       value={search}
                       onChange={e => setSearch(e.target.value)}
                       placeholder="Buscar usuários..."
-                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-gray-500 text-gray-800"
+                      className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:border-gray-500"
                     />
                   </div>
                   <button
@@ -458,13 +423,13 @@ export default function AdminPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(user.createdAt)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => viewUserDetails(user.id)}
+                          <Link
+                            href={`/admin/users/${user.id}`}
                             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                             title="Ver detalhes"
                           >
                             <HiEye className="w-4 h-4" />
-                          </button>
+                          </Link>
                           <button
                             onClick={() => toggleUserStatus(user.id, user.isActive)}
                             className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -519,115 +484,6 @@ export default function AdminPage() {
             </Link>
           </div>
         </div>
-
-        {/* Modal de Detalhes do Usuário */}
-        {showUserModal && selectedUser && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-black">Detalhes do Usuário</h3>
-                  <button 
-                    onClick={() => setShowUserModal(false)} 
-                    className="p-2 hover:bg-gray-100 rounded-lg"
-                  >
-                    <HiXCircle className="w-5 h-5 text-gray-500" />
-                  </button>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-6">
-                {/* Informações do Usuário */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="font-semibold text-black mb-3">Informações Pessoais</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Nome:</span>
-                        <span className="text-black font-medium">{selectedUser.name}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Email:</span>
-                        <span className="text-black font-medium">{selectedUser.email}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Função:</span>
-                        <span className="text-black font-medium">{selectedUser.role}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Status:</span>
-                        <span className="text-black font-medium">{selectedUser.isActive ? 'Ativo' : 'Inativo'}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Cadastro:</span>
-                        <span className="text-black font-medium">{formatDate(selectedUser.createdAt)}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Informações da Empresa */}
-                  {selectedUser.company && (
-                    <div>
-                      <h4 className="font-semibold text-black mb-3">Informações da Empresa</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Nome:</span>
-                          <span className="text-black font-medium">{selectedUser.company.companyName}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Segmento:</span>
-                          <span className="text-black font-medium">{selectedUser.company.businessSegment}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Atividade:</span>
-                          <span className="text-black font-medium">{selectedUser.company.mainActivity}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">CNPJ:</span>
-                          <span className="text-black font-medium">{selectedUser.company.cnpj || 'Não informado'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Localização:</span>
-                          <span className="text-black font-medium">{selectedUser.company.city}, {selectedUser.company.state}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Funcionários:</span>
-                          <span className="text-black font-medium">{selectedUser.company.employeeCount}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Faturamento:</span>
-                          <span className="text-black font-medium">{formatCurrency(selectedUser.company.monthlyRevenue || 0)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Histórico de Assinaturas */}
-                {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-black mb-3">Histórico de Assinaturas</h4>
-                    <div className="space-y-3">
-                      {selectedUser.subscriptions.map((sub: any) => (
-                        <div key={sub.id} className="p-4 border border-gray-200 rounded-lg">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-black">{sub.plan.name}</p>
-                              <p className="text-sm text-gray-600">
-                                {formatCurrency(sub.amount)} • {formatDate(sub.createdAt)}
-                              </p>
-                            </div>
-                            {getPlanStatusBadge(sub.status)}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
