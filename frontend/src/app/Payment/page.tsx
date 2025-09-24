@@ -27,10 +27,16 @@ function PaymentContent() {
     // Recuperar usuário do localStorage
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('user');
-      if (stored) {
+      const token = localStorage.getItem('authToken');
+
+      console.log('🔍 Verificando autenticação na página de pagamento');
+      console.log('Usuário no localStorage:', !!stored);
+      console.log('Token no localStorage:', !!token);
+
+      if (stored && token) {
         setUser(JSON.parse(stored));
       } else {
-        // Se não estiver logado, redireciona
+        console.log('❌ Usuário não logado, redirecionando...');
         window.location.href = '/Login';
       }
     }
@@ -41,39 +47,59 @@ function PaymentContent() {
 
     setLoading(true);
     try {
-      console.log('Enviando dados:', { planId: plan.id, userId: user.id || user.email });
+      const token = localStorage.getItem('authToken');
 
-      // MUDANÇA AQUI: usar sua rota API do Next.js
+      console.log('💳 Iniciando pagamento...');
+      console.log('Token presente:', !!token);
+      console.log('Dados do pagamento:', {
+        planId: plan.id,
+        userEmail: user.email,
+        userName: user.name,
+      });
+
+      if (!token) {
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
       const response = await fetch('/api/payment/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          planId: plan.id,
-          userId: user.id || user.email,
+          planId: plan.id, // Certificar que está enviando o ID correto
+          // Não precisa enviar userId, o backend vai usar do token
         }),
       });
 
-      console.log('Response status:', response.status);
+      console.log('📥 Response status:', response.status);
+
+      if (response.status === 401) {
+        console.log('❌ Token inválido, removendo dados e redirecionando...');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/Login';
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('Erro do servidor:', errorData);
+        console.error('❌ Erro do servidor:', errorData);
         throw new Error(`Erro ${response.status}: ${errorData}`);
       }
 
       const data = await response.json();
-      console.log('Resposta do servidor:', data);
+      console.log('✅ Resposta do servidor:', data);
 
       if (data.url) {
-        // Redireciona para o Stripe
+        console.log('🔗 Redirecionando para Stripe:', data.url);
         window.location.href = data.url;
       } else {
         throw new Error('URL de checkout não retornada');
       }
     } catch (error) {
-      console.error('Erro completo:', error);
+      console.error('💥 Erro completo:', error);
       alert(`Erro ao processar pagamento: ${error instanceof Error ? error.message : String(error)}`);
     }
     setLoading(false);
@@ -105,6 +131,24 @@ function PaymentContent() {
           <h1 className="text-3xl font-bold text-gray-900">Finalizar Assinatura</h1>
           <p className="text-gray-600 mt-2">Confirme os detalhes do seu plano</p>
         </div>
+
+        {/* Status de Autenticação (para debug) */}
+        {typeof window !== 'undefined' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="text-sm">
+              <p>
+                <strong>Debug:</strong>
+              </p>
+              <p>Token: {localStorage.getItem('authToken') ? '✅ Presente' : '❌ Ausente'}</p>
+              <p>
+                Usuário: {user.name} ({user.email})
+              </p>
+              <p>
+                Plano: {plan.name} - {plan.priceFormatted}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Resumo do Plano */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
