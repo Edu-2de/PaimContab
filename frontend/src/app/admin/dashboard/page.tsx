@@ -7,19 +7,16 @@ import {
   HiUsers,
   HiBuildingOffice,
   HiCreditCard,
-  HiCurrencyDollar,
   HiMagnifyingGlass,
   HiEye,
   HiUserCircle,
   HiCheckCircle,
   HiXCircle,
   HiArrowTrendingUp,
-  HiArrowTrendingDown,
   HiCalendarDays,
   HiChartBarSquare,
   HiUserPlus,
   HiBanknotes,
-  HiClockIcon,
 } from 'react-icons/hi2';
 
 interface Company {
@@ -295,7 +292,7 @@ export default function AdminPage() {
             <p className="text-gray-600">Carregando dashboard...</p>
           </div>
         </div>
-      </div>
+        </div>
     );
   }
 
@@ -722,6 +719,7 @@ export default function AdminPage() {
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }
