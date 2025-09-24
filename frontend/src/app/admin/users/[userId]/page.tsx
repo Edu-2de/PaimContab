@@ -208,11 +208,7 @@ export default function UserDetailsPage() {
 
     const badge = badges[status as keyof typeof badges] || badges.inactive;
 
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
-        {badge.text}
-      </span>
-    );
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>{badge.text}</span>;
   };
 
   if (loading) {
@@ -254,14 +250,14 @@ export default function UserDetailsPage() {
   return (
     <div className="flex min-h-screen bg-white">
       <AdminSidebar currentPage="users" />
-      
+
       <div className="flex-1 overflow-hidden">
         {/* Header */}
         <div className="border-b border-gray-200 px-8 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Link 
-                href="/admin/dashboard" 
+              <Link
+                href="/admin/dashboard"
                 className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <HiArrowLeft className="w-5 h-5" />
@@ -295,9 +291,7 @@ export default function UserDetailsPage() {
               <button
                 onClick={() => setIsEditing(!isEditing)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isEditing
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-black text-white hover:bg-gray-800'
+                  isEditing ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'
                 }`}
               >
                 <HiPencilSquare className="w-4 h-4" />
@@ -365,7 +359,9 @@ export default function UserDetailsPage() {
                           <p className="text-gray-600">{user.email}</p>
                           <div className="flex items-center gap-3 mt-2">
                             <span className="text-sm font-medium text-gray-500">Função:</span>
-                            <span className="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full">{user.role}</span>
+                            <span className="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
+                              {user.role}
+                            </span>
                             {user.isActive ? (
                               <div className="flex items-center gap-1 text-gray-600">
                                 <HiCheckCircle className="w-4 h-4" />
@@ -422,11 +418,11 @@ export default function UserDetailsPage() {
                         </div>
                         <div>
                           <h4 className="text-sm font-medium text-gray-500 mb-1">Segmento</h4>
-                          <p className="text-black">{user.company.businessSegment}</p>
+                          <p className="text-black">{user.company.businessSegment || 'Não informado'}</p>
                         </div>
                         <div>
                           <h4 className="text-sm font-medium text-gray-500 mb-1">Atividade Principal</h4>
-                          <p className="text-black">{user.company.mainActivity}</p>
+                          <p className="text-black">{user.company.mainActivity || 'Não informado'}</p>
                         </div>
                         <div>
                           <h4 className="text-sm font-medium text-gray-500 mb-1">Tipo de Negócio</h4>
@@ -443,7 +439,9 @@ export default function UserDetailsPage() {
                           <div className="flex items-center gap-2 text-black">
                             <HiMapPin className="w-4 h-4 text-gray-400" />
                             <span>
-                              {user.company.city}, {user.company.state}
+                              {user.company.city && user.company.state
+                                ? `${user.company.city}, ${user.company.state}`
+                                : 'Não informado'}
                             </span>
                           </div>
                         </div>
@@ -466,6 +464,24 @@ export default function UserDetailsPage() {
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* No Company Information */}
+              {!user.company && (
+                <div className="bg-white border border-gray-200 rounded-lg">
+                  <div className="p-6 border-b border-gray-200">
+                    <h3 className="text-lg font-semibold text-black flex items-center gap-2">
+                      <HiBuildingOffice className="w-5 h-5 text-gray-600" />
+                      Informações da Empresa
+                    </h3>
+                  </div>
+                  <div className="p-6">
+                    <div className="text-center py-8">
+                      <HiBuildingOffice className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500">Não há empresa cadastrada para este usuário</p>
                     </div>
                   </div>
                 </div>
@@ -494,9 +510,7 @@ export default function UserDetailsPage() {
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
                               <span className="text-gray-500">Valor:</span>
-                              <span className="ml-2 font-medium text-black">
-                                {formatCurrency(subscription.amount)}
-                              </span>
+                              <span className="ml-2 font-medium text-black">{formatCurrency(subscription.amount)}</span>
                             </div>
                             <div>
                               <span className="text-gray-500">Iniciado em:</span>
@@ -619,9 +633,7 @@ export default function UserDetailsPage() {
                   )}
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total de assinaturas:</span>
-                    <span className="font-medium text-black">
-                      {user.subscriptions ? user.subscriptions.length : 0}
-                    </span>
+                    <span className="font-medium text-black">{user.subscriptions ? user.subscriptions.length : 0}</span>
                   </div>
                 </div>
               </div>

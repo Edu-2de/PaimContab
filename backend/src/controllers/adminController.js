@@ -153,8 +153,16 @@ const getUserDetails = async (req, res) => {
       });
     }
 
+    // Mapear o campo Company para company (minúsculo) para consistency
+    const userResponse = {
+      ...user,
+      company: user.Company,
+      Company: undefined, // Remove o campo Company maiúsculo
+    };
+
     console.log('✅ Detalhes do usuário carregados:', user.name);
-    res.json(user);
+    console.log('📊 Empresa encontrada:', user.Company ? 'Sim' : 'Não');
+    res.json(userResponse);
   } catch (error) {
     console.error('💥 Erro ao buscar detalhes do usuário:', error);
     res.status(500).json({
