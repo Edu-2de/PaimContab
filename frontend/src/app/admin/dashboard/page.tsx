@@ -243,8 +243,9 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <AdminSidebar currentPage="dashboard" />
+    <AdminProtection>
+      <div className="min-h-screen bg-slate-50">
+        <AdminSidebar currentPage="dashboard" />
 
       <div className="ml-64 min-h-screen">
         {/* Header */}
@@ -550,6 +551,6 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminProtection>
   );
 }

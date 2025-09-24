@@ -83,16 +83,12 @@ export default function AdminProtection({ children }: AdminProtectionProps) {
             <div className="mb-6">
               <HiExclamationTriangle className="mx-auto h-16 w-16 text-red-500" />
             </div>
-            
+
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Acesso Negado</h1>
-            
-            <p className="text-gray-600 mb-2">
-              Você não tem permissão para acessar esta área administrativa.
-            </p>
-            
-            <p className="text-sm text-gray-500 mb-8">
-              Esta seção é restrita apenas para administradores do sistema.
-            </p>
+
+            <p className="text-gray-600 mb-2">Você não tem permissão para acessar esta área administrativa.</p>
+
+            <p className="text-sm text-gray-500 mb-8">Esta seção é restrita apenas para administradores do sistema.</p>
 
             {user && (
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
@@ -110,7 +106,7 @@ export default function AdminProtection({ children }: AdminProtectionProps) {
                 <HiHome className="w-5 h-5" />
                 Voltar para Home
               </button>
-              
+
               <button
                 onClick={() => {
                   localStorage.removeItem('authToken');
