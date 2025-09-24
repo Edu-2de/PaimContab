@@ -85,12 +85,15 @@ export default function AdminSubscriptionsPage() {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/subscriptions/${subscriptionId}/cancel`, {
-        method: 'PATCH',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-        },
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/subscriptions/${subscriptionId}/cancel`,
+        {
+          method: 'PATCH',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          },
+        }
+      );
 
       if (!response.ok) throw new Error('Erro ao cancelar assinatura');
 

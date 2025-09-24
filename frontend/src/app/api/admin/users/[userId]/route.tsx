@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {

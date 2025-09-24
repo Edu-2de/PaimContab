@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
+import AdminProtection from '@/components/AdminProtection';
 import Link from 'next/link';
 import {
   HiUsers,
