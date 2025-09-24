@@ -35,7 +35,7 @@ export default function AdminReportsPage() {
   const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/admin/reports?period=${selectedPeriod}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/reports?period=${selectedPeriod}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },

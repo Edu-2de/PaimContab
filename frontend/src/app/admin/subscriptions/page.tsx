@@ -56,7 +56,7 @@ export default function AdminSubscriptionsPage() {
         ...(filterStatus && { status: filterStatus }),
       });
 
-      const response = await fetch(`/api/admin/subscriptions?${params}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/subscriptions?${params}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -85,7 +85,7 @@ export default function AdminSubscriptionsPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/subscriptions/${subscriptionId}/cancel`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/subscriptions/${subscriptionId}/cancel`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
