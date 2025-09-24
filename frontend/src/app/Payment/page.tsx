@@ -45,6 +45,14 @@ function PaymentContent() {
   const handlePayment = async () => {
     if (!user || !plan) return;
 
+    // Verificar se há token
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Sessão expirada. Faça login novamente.');
+      window.location.href = '/Login';
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
