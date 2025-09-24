@@ -20,6 +20,7 @@ import {
   HiChartBarSquare,
   HiDocumentText,
   HiCog6Tooth,
+  HiTrash,
 } from 'react-icons/hi2';
 
 interface User {
@@ -33,14 +34,27 @@ interface User {
   company?: {
     id: string;
     companyName: string;
-    businessSegment: string;
-    mainActivity: string;
+    legalName?: string;
+    businessSegment?: string;
+    mainActivity?: string;
+    secondaryActivity?: string;
     businessType: string;
-    cnpj: string | null;
-    city: string;
-    state: string;
-    employeeCount: string;
-    monthlyRevenue: number | null;
+    cnpj?: string | null;
+    address?: string;
+    addressNumber?: string;
+    complement?: string;
+    neighborhood?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    businessPhone?: string;
+    businessEmail?: string;
+    website?: string;
+    taxRegime?: string;
+    monthlyRevenue?: number | null;
+    employeeCount: number;
+    foundationDate?: string;
+    notes?: string;
     createdAt: string;
   };
   subscriptions: Array<{
@@ -77,10 +91,37 @@ export default function UserDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [isEditingCompany, setIsEditingCompany] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
     isActive: true,
+  });
+  const [companyEditForm, setCompanyEditForm] = useState({
+    companyName: '',
+    legalName: '',
+    businessSegment: '',
+    mainActivity: '',
+    secondaryActivity: '',
+    businessType: 'MEI',
+    cnpj: '',
+    address: '',
+    addressNumber: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
+    zipCode: '',
+    businessPhone: '',
+    businessEmail: '',
+    website: '',
+    taxRegime: '',
+    monthlyRevenue: '',
+    employeeCount: 0,
+    foundationDate: '',
+    notes: '',
   });
 
   useEffect(() => {
@@ -119,6 +160,34 @@ export default function UserDetailsPage() {
         email: data.email,
         isActive: data.isActive,
       });
+
+      // Preencher formulário da empresa se existir
+      if (data.company) {
+        setCompanyEditForm({
+          companyName: data.company.companyName || '',
+          legalName: data.company.legalName || '',
+          businessSegment: data.company.businessSegment || '',
+          mainActivity: data.company.mainActivity || '',
+          secondaryActivity: data.company.secondaryActivity || '',
+          businessType: data.company.businessType || 'MEI',
+          cnpj: data.company.cnpj || '',
+          address: data.company.address || '',
+          addressNumber: data.company.addressNumber || '',
+          complement: data.company.complement || '',
+          neighborhood: data.company.neighborhood || '',
+          city: data.company.city || '',
+          state: data.company.state || '',
+          zipCode: data.company.zipCode || '',
+          businessPhone: data.company.businessPhone || '',
+          businessEmail: data.company.businessEmail || '',
+          website: data.company.website || '',
+          taxRegime: data.company.taxRegime || '',
+          monthlyRevenue: data.company.monthlyRevenue?.toString() || '',
+          employeeCount: data.company.employeeCount || 0,
+          foundationDate: data.company.foundationDate ? data.company.foundationDate.split('T')[0] : '',
+          notes: data.company.notes || '',
+        });
+      }
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -152,6 +221,72 @@ export default function UserDetailsPage() {
       alert('Usuário atualizado com sucesso!');
     } catch (error: any) {
       alert(`Erro: ${error.message}`);
+    }
+  };
+
+  const handleUpdateCompany = async () => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        router.push('/Login');
+        return;
+      }
+
+      const companyData = {
+        ...companyEditForm,
+        monthlyRevenue: companyEditForm.monthlyRevenue ? parseFloat(companyEditForm.monthlyRevenue) : null,
+        foundationDate: companyEditForm.foundationDate || null,
+      };
+
+      const response = await fetch(`/api/admin/users/${userId}/company`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(companyData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar empresa');
+      }
+
+      await loadUserDetails();
+      setIsEditingCompany(false);
+      alert('Empresa atualizada com sucesso!');
+    } catch (error: any) {
+      alert(`Erro: ${error.message}`);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      setDeleteLoading(true);
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        router.push('/Login');
+        return;
+      }
+
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar usuário');
+      }
+
+      alert('Usuário deletado com sucesso!');
+      router.push('/admin/dashboard');
+    } catch (error: any) {
+      alert(`Erro: ${error.message}`);
+    } finally {
+      setDeleteLoading(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -253,27 +388,27 @@ export default function UserDetailsPage() {
 
       <div className="flex-1 overflow-hidden">
         {/* Header */}
-        <div className="border-b border-gray-200 px-8 py-6">
+        <div className="bg-white border-b border-gray-100 px-8 py-6 shadow-sm">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 href="/admin/dashboard"
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
               >
                 <HiArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-black">Detalhes do Usuário</h1>
-                <p className="text-gray-600 mt-1">Informações completas e gerenciamento</p>
+                <h1 className="text-2xl font-bold text-gray-900">Gerenciar Usuário</h1>
+                <p className="text-gray-500 mt-1 text-sm">Informações completas e controles administrativos</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={handleToggleStatus}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
                   user.isActive
-                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    : 'bg-gray-800 text-white hover:bg-gray-700'
+                    ? 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
                 {user.isActive ? (
@@ -290,12 +425,21 @@ export default function UserDetailsPage() {
               </button>
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                  isEditing ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-black text-white hover:bg-gray-800'
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
+                  isEditing 
+                    ? 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200' 
+                    : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
                 <HiPencilSquare className="w-4 h-4" />
                 {isEditing ? 'Cancelar' : 'Editar'}
+              </button>
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all duration-200"
+              >
+                <HiTrash className="w-4 h-4" />
+                Deletar
               </button>
             </div>
           </div>
@@ -402,69 +546,235 @@ export default function UserDetailsPage() {
 
               {/* Company Information */}
               {user.company && (
-                <div className="bg-white border border-gray-200 rounded-lg">
-                  <div className="p-6 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-black flex items-center gap-2">
-                      <HiBuildingOffice className="w-5 h-5 text-gray-600" />
+                <div className="bg-white border border-gray-100 rounded-xl shadow-sm">
+                  <div className="flex items-center justify-between p-6 border-b border-gray-100">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <HiBuildingOffice className="w-5 h-5 text-gray-500" />
                       Informações da Empresa
                     </h3>
+                    <button
+                      onClick={() => setIsEditingCompany(!isEditingCompany)}
+                      className={`flex items-center gap-2 px-3 py-1.5 text-sm rounded-lg font-medium transition-all duration-200 ${
+                        isEditingCompany
+                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-gray-900 text-white hover:bg-gray-800'
+                      }`}
+                    >
+                      <HiPencilSquare className="w-4 h-4" />
+                      {isEditingCompany ? 'Cancelar' : 'Editar'}
+                    </button>
                   </div>
                   <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Nome da Empresa</h4>
-                          <p className="text-black font-medium">{user.company.companyName}</p>
+                    {isEditingCompany ? (
+                      <div className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Nome da Empresa*
+                            </label>
+                            <input
+                              type="text"
+                              value={companyEditForm.companyName}
+                              onChange={(e) =>
+                                setCompanyEditForm({ ...companyEditForm, companyName: e.target.value })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Razão Social
+                            </label>
+                            <input
+                              type="text"
+                              value={companyEditForm.legalName}
+                              onChange={(e) =>
+                                setCompanyEditForm({ ...companyEditForm, legalName: e.target.value })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              CNPJ
+                            </label>
+                            <input
+                              type="text"
+                              value={companyEditForm.cnpj}
+                              onChange={(e) => setCompanyEditForm({ ...companyEditForm, cnpj: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                              placeholder="00.000.000/0000-00"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Tipo de Negócio
+                            </label>
+                            <select
+                              value={companyEditForm.businessType}
+                              onChange={(e) =>
+                                setCompanyEditForm({ ...companyEditForm, businessType: e.target.value })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                            >
+                              <option value="MEI">MEI</option>
+                              <option value="ME">ME</option>
+                              <option value="EPP">EPP</option>
+                              <option value="LTDA">LTDA</option>
+                              <option value="SA">SA</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Segmento de Negócio
+                            </label>
+                            <input
+                              type="text"
+                              value={companyEditForm.businessSegment}
+                              onChange={(e) =>
+                                setCompanyEditForm({ ...companyEditForm, businessSegment: e.target.value })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Atividade Principal
+                            </label>
+                            <input
+                              type="text"
+                              value={companyEditForm.mainActivity}
+                              onChange={(e) =>
+                                setCompanyEditForm({ ...companyEditForm, mainActivity: e.target.value })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Cidade
+                            </label>
+                            <input
+                              type="text"
+                              value={companyEditForm.city}
+                              onChange={(e) => setCompanyEditForm({ ...companyEditForm, city: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Estado
+                            </label>
+                            <input
+                              type="text"
+                              value={companyEditForm.state}
+                              onChange={(e) => setCompanyEditForm({ ...companyEditForm, state: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                              placeholder="SP"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Número de Funcionários
+                            </label>
+                            <input
+                              type="number"
+                              value={companyEditForm.employeeCount}
+                              onChange={(e) =>
+                                setCompanyEditForm({ ...companyEditForm, employeeCount: parseInt(e.target.value) || 0 })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                              min="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                              Faturamento Mensal
+                            </label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={companyEditForm.monthlyRevenue}
+                              onChange={(e) =>
+                                setCompanyEditForm({ ...companyEditForm, monthlyRevenue: e.target.value })
+                              }
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                              placeholder="0.00"
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Segmento</h4>
-                          <p className="text-black">{user.company.businessSegment || 'Não informado'}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Atividade Principal</h4>
-                          <p className="text-black">{user.company.mainActivity || 'Não informado'}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Tipo de Negócio</h4>
-                          <p className="text-black">{user.company.businessType}</p>
+                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
+                          <button
+                            onClick={() => setIsEditingCompany(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            onClick={handleUpdateCompany}
+                            className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+                          >
+                            Salvar Alterações
+                          </button>
                         </div>
                       </div>
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">CNPJ</h4>
-                          <p className="text-black">{user.company.cnpj || 'Não informado'}</p>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Localização</h4>
-                          <div className="flex items-center gap-2 text-black">
-                            <HiMapPin className="w-4 h-4 text-gray-400" />
-                            <span>
-                              {user.company.city && user.company.state
-                                ? `${user.company.city}, ${user.company.state}`
-                                : 'Não informado'}
-                            </span>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Nome da Empresa</h4>
+                            <p className="text-gray-900 font-medium">{user.company.companyName}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Segmento</h4>
+                            <p className="text-gray-900">{user.company.businessSegment || 'Não informado'}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Atividade Principal</h4>
+                            <p className="text-gray-900">{user.company.mainActivity || 'Não informado'}</p>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Tipo de Negócio</h4>
+                            <p className="text-gray-900">{user.company.businessType}</p>
                           </div>
                         </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Número de Funcionários</h4>
-                          <div className="flex items-center gap-2 text-black">
-                            <HiUsers className="w-4 h-4 text-gray-400" />
-                            <span>{user.company.employeeCount}</span>
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">CNPJ</h4>
+                            <p className="text-gray-900">{user.company.cnpj || 'Não informado'}</p>
                           </div>
-                        </div>
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-500 mb-1">Faturamento Mensal</h4>
-                          <div className="flex items-center gap-2 text-black">
-                            <HiCurrencyDollar className="w-4 h-4 text-gray-400" />
-                            <span>
-                              {user.company.monthlyRevenue
-                                ? formatCurrency(user.company.monthlyRevenue)
-                                : 'Não informado'}
-                            </span>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Localização</h4>
+                            <div className="flex items-center gap-2 text-gray-900">
+                              <HiMapPin className="w-4 h-4 text-gray-400" />
+                              <span>
+                                {user.company.city && user.company.state
+                                  ? `${user.company.city}, ${user.company.state}`
+                                  : 'Não informado'}
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Número de Funcionários</h4>
+                            <div className="flex items-center gap-2 text-gray-900">
+                              <HiUsers className="w-4 h-4 text-gray-400" />
+                              <span>{user.company.employeeCount}</span>
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-medium text-gray-500 mb-1">Faturamento Mensal</h4>
+                            <div className="flex items-center gap-2 text-gray-900">
+                              <HiCurrencyDollar className="w-4 h-4 text-gray-400" />
+                              <span>
+                                {user.company.monthlyRevenue
+                                  ? formatCurrency(user.company.monthlyRevenue)
+                                  : 'Não informado'}
+                              </span>
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -641,6 +951,60 @@ export default function UserDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <HiTrash className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Confirmar Exclusão</h3>
+                  <p className="text-sm text-gray-500 mt-1">Esta ação não pode ser desfeita.</p>
+                </div>
+              </div>
+              <div className="mb-6">
+                <p className="text-gray-700">
+                  Tem certeza que deseja deletar permanentemente o usuário{' '}
+                  <span className="font-semibold text-gray-900">{user?.name}</span>?
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Todos os dados associados, incluindo empresa e histórico de assinaturas, serão removidos.
+                </p>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  disabled={deleteLoading}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Deletando...
+                    </>
+                  ) : (
+                    <>
+                      <HiTrash className="w-4 h-4" />
+                      Confirmar Exclusão
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
