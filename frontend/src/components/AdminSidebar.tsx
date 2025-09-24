@@ -107,7 +107,7 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
 
   return (
     <div className={`
-      bg-white border-r border-gray-200 min-h-screen transition-all duration-300 ease-in-out relative flex flex-col
+      fixed left-0 top-0 bg-white border-r border-gray-200 h-screen transition-all duration-300 ease-in-out flex flex-col z-50
       ${isCollapsed ? 'w-16' : 'w-64'}
     `}>
       {/* Logo/Header */}
@@ -134,7 +134,7 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4">
+      <nav className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-1">
           {navigationItems.map((item) => {
             const Icon = item.icon;

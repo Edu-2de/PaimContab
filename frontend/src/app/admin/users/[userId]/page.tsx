@@ -348,9 +348,9 @@ export default function UserDetailsPage() {
 
   if (loading) {
     return (
-      <div className="flex">
+      <div>
         <AdminSidebar currentPage="users" />
-        <div className="flex-1 flex items-center justify-center bg-white">
+        <div className="ml-64 flex items-center justify-center bg-white min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-900 mx-auto mb-4"></div>
             <p className="text-gray-600">Carregando dados do usuário...</p>
@@ -362,9 +362,9 @@ export default function UserDetailsPage() {
 
   if (error || !user) {
     return (
-      <div className="flex">
+      <div>
         <AdminSidebar currentPage="users" />
-        <div className="flex-1 flex items-center justify-center bg-white">
+        <div className="ml-64 flex items-center justify-center bg-white min-h-screen">
           <div className="text-center">
             <HiXCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-black mb-2">Usuário não encontrado</h3>
@@ -383,10 +383,10 @@ export default function UserDetailsPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-white">
+    <div>
       <AdminSidebar currentPage="users" />
 
-      <div className="flex-1 overflow-hidden">
+      <div className="ml-64 min-h-screen bg-white">
         {/* Header */}
         <div className="bg-white border-b border-gray-100 px-8 py-6 shadow-sm">
           <div className="flex items-center justify-between">

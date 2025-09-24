@@ -230,9 +230,9 @@ export default function AdminPage() {
 
   if (loading && !users.length) {
     return (
-      <div className="flex min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50">
         <AdminSidebar currentPage="dashboard" />
-        <div className="flex-1 flex items-center justify-center">
+        <div className="ml-64 flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="animate-spin rounded-full h-10 w-10 border-2 border-slate-300 border-t-slate-700 mx-auto mb-4"></div>
             <p className="text-slate-600 font-medium">Carregando dashboard...</p>
@@ -243,10 +243,10 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50">
       <AdminSidebar currentPage="dashboard" />
       
-      <div className="flex-1 overflow-hidden">
+      <div className="ml-64 min-h-screen">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
           <div className="flex items-center justify-between">
