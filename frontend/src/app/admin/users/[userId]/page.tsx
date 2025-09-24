@@ -426,8 +426,8 @@ export default function UserDetailsPage() {
               <button
                 onClick={() => setIsEditing(!isEditing)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 ${
-                  isEditing 
-                    ? 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200' 
+                  isEditing
+                    ? 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                     : 'bg-gray-900 text-white hover:bg-gray-800'
                 }`}
               >
@@ -569,52 +569,38 @@ export default function UserDetailsPage() {
                       <div className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Nome da Empresa*
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Empresa*</label>
                             <input
                               type="text"
                               value={companyEditForm.companyName}
-                              onChange={(e) =>
-                                setCompanyEditForm({ ...companyEditForm, companyName: e.target.value })
-                              }
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, companyName: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Razão Social
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Razão Social</label>
                             <input
                               type="text"
                               value={companyEditForm.legalName}
-                              onChange={(e) =>
-                                setCompanyEditForm({ ...companyEditForm, legalName: e.target.value })
-                              }
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, legalName: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              CNPJ
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
                             <input
                               type="text"
                               value={companyEditForm.cnpj}
-                              onChange={(e) => setCompanyEditForm({ ...companyEditForm, cnpj: e.target.value })}
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, cnpj: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                               placeholder="00.000.000/0000-00"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Tipo de Negócio
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Negócio</label>
                             <select
                               value={companyEditForm.businessType}
-                              onChange={(e) =>
-                                setCompanyEditForm({ ...companyEditForm, businessType: e.target.value })
-                              }
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, businessType: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                             >
                               <option value="MEI">MEI</option>
@@ -625,50 +611,40 @@ export default function UserDetailsPage() {
                             </select>
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Segmento de Negócio
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Segmento de Negócio</label>
                             <input
                               type="text"
                               value={companyEditForm.businessSegment}
-                              onChange={(e) =>
+                              onChange={e =>
                                 setCompanyEditForm({ ...companyEditForm, businessSegment: e.target.value })
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Atividade Principal
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Atividade Principal</label>
                             <input
                               type="text"
                               value={companyEditForm.mainActivity}
-                              onChange={(e) =>
-                                setCompanyEditForm({ ...companyEditForm, mainActivity: e.target.value })
-                              }
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, mainActivity: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Cidade
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
                             <input
                               type="text"
                               value={companyEditForm.city}
-                              onChange={(e) => setCompanyEditForm({ ...companyEditForm, city: e.target.value })}
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, city: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Estado
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                             <input
                               type="text"
                               value={companyEditForm.state}
-                              onChange={(e) => setCompanyEditForm({ ...companyEditForm, state: e.target.value })}
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, state: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                               placeholder="SP"
                             />
@@ -680,7 +656,7 @@ export default function UserDetailsPage() {
                             <input
                               type="number"
                               value={companyEditForm.employeeCount}
-                              onChange={(e) =>
+                              onChange={e =>
                                 setCompanyEditForm({ ...companyEditForm, employeeCount: parseInt(e.target.value) || 0 })
                               }
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
@@ -688,16 +664,12 @@ export default function UserDetailsPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                              Faturamento Mensal
-                            </label>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Faturamento Mensal</label>
                             <input
                               type="number"
                               step="0.01"
                               value={companyEditForm.monthlyRevenue}
-                              onChange={(e) =>
-                                setCompanyEditForm({ ...companyEditForm, monthlyRevenue: e.target.value })
-                              }
+                              onChange={e => setCompanyEditForm({ ...companyEditForm, monthlyRevenue: e.target.value })}
                               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                               placeholder="0.00"
                             />
