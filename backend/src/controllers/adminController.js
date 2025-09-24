@@ -78,8 +78,8 @@ const getAllUsers = async (req, res) => {
         subscriptions: {
           include: { plan: true },
           orderBy: { createdAt: 'desc' },
-          take: 1
-        }
+          take: 1,
+        },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -101,7 +101,7 @@ const getAllUsers = async (req, res) => {
       createdAt: user.createdAt,
       company: user.Company,
       currentSubscription: user.subscriptions[0] || null,
-      planStatus: user.subscriptions[0]?.isActive ? 'active' : 'no_plan'
+      planStatus: user.subscriptions[0]?.isActive ? 'active' : 'no_plan',
     }));
 
     const response = {
@@ -137,8 +137,8 @@ const getUserDetails = async (req, res) => {
         Company: true,
         subscriptions: {
           include: { plan: true },
-          orderBy: { createdAt: 'desc' }
-        }
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
@@ -184,8 +184,8 @@ const updateUserStatus = async (req, res) => {
         subscriptions: {
           include: { plan: true },
           orderBy: { createdAt: 'desc' },
-          take: 1
-        }
+          take: 1,
+        },
       },
     });
 
