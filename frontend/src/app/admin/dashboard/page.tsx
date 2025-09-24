@@ -1,16 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-import { useState, useEffect } from "react";
-import { 
-  HiUsers, 
-  HiBuildingOffice, 
-  HiCreditCard, 
+'use client';
+import { useState, useEffect } from 'react';
+import {
+  HiUsers,
+  HiBuildingOffice,
+  HiCreditCard,
   HiCurrencyDollar,
   HiMagnifyingGlass,
   HiEye,
   HiUserCircle,
   HiCheckCircle,
-  HiXCircle} from "react-icons/hi2";
+  HiXCircle,
+} from 'react-icons/hi2';
 
 interface Company {
   companyName: string;
@@ -58,43 +59,43 @@ export default function AdminPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
-    pages: 0
+    pages: 0,
   });
 
   useEffect(() => {
     // Verificar se usuário é admin antes de carregar dados
     const user = localStorage.getItem('user');
     const token = localStorage.getItem('authToken');
-    
+
     console.log('🔐 Verificando acesso admin...');
     console.log('Token presente:', !!token);
     console.log('User presente:', !!user);
-    
+
     if (!user || !token) {
       console.log('❌ Sem token ou usuário, redirecionando para login');
       window.location.href = '/Login';
       return;
     }
-    
+
     try {
       const userData = JSON.parse(user);
       console.log('👤 Dados do usuário:', userData);
       console.log('🔧 Role do usuário:', userData.role);
-      
+
       if (userData.role !== 'admin') {
         console.log('❌ Usuário não é admin, redirecionando para home');
         alert('Acesso negado. Esta área é restrita aos administradores.');
         window.location.href = '/';
         return;
       }
-      
+
       console.log('✅ Usuário é admin, carregando dados...');
       loadDashboardData();
       loadUsers();
@@ -108,22 +109,22 @@ export default function AdminPage() {
     try {
       const token = localStorage.getItem('authToken');
       console.log('🔑 Token para dashboard:', token ? 'Presente' : 'Ausente');
-      
+
       if (!token) {
         console.log('❌ Sem token, redirecionando para login');
         window.location.href = '/Login';
         return;
       }
-      
+
       const response = await fetch('/api/admin/dashboard', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       console.log('📊 Dashboard response status:', response.status);
-      
+
       if (response.status === 401) {
         console.log('❌ Token inválido, removendo e redirecionando');
         localStorage.removeItem('authToken');
@@ -131,7 +132,7 @@ export default function AdminPage() {
         window.location.href = '/Login';
         return;
       }
-      
+
       if (response.ok) {
         const data = await response.json();
         console.log('✅ Dashboard data:', data);
@@ -145,33 +146,30 @@ export default function AdminPage() {
     }
   };
 
-  const loadUsers = async (page = 1, searchTerm = "") => {
+  const loadUsers = async (page = 1, searchTerm = '') => {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
       if (!token) {
         window.location.href = '/Login';
         return;
       }
-      
-      const response = await fetch(
-        `/api/admin/users?page=${page}&limit=10&search=${searchTerm}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
+
+      const response = await fetch(`/api/admin/users?page=${page}&limit=10&search=${searchTerm}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
       if (response.status === 401) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = '/Login';
         return;
       }
-      
+
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
@@ -196,21 +194,21 @@ export default function AdminPage() {
         window.location.href = '/Login';
         return;
       }
-      
+
       const response = await fetch(`/api/admin/users/${userId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-      
+
       if (response.status === 401) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = '/Login';
         return;
       }
-      
+
       if (response.ok) {
         const userData = await response.json();
         setSelectedUser(userData);
@@ -228,23 +226,23 @@ export default function AdminPage() {
         window.location.href = '/Login';
         return;
       }
-      
+
       const response = await fetch(`/api/admin/users/${userId}/status`, {
         method: 'PATCH',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ isActive: !currentStatus })
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
-      
+
       if (response.status === 401) {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = '/Login';
         return;
       }
-      
+
       if (response.ok) {
         loadUsers(pagination.page, search);
       }
@@ -258,21 +256,17 @@ export default function AdminPage() {
       active: { color: 'bg-green-100 text-green-800', text: 'Ativo' },
       canceled: { color: 'bg-red-100 text-red-800', text: 'Cancelado' },
       pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendente' },
-      no_plan: { color: 'bg-gray-100 text-gray-800', text: 'Sem Plano' }
+      no_plan: { color: 'bg-gray-100 text-gray-800', text: 'Sem Plano' },
     };
     const badge = badges[status as keyof typeof badges] || badges.no_plan;
-    
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>
-        {badge.text}
-      </span>
-    );
+
+    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>{badge.text}</span>;
   };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -294,12 +288,8 @@ export default function AdminPage() {
       <div className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
-            <h1 className="text-3xl font-bold text-slate-900">
-              Painel Administrativo
-            </h1>
-            <p className="text-slate-600 mt-2">
-              Gerencie usuários, planos e acompanhe estatísticas
-            </p>
+            <h1 className="text-3xl font-bold text-slate-900">Painel Administrativo</h1>
+            <p className="text-slate-600 mt-2">Gerencie usuários, planos e acompanhe estatísticas</p>
           </div>
         </div>
       </div>
@@ -351,9 +341,7 @@ export default function AdminPage() {
                 </div>
                 <div className="ml-4">
                   <p className="text-sm text-slate-600">Receita Total</p>
-                  <p className="text-2xl font-bold text-slate-900">
-                    {formatCurrency(stats.totalRevenue)}
-                  </p>
+                  <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.totalRevenue)}</p>
                 </div>
               </div>
             </div>
@@ -365,7 +353,7 @@ export default function AdminPage() {
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-bold text-slate-900">Usuários</h2>
-              
+
               {/* Search */}
               <form onSubmit={handleSearch} className="flex gap-2">
                 <div className="relative">
@@ -373,7 +361,7 @@ export default function AdminPage() {
                   <input
                     type="text"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={e => setSearch(e.target.value)}
                     placeholder="Buscar usuários..."
                     className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-slate-500"
                   />
@@ -392,28 +380,16 @@ export default function AdminPage() {
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                    Usuário
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                    Empresa
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                    Plano
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                    Cadastro
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">
-                    Ações
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Usuário</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Empresa</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Plano</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Cadastro</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {users.map((user) => (
+                {users.map(user => (
                   <tr key={user.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
@@ -427,12 +403,8 @@ export default function AdminPage() {
                     <td className="px-6 py-4">
                       {user.company ? (
                         <div>
-                          <p className="font-medium text-slate-900">
-                            {user.company.companyName}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {user.company.businessSegment}
-                          </p>
+                          <p className="font-medium text-slate-900">{user.company.companyName}</p>
+                          <p className="text-sm text-slate-500">{user.company.businessSegment}</p>
                         </div>
                       ) : (
                         <span className="text-slate-400">Não cadastrada</span>
@@ -441,12 +413,8 @@ export default function AdminPage() {
                     <td className="px-6 py-4">
                       {user.currentSubscription ? (
                         <div>
-                          <p className="font-medium text-slate-900">
-                            {user.currentSubscription.plan.name}
-                          </p>
-                          <p className="text-sm text-slate-500">
-                            {formatCurrency(user.currentSubscription.amount)}
-                          </p>
+                          <p className="font-medium text-slate-900">{user.currentSubscription.plan.name}</p>
+                          <p className="text-sm text-slate-500">{formatCurrency(user.currentSubscription.amount)}</p>
                         </div>
                       ) : (
                         <span className="text-slate-400">Sem plano</span>
@@ -462,9 +430,7 @@ export default function AdminPage() {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">
-                      {formatDate(user.createdAt)}
-                    </td>
+                    <td className="px-6 py-4 text-sm text-slate-500">{formatDate(user.createdAt)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
@@ -476,9 +442,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => toggleUserStatus(user.id, user.isActive)}
                           className={`p-2 rounded-lg transition-colors ${
-                            user.isActive
-                              ? 'text-red-600 hover:bg-red-100'
-                              : 'text-green-600 hover:bg-green-100'
+                            user.isActive ? 'text-red-600 hover:bg-red-100' : 'text-green-600 hover:bg-green-100'
                           }`}
                         >
                           {user.isActive ? <HiXCircle className="w-5 h-5" /> : <HiCheckCircle className="w-5 h-5" />}
@@ -496,9 +460,8 @@ export default function AdminPage() {
             <div className="px-6 py-4 border-t border-slate-200">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-slate-700">
-                  Mostrando {((pagination.page - 1) * pagination.limit) + 1} a{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} de{' '}
-                  {pagination.total} usuários
+                  Mostrando {(pagination.page - 1) * pagination.limit + 1} a{' '}
+                  {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} usuários
                 </p>
                 <div className="flex gap-2">
                   {Array.from({ length: pagination.pages }, (_, i) => (
@@ -527,13 +490,8 @@ export default function AdminPage() {
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-slate-200">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-slate-900">
-                  Detalhes do Usuário
-                </h3>
-                <button
-                  onClick={() => setShowUserModal(false)}
-                  className="p-2 hover:bg-slate-100 rounded-lg"
-                >
+                <h3 className="text-xl font-bold text-slate-900">Detalhes do Usuário</h3>
+                <button onClick={() => setShowUserModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
                   <HiXCircle className="w-6 h-6" />
                 </button>
               </div>
@@ -545,11 +503,21 @@ export default function AdminPage() {
                 <div>
                   <h4 className="font-semibold text-slate-900 mb-3">Informações Pessoais</h4>
                   <div className="space-y-2 text-sm">
-                    <p><span className="font-medium">Nome:</span> {selectedUser.name}</p>
-                    <p><span className="font-medium">Email:</span> {selectedUser.email}</p>
-                    <p><span className="font-medium">Função:</span> {selectedUser.role}</p>
-                    <p><span className="font-medium">Status:</span> {selectedUser.isActive ? 'Ativo' : 'Inativo'}</p>
-                    <p><span className="font-medium">Cadastro:</span> {formatDate(selectedUser.createdAt)}</p>
+                    <p>
+                      <span className="font-medium">Nome:</span> {selectedUser.name}
+                    </p>
+                    <p>
+                      <span className="font-medium">Email:</span> {selectedUser.email}
+                    </p>
+                    <p>
+                      <span className="font-medium">Função:</span> {selectedUser.role}
+                    </p>
+                    <p>
+                      <span className="font-medium">Status:</span> {selectedUser.isActive ? 'Ativo' : 'Inativo'}
+                    </p>
+                    <p>
+                      <span className="font-medium">Cadastro:</span> {formatDate(selectedUser.createdAt)}
+                    </p>
                   </div>
                 </div>
 
@@ -558,15 +526,34 @@ export default function AdminPage() {
                   <div>
                     <h4 className="font-semibold text-slate-900 mb-3">Informações da Empresa</h4>
                     <div className="space-y-2 text-sm">
-                      <p><span className="font-medium">Nome:</span> {selectedUser.company.companyName}</p>
-                      <p><span className="font-medium">Segmento:</span> {selectedUser.company.businessSegment}</p>
-                      <p><span className="font-medium">Atividade:</span> {selectedUser.company.mainActivity}</p>
-                      <p><span className="font-medium">Tipo:</span> {selectedUser.company.businessType}</p>
-                      <p><span className="font-medium">CNPJ:</span> {selectedUser.company.cnpj || 'Não informado'}</p>
-                      <p><span className="font-medium">Cidade:</span> {selectedUser.company.city}</p>
-                      <p><span className="font-medium">Estado:</span> {selectedUser.company.state}</p>
-                      <p><span className="font-medium">Funcionários:</span> {selectedUser.company.employeeCount}</p>
-                      <p><span className="font-medium">Faturamento:</span> {formatCurrency(selectedUser.company.monthlyRevenue || 0)}</p>
+                      <p>
+                        <span className="font-medium">Nome:</span> {selectedUser.company.companyName}
+                      </p>
+                      <p>
+                        <span className="font-medium">Segmento:</span> {selectedUser.company.businessSegment}
+                      </p>
+                      <p>
+                        <span className="font-medium">Atividade:</span> {selectedUser.company.mainActivity}
+                      </p>
+                      <p>
+                        <span className="font-medium">Tipo:</span> {selectedUser.company.businessType}
+                      </p>
+                      <p>
+                        <span className="font-medium">CNPJ:</span> {selectedUser.company.cnpj || 'Não informado'}
+                      </p>
+                      <p>
+                        <span className="font-medium">Cidade:</span> {selectedUser.company.city}
+                      </p>
+                      <p>
+                        <span className="font-medium">Estado:</span> {selectedUser.company.state}
+                      </p>
+                      <p>
+                        <span className="font-medium">Funcionários:</span> {selectedUser.company.employeeCount}
+                      </p>
+                      <p>
+                        <span className="font-medium">Faturamento:</span>{' '}
+                        {formatCurrency(selectedUser.company.monthlyRevenue || 0)}
+                      </p>
                     </div>
                   </div>
                 )}
