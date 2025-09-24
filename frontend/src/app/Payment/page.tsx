@@ -46,7 +46,7 @@ function PaymentContent() {
     if (!user || !plan) return;
 
     // Verificar se há token
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('authToken');
     if (!token) {
       alert('Sessão expirada. Faça login novamente.');
       window.location.href = '/Login';
@@ -55,13 +55,7 @@ function PaymentContent() {
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('authToken');
-
-      if (!token) {
-        throw new Error('Usuário não autenticado. Faça login novamente.');
-      }
-
-      const response = await fetch('/api/payment/create-checkout', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payment/create-checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -72,7 +66,8 @@ function PaymentContent() {
         }),
       });
 
-      if (response.status === 401) {
+      if (response.status === 401 || response.status === 403) {
+        alert('Sessão expirada. Faça login novamente.');
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = '/Login';

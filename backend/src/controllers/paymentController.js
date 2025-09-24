@@ -49,29 +49,28 @@ exports.createCheckoutSession = async (req, res) => {
   console.log('📋 User do middleware:', req.user); // Debug
   console.log('📋 Body da requisição:', req.body);
 
-  const { planId, userId } = req.body;
+  const { planId } = req.body;
 
   try {
-    // 🔧 USAR O USUÁRIO DO TOKEN AO INVÉS DO BODY
-    const userIdFromToken = req.user.userId; // Do JWT
-    const userEmailFromToken = req.user.email; // Do JWT
+    // 🔧 USAR O USUÁRIO DO TOKEN (middleware authMiddleware já populou req.user)
+    const user = req.user;
     
     console.log('👤 Dados do token:', { 
-      userId: userIdFromToken, 
-      email: userEmailFromToken 
+      userId: user.userId, 
+      email: user.email 
     });
 
-    // Buscar usuário pelo ID do token
-    const user = await prisma.user.findUnique({ 
-      where: { id: userIdFromToken } 
+    // Buscar usuário completo no banco pelo ID do token
+    const fullUser = await prisma.user.findUnique({ 
+      where: { id: user.userId } 
     });
 
-    if (!user) {
-      console.log('❌ Usuário não encontrado:', userIdFromToken);
+    if (!fullUser) {
+      console.log('❌ Usuário não encontrado:', user.userId);
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
-    // Buscar plano por ID simples (string)
+    // Planos disponíveis (hardcoded por enquanto)
     const plans = {
       'essencial': { name: 'Essencial', price: 19.0 },
       'profissional': { name: 'Profissional', price: 39.0 },
@@ -85,13 +84,13 @@ exports.createCheckoutSession = async (req, res) => {
     }
 
     console.log('✅ Plano encontrado:', plan);
-    console.log('✅ Usuário encontrado:', { id: user.id, email: user.email });
+    console.log('✅ Usuário encontrado:', { id: fullUser.id, email: fullUser.email });
 
-    // Criar sessão de checkout diretamente com dados hardcoded
+    // Criar sessão de checkout
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      customer_email: user.email,
+      customer_email: fullUser.email,
       line_items: [
         {
           price_data: {
@@ -107,11 +106,11 @@ exports.createCheckoutSession = async (req, res) => {
         },
       ],
       metadata: {
-        userId: user.id,
+        userId: fullUser.id,
         planId: planId,
       },
-      success_url: `${process.env.FRONTEND_URL}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.FRONTEND_URL}/PaymentCanceled`,
+      success_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/PaymentCanceled`,
     });
 
     console.log('✅ Sessão de checkout criada:', session.id);
