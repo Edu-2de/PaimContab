@@ -1,66 +1,71 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Dashboard com estatísticas gerais
-exports.getDashboard = async (req, res) => {
+// Controller function to get dashboard statistics
+const getDashboard = async (req, res) => {
   try {
-    console.log('Executando getDashboard...');
+    console.log('� Buscando estatísticas do dashboard...');
 
+    // Get total users
     const totalUsers = await prisma.user.count();
-    console.log('Total users:', totalUsers);
+    console.log('� Total de usuários:', totalUsers);
 
+    // Get active users
+    const activeUsers = await prisma.user.count({
+      where: { isActive: true },
+    });
+    console.log('✅ Usuários ativos:', activeUsers);
+
+    // Get users with companies (Company é one-to-one, não many)
+    const usersWithCompany = await prisma.user.count({
+      where: {
+        Company: {
+          isNot: null,
+        },
+      },
+    });
+    console.log('🏢 Usuários com empresa:', usersWithCompany);
+
+    // Get active subscriptions
+    const activeSubscriptions = await prisma.subscription.count({
+      where: { isActive: true },
+    });
+    console.log('💳 Assinaturas ativas:', activeSubscriptions);
+
+    // Get total companies
     const totalCompanies = await prisma.company.count();
-    console.log('Total companies:', totalCompanies);
-
-    // Como pode não ter subscription ainda, vamos fazer um try/catch
-    let activeSubscriptions = 0;
-    let totalRevenue = 0;
-
-    try {
-      activeSubscriptions = await prisma.subscription.count({
-        where: { status: 'active' },
-      });
-
-      const revenueResult = await prisma.subscription.aggregate({
-        where: { status: 'active' },
-        _sum: { amount: true },
-      });
-
-      totalRevenue = revenueResult._sum.amount || 0;
-    } catch (subscriptionError) {
-      console.log('Subscription table not found, using default values');
-      activeSubscriptions = 0;
-      totalRevenue = 0;
-    }
+    console.log('🏢 Total de empresas:', totalCompanies);
 
     const stats = {
       totalUsers,
+      activeUsers,
+      usersWithCompany,
       totalCompanies,
       activeSubscriptions,
-      totalRevenue,
+      inactiveUsers: totalUsers - activeUsers,
     };
 
-    console.log('Stats finais:', stats);
+    console.log('✅ Dashboard carregado com sucesso');
     res.json(stats);
   } catch (error) {
-    console.error('Erro no getDashboard:', error);
+    console.error('� Erro ao carregar dashboard:', error);
     res.status(500).json({
-      message: 'Erro interno do servidor',
+      message: 'Erro ao carregar dashboard',
       error: error.message,
     });
   }
 };
 
-// Listar todos os usuários com suas informações
-exports.getAllUsers = async (req, res) => {
+// Controller function to get all users
+const getAllUsers = async (req, res) => {
   try {
-    console.log('Executando getAllUsers...');
+    console.log('👥 Buscando todos os usuários...');
+
     const { page = 1, limit = 10, search = '' } = req.query;
-    const skip = (page - 1) * limit;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    console.log('Parâmetros:', { page, limit, search, skip });
-
-    const where = search
+    // Build search condition
+    const searchCondition = search
       ? {
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
@@ -69,151 +74,146 @@ exports.getAllUsers = async (req, res) => {
         }
       : {};
 
-    console.log('Where clause:', JSON.stringify(where, null, 2));
-
+    // Get users with pagination
     const users = await prisma.user.findMany({
-      where,
-      skip: parseInt(skip),
-      take: parseInt(limit),
+      where: searchCondition,
       include: {
-        Company: true, // <-- MUDANÇA CRÍTICA: Company com C maiúsculo, não company
+        Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
       },
       orderBy: { createdAt: 'desc' },
+      skip,
+      take: parseInt(limit),
     });
 
-    const total = await prisma.user.count({ where });
+    // Get total count for pagination
+    const totalUsers = await prisma.user.count({
+      where: searchCondition,
+    });
 
-    const usersWithStatus = users.map(user => ({
+    // Format users data
+    const formattedUsers = users.map(user => ({
       id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
       isActive: user.isActive,
       createdAt: user.createdAt,
-      company: user.Company, // <-- Mapeando Company para company (minúsculo)
-      currentSubscription: null,
-      planStatus: 'no_plan',
+      company: user.Company,
+      currentSubscription: user.subscriptions[0] || null,
+      planStatus: user.subscriptions[0]?.isActive ? 'active' : 'no_plan',
     }));
 
-    console.log(`Encontrados ${users.length} usuários de ${total} total`);
-    
-    // Log detalhado dos primeiros usuários
-    usersWithStatus.slice(0, 2).forEach((user, index) => {
-      console.log(`Usuário ${index + 1}:`, {
-        name: user.name,
-        email: user.email,
-        hasCompany: !!user.company,
-        companyName: user.company?.companyName || 'N/A'
-      });
-    });
-
-    res.json({
-      users: usersWithStatus,
+    const response = {
+      users: formattedUsers,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total,
-        pages: Math.ceil(total / limit),
+        total: totalUsers,
+        totalPages: Math.ceil(totalUsers / parseInt(limit)),
       },
-    });
+    };
+
+    console.log(`✅ ${users.length} usuários encontrados`);
+    res.json(response);
   } catch (error) {
-    console.error('Erro ao buscar usuários:', error);
+    console.error('💥 Erro ao buscar usuários:', error);
     res.status(500).json({
-      message: 'Erro interno do servidor',
+      message: 'Erro ao buscar usuários',
       error: error.message,
     });
   }
 };
 
-// Buscar detalhes completos de um usuário
-exports.getUserDetails = async (req, res) => {
+// Controller function to get user details
+const getUserDetails = async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log('Buscando detalhes do usuário:', userId);
+    console.log('🔍 Buscando detalhes do usuário:', userId);
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        Company: true, // <-- Company com C maiúsculo
+        Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 
     if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+      console.log('❌ Usuário não encontrado');
+      return res.status(404).json({
+        message: 'Usuário não encontrado',
+      });
     }
 
-    // Ajustar o nome do campo para o frontend
-    const userWithDetails = {
-      ...user,
-      company: user.Company, // <-- Mapear Company para company
-      subscriptions: [],
-      consultingSessions: [],
-    };
-
-    console.log('Usuário encontrado:', userWithDetails.name);
-    res.json(userWithDetails);
+    console.log('✅ Detalhes do usuário carregados:', user.name);
+    res.json(user);
   } catch (error) {
-    console.error('Erro ao buscar detalhes do usuário:', error);
+    console.error('💥 Erro ao buscar detalhes do usuário:', error);
     res.status(500).json({
-      message: 'Erro interno do servidor',
+      message: 'Erro ao buscar detalhes do usuário',
       error: error.message,
     });
   }
 };
 
-// Atualizar status do usuário
-exports.updateUserStatus = async (req, res) => {
+// Controller function to update user status
+const updateUserStatus = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { isActive } = req.body;
+    const { isActive, planStatus } = req.body;
 
-    console.log('Atualizando status do usuário:', userId, 'para:', isActive);
+    console.log('⚡ Atualizando status do usuário:', userId, { isActive, planStatus });
+
+    const updateData = {};
+    if (typeof isActive === 'boolean') {
+      updateData.isActive = isActive;
+    }
+    if (planStatus) {
+      updateData.planStatus = planStatus;
+    }
 
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { isActive: Boolean(isActive) },
+      data: updateData,
+      include: {
+        Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     });
 
-    console.log('Status atualizado com sucesso');
-
-    res.json({
-      message: `Usuário ${isActive ? 'ativado' : 'desativado'} com sucesso`,
-      user,
-    });
+    console.log('✅ Status do usuário atualizado:', user.name);
+    res.json(user);
   } catch (error) {
-    console.error('Erro ao atualizar usuário:', error);
+    console.error('💥 Erro ao atualizar status do usuário:', error);
+
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        message: 'Usuário não encontrado',
+      });
+    }
+
     res.status(500).json({
-      message: 'Erro interno do servidor',
+      message: 'Erro ao atualizar status do usuário',
       error: error.message,
     });
   }
 };
 
-// Estatísticas por período
-exports.getStats = async (req, res) => {
-  try {
-    const { period = '30' } = req.query;
-    const days = parseInt(period);
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
-
-    const newUsers = await prisma.user.count({
-      where: {
-        createdAt: { gte: startDate },
-      },
-    });
-
-    res.json({
-      period: `${days} dias`,
-      newUsers,
-      newSubscriptions: 0,
-      revenue: 0,
-    });
-  } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
-    res.status(500).json({
-      message: 'Erro interno do servidor',
-      error: error.message,
-    });
-  }
+module.exports = {
+  getDashboard,
+  getAllUsers,
+  getUserDetails,
+  updateUserStatus,
 };

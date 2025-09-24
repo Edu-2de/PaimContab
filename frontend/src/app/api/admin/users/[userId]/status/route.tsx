@@ -1,23 +1,30 @@
-import { NextResponse } from "next/server";
+import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ userId: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const { userId } = await params;
     const body = await request.json();
-    
+
     console.log('Frontend: Atualizando status do usuário:', userId, body);
-    
+
+    // Buscar token do header Authorization
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ message: 'Token de acesso requerido', code: 'NO_TOKEN' }, { status: 401 });
+    }
+
     const response = await fetch(`${apiUrl}/api/admin/users/${userId}/status`, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     console.log('Frontend: Status da resposta:', response.status);
@@ -34,9 +41,12 @@ export async function PATCH(
   } catch (error) {
     console.error('Frontend: Erro na rota de atualização de status:', error);
     return NextResponse.json(
-      { 
-        message: 'Erro interno do servidor', 
-        error: typeof error === 'object' && error !== null && 'message' in error ? (error as { message: string }).message : String(error)
+      {
+        message: 'Erro interno do servidor',
+        error:
+          typeof error === 'object' && error !== null && 'message' in error
+            ? (error as { message: string }).message
+            : String(error),
       },
       { status: 500 }
     );

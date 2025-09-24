@@ -64,12 +64,12 @@ export default function LoginRegisterPage() {
         if (!res.ok) {
           setError(data.message || 'Erro ao registrar.');
         } else {
-          console.log('Dados do usuário registrado:', data.user); // Debug
+          console.log('Dados do usuário registrado:', data.user);
 
           // Verificar se data.user existe antes de salvar
           if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
-            // No registro, não temos token ainda, usuário precisará fazer login
+
             console.log('Usuário registrado e salvo no localStorage'); // Debug
             window.location.href = '/setup-company';
           } else {
@@ -77,22 +77,72 @@ export default function LoginRegisterPage() {
           }
         }
       } else {
+        console.log('🔐 Fazendo login com:', { email });
+
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password: pass }),
         });
+
         const data = await res.json();
+        console.log('📥 Resposta do login:', data);
+
         if (!res.ok) {
           setError(data.message || 'E-mail ou senha inválidos.');
         } else {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('token', data.token);
-          console.log('Token salvo:', data.token);
-          window.location.href = '/';
+          console.log('✅ Login bem-sucedido!');
+
+          // 🔍 DEBUG DETALHADO DO TOKEN
+          if (data.token && data.user) {
+            console.log('🔑 Token completo recebido:', data.token);
+            console.log('📋 Decodificando token...');
+
+            // Decodificar o JWT para ver o conteúdo (apenas para debug)
+            try {
+              const tokenParts = data.token.split('.');
+              const payload = JSON.parse(atob(tokenParts[1]));
+              console.log('📄 Payload do token:', payload);
+              console.log('⏰ Token expira em:', new Date(payload.exp * 1000));
+              console.log('⏰ Tempo atual:', new Date());
+              console.log(
+                '⏰ Token válido por mais:',
+                Math.round((payload.exp * 1000 - Date.now()) / 1000 / 60),
+                'minutos'
+              );
+            } catch (e) {
+              console.log('❌ Erro ao decodificar token:', e);
+            }
+
+            console.log('💾 Salvando token:', data.token.substring(0, 20) + '...');
+            console.log('👤 Salvando usuário:', data.user);
+
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+
+            // Verificar se foi salvo
+            const savedToken = localStorage.getItem('authToken');
+            const savedUser = localStorage.getItem('user');
+
+            console.log('✅ Token salvo:', savedToken ? savedToken.substring(0, 20) + '...' : 'FALHOU');
+            console.log('✅ User salvo:', savedUser ? JSON.parse(savedUser).name : 'FALHOU');
+
+            // Redirecionar baseado no role
+            if (data.user.role === 'admin') {
+              console.log('🔧 Redirecionando para painel admin');
+              window.location.href = '/admin/dashboard';
+            } else {
+              console.log('👥 Redirecionando para home');
+              window.location.href = '/';
+            }
+          } else {
+            setError('Erro: token ou dados do usuário não retornados.');
+            console.error('❌ Token ou usuário não retornados:', { token: !!data.token, user: !!data.user });
+          }
         }
       }
-    } catch {
+    } catch (error) {
+      console.error('💥 Erro na requisição:', error);
       setError('Erro de conexão.');
     }
     setLoading(false);

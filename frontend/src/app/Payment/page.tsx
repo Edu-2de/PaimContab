@@ -1,7 +1,12 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { HiArrowLeft, HiCreditCard } from 'react-icons/hi2';
+import { 
+  HiArrowLeft, 
+  HiCreditCard, 
+  HiShieldCheck, 
+  HiCheckCircle
+} from 'react-icons/hi2';
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -27,10 +32,11 @@ function PaymentContent() {
     // Recuperar usuário do localStorage
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('user');
-      if (stored) {
+      const token = localStorage.getItem('authToken');
+
+      if (stored && token) {
         setUser(JSON.parse(stored));
       } else {
-        // Se não estiver logado, redireciona
         window.location.href = '/Login';
       }
     }
@@ -49,40 +55,43 @@ function PaymentContent() {
 
     setLoading(true);
     try {
-      console.log('Enviando dados:', { planId: plan.id, userId: user.id || user.email });
+      const token = localStorage.getItem('authToken');
 
-      // MUDANÇA AQUI: usar sua rota API do Next.js
+      if (!token) {
+        throw new Error('Usuário não autenticado. Faça login novamente.');
+      }
+
       const response = await fetch('/api/payment/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           planId: plan.id,
-          userId: user.id || user.email,
-          token: token, // Enviar o token
         }),
       });
 
-      console.log('Response status:', response.status);
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/Login';
+        return;
+      }
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('Erro do servidor:', errorData);
         throw new Error(`Erro ${response.status}: ${errorData}`);
       }
 
       const data = await response.json();
-      console.log('Resposta do servidor:', data);
 
       if (data.url) {
-        // Redireciona para o Stripe
         window.location.href = data.url;
       } else {
         throw new Error('URL de checkout não retornada');
       }
     } catch (error) {
-      console.error('Erro completo:', error);
       alert(`Erro ao processar pagamento: ${error instanceof Error ? error.message : String(error)}`);
     }
     setLoading(false);
@@ -90,105 +99,209 @@ function PaymentContent() {
 
   if (!plan || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p>Carregando...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
     );
   }
 
+  // Benefícios essenciais por plano
+  const planBenefits = {
+    'essencial': [
+      'Controle de receitas e despesas',
+      'Relatórios mensais',
+      'Suporte via chat',
+      'Backup automático'
+    ],
+    'profissional': [
+      'Tudo do Essencial',
+      'Relatórios avançados',
+      'Integração bancária',
+      'Suporte prioritário'
+    ],
+    'premium': [
+      'Tudo do Profissional',
+      'Consultoria mensal',
+      'API para integrações',
+      'Suporte 24/7'
+    ]
+  };
+
+  const currentBenefits = planBenefits[plan.id as keyof typeof planBenefits] || [];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        {/* Header Clean */}
+        <div className="mb-12">
           <button
             onClick={() => window.history.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-6"
+            className="inline-flex items-center gap-2 text-gray-500 hover:text-black transition-colors mb-8 text-sm"
           >
-            <HiArrowLeft className="w-5 h-5" />
+            <HiArrowLeft className="w-4 h-4" />
             Voltar
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">Finalizar Assinatura</h1>
-          <p className="text-gray-600 mt-2">Confirme os detalhes do seu plano</p>
-        </div>
-
-        {/* Resumo do Plano */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Plano {plan.name}</h2>
-            <span className="text-3xl font-bold text-gray-900">{plan.priceFormatted}</span>
-          </div>
-
-          <div className="space-y-4 mb-6">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Tipo de cobrança:</span>
-              <span className="font-medium">Mensal</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Primeiro pagamento:</span>
-              <span className="font-medium">Hoje</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Próxima cobrança:</span>
-              <span className="font-medium">
-                {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
-              </span>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <div className="flex justify-between text-lg font-semibold">
-              <span>Total hoje:</span>
-              <span>{plan.priceFormatted}</span>
-            </div>
+          
+          <div className="max-w-2xl">
+            <h1 className="text-3xl font-bold text-black mb-4">Finalizar assinatura</h1>
+            <p className="text-gray-600">
+              Complete sua assinatura do PaimContab e comece a gerenciar seu MEI hoje mesmo.
+            </p>
           </div>
         </div>
 
-        {/* Dados do Cliente */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          <h3 className="text-lg font-semibold mb-4">Dados da conta</h3>
-          <div className="space-y-3">
-            <div>
-              <span className="text-gray-600">Nome:</span>
-              <span className="ml-2 font-medium">{user.name}</span>
+        <div className="grid lg:grid-cols-5 gap-12">
+          {/* Conteúdo Principal */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Plano Selecionado */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-black">Plano {plan.name}</h2>
+                  <p className="text-gray-500 text-sm">Assinatura mensal</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-black">{plan.priceFormatted}</div>
+                  <div className="text-gray-500 text-sm">por mês</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {currentBenefits.map((benefit, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <HiCheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-700 text-sm">{benefit}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
-              <span className="text-gray-600">Email:</span>
-              <span className="ml-2 font-medium">{user.email}</span>
+
+            {/* Informações de Cobrança */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-black mb-4">Detalhes da cobrança</h3>
+              
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Plano {plan.name}</span>
+                  <span className="text-black font-medium">{plan.priceFormatted}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Primeiro pagamento</span>
+                  <span className="text-black">Hoje</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Próxima cobrança</span>
+                  <span className="text-black">
+                    {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                
+                <div className="border-t border-gray-200 pt-3 mt-4">
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-black">Total</span>
+                    <span className="font-bold text-black text-lg">{plan.priceFormatted}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Segurança */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+              <HiShieldCheck className="w-5 h-5 text-gray-400" />
+              <div>
+                <div className="font-medium text-black text-sm">Pagamento seguro</div>
+                <div className="text-gray-600 text-xs">Processado via Stripe com criptografia SSL</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Conta */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-black mb-4">Conta</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-gray-600 font-medium text-sm">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-medium text-black text-sm">{user.name}</div>
+                  <div className="text-gray-500 text-xs">{user.email}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Resumo */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-black mb-4">Resumo</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="text-black">{plan.priceFormatted}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Taxas</span>
+                  <span className="text-black">R$ 0,00</span>
+                </div>
+                <div className="border-t border-gray-200 pt-2 mt-3">
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-black">Total</span>
+                    <span className="font-bold text-black">{plan.priceFormatted}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botão de Pagamento */}
+            <button
+              onClick={handlePayment}
+              disabled={loading}
+              className={`
+                w-full bg-black text-white rounded-lg px-6 py-3 font-medium
+                flex items-center justify-center gap-3 transition-all duration-200
+                ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}
+              `}
+            >
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                  <span>Processando...</span>
+                </>
+              ) : (
+                <>
+                  <HiCreditCard className="w-5 h-5" />
+                  <span>Finalizar pagamento</span>
+                </>
+              )}
+            </button>
+
+            {/* Garantia */}
+            <div className="text-center">
+              <p className="text-xs text-gray-500">
+                Garantia de 7 dias. Cancele a qualquer momento.
+              </p>
+            </div>
+
+            {/* Termos */}
+            <div className="text-center">
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Ao continuar, você concorda com os{' '}
+                <a href="#" className="text-black hover:underline">
+                  termos de serviço
+                </a>
+                {' '}e{' '}
+                <a href="#" className="text-black hover:underline">
+                  política de privacidade
+                </a>
+              </p>
             </div>
           </div>
         </div>
-
-        {/* Botão de Pagamento */}
-        <button
-          onClick={handlePayment}
-          disabled={loading}
-          className={`
-            w-full bg-gray-900 text-white rounded-xl px-6 py-4 font-semibold text-lg
-            flex items-center justify-center gap-3 transition
-            ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800 active:scale-95'}
-          `}
-        >
-          {loading ? (
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-          ) : (
-            <>
-              <HiCreditCard className="w-6 h-6" />
-              Pagar com Cartão
-            </>
-          )}
-        </button>
-
-        {/* Termos */}
-        <p className="text-sm text-gray-500 text-center mt-6">
-          Ao continuar, você concorda com nossos{' '}
-          <a href="#" className="text-gray-700 underline">
-            Termos de Serviço
-          </a>
-        </p>
       </div>
     </div>
   );
@@ -196,7 +309,14 @@ function PaymentContent() {
 
 export default function PaymentPage() {
   return (
-    <Suspense fallback={<div>Carregando...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    }>
       <PaymentContent />
     </Suspense>
   );

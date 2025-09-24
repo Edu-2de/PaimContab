@@ -45,75 +45,80 @@ async function notifyAdmins(user, plan, subscription) {
 
 // Criar sessão de checkout
 exports.createCheckoutSession = async (req, res) => {
+  console.log('🛒 Payment Controller - Iniciando...');
+  console.log('📋 User do middleware:', req.user); // Debug
+  console.log('📋 Body da requisição:', req.body);
+
   const { planId, userId } = req.body;
 
-  console.log('Dados recebidos:', { planId, userId });
-
   try {
-    // Buscar plano
-    const plan = await prisma.plan.findUnique({ where: { id: planId } });
-    if (!plan) {
-      console.log('Plano não encontrado:', planId);
-      return res.status(404).json({ message: 'Plano não encontrado' });
-    }
+    // 🔧 USAR O USUÁRIO DO TOKEN AO INVÉS DO BODY
+    const userIdFromToken = req.user.userId; // Do JWT
+    const userEmailFromToken = req.user.email; // Do JWT
+    
+    console.log('👤 Dados do token:', { 
+      userId: userIdFromToken, 
+      email: userEmailFromToken 
+    });
 
-    // Buscar usuário por ID ou email
-    let user = null;
-    if (userId.includes('@')) {
-      // É um email
-      user = await prisma.user.findUnique({ where: { email: userId } });
-    } else {
-      // É um ID
-      user = await prisma.user.findUnique({ where: { id: userId } });
-    }
+    // Buscar usuário pelo ID do token
+    const user = await prisma.user.findUnique({ 
+      where: { id: userIdFromToken } 
+    });
 
     if (!user) {
-      console.log('Usuário não encontrado:', userId);
+      console.log('❌ Usuário não encontrado:', userIdFromToken);
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
 
-    console.log('Plano encontrado:', plan);
-    console.log('Usuário encontrado:', { id: user.id, email: user.email });
+    // Buscar plano por ID simples (string)
+    const plans = {
+      'essencial': { name: 'Essencial', price: 19.0 },
+      'profissional': { name: 'Profissional', price: 39.0 },
+      'premium': { name: 'Premium', price: 69.0 }
+    };
 
-    // Criar produto e preço no Stripe
-    const product = await stripe.products.create({
-      name: plan.name,
-      description: plan.description || `Plano ${plan.name} - PaimContab`,
-    });
+    const plan = plans[planId];
+    if (!plan) {
+      console.log('❌ Plano não encontrado:', planId);
+      return res.status(404).json({ message: 'Plano não encontrado' });
+    }
 
-    const price = await stripe.prices.create({
-      product: product.id,
-      unit_amount: Math.round(plan.price * 100), // Correção: removido parseFloat
-      currency: 'brl',
-      recurring: { interval: 'month' },
-    });
+    console.log('✅ Plano encontrado:', plan);
+    console.log('✅ Usuário encontrado:', { id: user.id, email: user.email });
 
-    console.log('Produto e preço criados no Stripe');
-
-    // Criar sessão de checkout
+    // Criar sessão de checkout diretamente com dados hardcoded
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       customer_email: user.email,
       line_items: [
         {
-          price: price.id,
+          price_data: {
+            currency: 'brl',
+            product_data: {
+              name: `Plano ${plan.name} - PaimContab`,
+              description: `Assinatura mensal do plano ${plan.name}`,
+            },
+            unit_amount: Math.round(plan.price * 100), // Converter para centavos
+            recurring: { interval: 'month' },
+          },
           quantity: 1,
         },
       ],
       metadata: {
         userId: user.id,
-        planId: plan.id,
+        planId: planId,
       },
       success_url: `${process.env.FRONTEND_URL}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL}/PaymentCanceled`,
     });
 
-    console.log('Sessão de checkout criada:', session.id);
+    console.log('✅ Sessão de checkout criada:', session.id);
     res.json({ url: session.url });
 
   } catch (error) {
-    console.error('Erro detalhado ao criar sessão:', error);
+    console.error('❌ Erro detalhado ao criar sessão:', error);
     res.status(500).json({ 
       message: 'Erro interno do servidor',
       error: error.message 
