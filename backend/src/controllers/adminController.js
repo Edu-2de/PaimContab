@@ -75,6 +75,11 @@ const getAllUsers = async (req, res) => {
       where: searchCondition,
       include: {
         Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -86,8 +91,21 @@ const getAllUsers = async (req, res) => {
       where: searchCondition,
     });
 
+    // Format users data
+    const formattedUsers = users.map(user => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+      company: user.Company,
+      currentSubscription: user.subscriptions[0] || null,
+      planStatus: user.subscriptions[0]?.isActive ? 'active' : 'no_plan'
+    }));
+
     const response = {
-      users,
+      users: formattedUsers,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -117,6 +135,10 @@ const getUserDetails = async (req, res) => {
       where: { id: userId },
       include: {
         Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' }
+        }
       },
     });
 
@@ -159,6 +181,11 @@ const updateUserStatus = async (req, res) => {
       data: updateData,
       include: {
         Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
       },
     });
 
