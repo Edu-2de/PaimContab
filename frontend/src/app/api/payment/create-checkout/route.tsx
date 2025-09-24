@@ -6,24 +6,21 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log('Frontend Payment: Dados recebidos:', body);
-    
+
     const authHeader = request.headers.get('authorization');
     console.log('Frontend Payment: Auth header:', authHeader ? 'presente' : 'ausente');
-    
+
     if (!authHeader) {
-      return NextResponse.json(
-        { message: 'Token de acesso requerido', code: 'NO_TOKEN' },
-        { status: 401 }
-      );
+      return NextResponse.json({ message: 'Token de acesso requerido', code: 'NO_TOKEN' }, { status: 401 });
     }
 
     const response = await fetch(`${apiUrl}/api/payment/create-checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': authHeader, 
+        Authorization: authHeader,
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(body),
     });
 
     console.log('Frontend Payment: Status do backend:', response.status);
@@ -39,9 +36,6 @@ export async function POST(request: Request) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Frontend Payment: Erro:', error);
-    return NextResponse.json(
-      { message: 'Erro interno do servidor' },
-      { status: 500 }
-    );
+    return NextResponse.json({ message: 'Erro interno do servidor' }, { status: 500 });
   }
 }
