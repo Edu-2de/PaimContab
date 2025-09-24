@@ -59,9 +59,11 @@ interface User {
 
 interface DashboardStats {
   totalUsers: number;
+  activeUsers: number;
+  usersWithCompany: number;
   totalCompanies: number;
   activeSubscriptions: number;
-  totalRevenue: number;
+  inactiveUsers: number;
 }
 
 export default function AdminPage() {
