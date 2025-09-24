@@ -5,10 +5,7 @@ import {
   HiArrowLeft, 
   HiCreditCard, 
   HiShieldCheck, 
-  HiCheckCircle,
-  HiInformationCircle,
-  HiCalendar,
-  HiCurrencyDollar
+  HiCheckCircle
 } from 'react-icons/hi2';
 
 function PaymentContent() {
@@ -37,14 +34,9 @@ function PaymentContent() {
       const stored = localStorage.getItem('user');
       const token = localStorage.getItem('authToken');
 
-      console.log('🔍 Verificando autenticação na página de pagamento');
-      console.log('Usuário no localStorage:', !!stored);
-      console.log('Token no localStorage:', !!token);
-
       if (stored && token) {
         setUser(JSON.parse(stored));
       } else {
-        console.log('❌ Usuário não logado, redirecionando...');
         window.location.href = '/Login';
       }
     }
@@ -56,14 +48,6 @@ function PaymentContent() {
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-
-      console.log('💳 Iniciando pagamento...');
-      console.log('Token presente:', !!token);
-      console.log('Dados do pagamento:', {
-        planId: plan.id,
-        userEmail: user.email,
-        userName: user.name,
-      });
 
       if (!token) {
         throw new Error('Usuário não autenticado. Faça login novamente.');
@@ -80,10 +64,7 @@ function PaymentContent() {
         }),
       });
 
-      console.log('📥 Response status:', response.status);
-
       if (response.status === 401) {
-        console.log('❌ Token inválido, removendo dados e redirecionando...');
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = '/Login';
@@ -92,21 +73,17 @@ function PaymentContent() {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error('❌ Erro do servidor:', errorData);
         throw new Error(`Erro ${response.status}: ${errorData}`);
       }
 
       const data = await response.json();
-      console.log('✅ Resposta do servidor:', data);
 
       if (data.url) {
-        console.log('🔗 Redirecionando para Stripe:', data.url);
         window.location.href = data.url;
       } else {
         throw new Error('URL de checkout não retornada');
       }
     } catch (error) {
-      console.error('💥 Erro completo:', error);
       alert(`Erro ao processar pagamento: ${error instanceof Error ? error.message : String(error)}`);
     }
     setLoading(false);
@@ -114,182 +91,159 @@ function PaymentContent() {
 
   if (!plan || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700 text-lg">Carregando informações...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
     );
   }
 
-  // Benefícios do plano baseado no ID
+  // Benefícios essenciais por plano
   const planBenefits = {
     'essencial': [
-      'Controle básico de receitas e despesas',
-      'Relatórios mensais simples',
+      'Controle de receitas e despesas',
+      'Relatórios mensais',
       'Suporte via chat',
-      'Backup automático',
-      'Acesso via web'
+      'Backup automático'
     ],
     'profissional': [
-      'Todas as funcionalidades do Essencial',
-      'Relatórios avançados e personalizados',
-      'Integração com bancos',
-      'Controle de estoque',
-      'Suporte prioritário',
-      'Aplicativo móvel'
+      'Tudo do Essencial',
+      'Relatórios avançados',
+      'Integração bancária',
+      'Suporte prioritário'
     ],
     'premium': [
-      'Todas as funcionalidades do Profissional',
-      'Consultoria personalizada mensal',
-      'Relatórios fiscais automatizados',
+      'Tudo do Profissional',
+      'Consultoria mensal',
       'API para integrações',
-      'Suporte 24/7',
-      'Treinamento personalizado'
+      'Suporte 24/7'
     ]
   };
 
   const currentBenefits = planBenefits[plan.id as keyof typeof planBenefits] || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-4xl mx-auto px-6 py-12">
+        {/* Header Clean */}
+        <div className="mb-12">
           <button
             onClick={() => window.history.back()}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors mb-6 font-medium"
+            className="inline-flex items-center gap-2 text-gray-500 hover:text-black transition-colors mb-8 text-sm"
           >
-            <HiArrowLeft className="w-5 h-5" />
-            Voltar aos planos
+            <HiArrowLeft className="w-4 h-4" />
+            Voltar
           </button>
-          <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-3">Finalizar Assinatura</h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Você está a um passo de transformar a gestão do seu MEI com o PaimContab
+          
+          <div className="max-w-2xl">
+            <h1 className="text-3xl font-bold text-black mb-4">Finalizar assinatura</h1>
+            <p className="text-gray-600">
+              Complete sua assinatura do PaimContab e comece a gerenciar seu MEI hoje mesmo.
             </p>
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Coluna Principal - Dados do Plano */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Resumo do Plano */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
-                <div className="flex items-center justify-between text-white">
-                  <div>
-                    <h2 className="text-2xl font-bold">Plano {plan.name}</h2>
-                    <p className="text-blue-100 mt-1">Solução completa para seu MEI</p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold">{plan.priceFormatted}</div>
-                    <div className="text-blue-100 text-sm">por mês</div>
-                  </div>
+        <div className="grid lg:grid-cols-5 gap-12">
+          {/* Conteúdo Principal */}
+          <div className="lg:col-span-3 space-y-8">
+            {/* Plano Selecionado */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-black">Plano {plan.name}</h2>
+                  <p className="text-gray-500 text-sm">Assinatura mensal</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-bold text-black">{plan.priceFormatted}</div>
+                  <div className="text-gray-500 text-sm">por mês</div>
                 </div>
               </div>
 
-              <div className="p-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                  <HiCheckCircle className="w-6 h-6 text-green-600" />
-                  O que está incluso:
-                </h3>
-                <div className="grid md:grid-cols-2 gap-3">
-                  {currentBenefits.map((benefit, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      <HiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0" />
-                      <span className="text-gray-700">{benefit}</span>
-                    </div>
-                  ))}
-                </div>
+              <div className="space-y-3">
+                {currentBenefits.map((benefit, index) => (
+                  <div key={index} className="flex items-center gap-3">
+                    <HiCheckCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    <span className="text-gray-700 text-sm">{benefit}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Detalhes da Cobrança */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-                <HiCurrencyDollar className="w-6 h-6 text-blue-600" />
-                Detalhes da Cobrança
-              </h3>
+            {/* Informações de Cobrança */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-black mb-4">Detalhes da cobrança</h3>
               
-              <div className="space-y-4">
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-700 font-medium">Plano {plan.name}</span>
-                  <span className="text-gray-900 font-semibold">{plan.priceFormatted}</span>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Plano {plan.name}</span>
+                  <span className="text-black font-medium">{plan.priceFormatted}</span>
                 </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-700">Tipo de cobrança</span>
-                  <span className="text-gray-900 font-medium">Mensal</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Primeiro pagamento</span>
+                  <span className="text-black">Hoje</span>
                 </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-700">Primeiro pagamento</span>
-                  <span className="text-gray-900 font-medium">Hoje</span>
-                </div>
-                <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-gray-700">Próxima cobrança</span>
-                  <span className="text-gray-900 font-medium">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Próxima cobrança</span>
+                  <span className="text-black">
                     {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
-                <div className="flex justify-between items-center pt-4">
-                  <span className="text-lg font-semibold text-gray-900">Total hoje</span>
-                  <span className="text-2xl font-bold text-blue-600">{plan.priceFormatted}</span>
+                
+                <div className="border-t border-gray-200 pt-3 mt-4">
+                  <div className="flex justify-between">
+                    <span className="font-semibold text-black">Total</span>
+                    <span className="font-bold text-black text-lg">{plan.priceFormatted}</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Informações de Segurança */}
-            <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-              <div className="flex items-start gap-3">
-                <HiShieldCheck className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-green-900 mb-2">Pagamento 100% Seguro</h4>
-                  <p className="text-green-800 text-sm leading-relaxed">
-                    Seus dados são protegidos com criptografia SSL de 256 bits. 
-                    Processamento seguro via Stripe, usado por milhões de empresas worldwide.
-                  </p>
-                </div>
+            {/* Segurança */}
+            <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+              <HiShieldCheck className="w-5 h-5 text-gray-400" />
+              <div>
+                <div className="font-medium text-black text-sm">Pagamento seguro</div>
+                <div className="text-gray-600 text-xs">Processado via Stripe com criptografia SSL</div>
               </div>
             </div>
           </div>
 
-          {/* Sidebar - Resumo e Ação */}
-          <div className="space-y-6">
-            {/* Dados da Conta */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Dados da Conta</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-bold text-lg">
-                      {user.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <div className="font-medium text-gray-900">{user.name}</div>
-                    <div className="text-sm text-gray-600">{user.email}</div>
-                  </div>
+          {/* Sidebar */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Conta */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-black mb-4">Conta</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                  <span className="text-gray-600 font-medium text-sm">
+                    {user.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <div className="font-medium text-black text-sm">{user.name}</div>
+                  <div className="text-gray-500 text-xs">{user.email}</div>
                 </div>
               </div>
             </div>
 
-            {/* Resumo da Compra */}
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumo da Compra</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between text-gray-700">
-                  <span>Subtotal</span>
-                  <span>{plan.priceFormatted}</span>
+            {/* Resumo */}
+            <div className="border border-gray-200 rounded-lg p-6">
+              <h3 className="font-semibold text-black mb-4">Resumo</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Subtotal</span>
+                  <span className="text-black">{plan.priceFormatted}</span>
                 </div>
-                <div className="flex justify-between text-gray-700">
-                  <span>Taxas</span>
-                  <span className="text-green-600">R$ 0,00</span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Taxas</span>
+                  <span className="text-black">R$ 0,00</span>
                 </div>
-                <div className="border-t border-gray-200 pt-3">
+                <div className="border-t border-gray-200 pt-2 mt-3">
                   <div className="flex justify-between">
-                    <span className="text-lg font-semibold text-gray-900">Total</span>
-                    <span className="text-xl font-bold text-blue-600">{plan.priceFormatted}</span>
+                    <span className="font-semibold text-black">Total</span>
+                    <span className="font-bold text-black">{plan.priceFormatted}</span>
                   </div>
                 </div>
               </div>
@@ -300,64 +254,46 @@ function PaymentContent() {
               onClick={handlePayment}
               disabled={loading}
               className={`
-                w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6 py-4 font-semibold text-lg
-                flex items-center justify-center gap-3 transition-all duration-200 shadow-lg
-                ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl transform hover:-translate-y-0.5'}
+                w-full bg-black text-white rounded-lg px-6 py-3 font-medium
+                flex items-center justify-center gap-3 transition-all duration-200
+                ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-800'}
               `}
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
                   <span>Processando...</span>
                 </>
               ) : (
                 <>
-                  <HiCreditCard className="w-6 h-6" />
-                  <span>Finalizar Pagamento</span>
+                  <HiCreditCard className="w-5 h-5" />
+                  <span>Finalizar pagamento</span>
                 </>
               )}
             </button>
 
             {/* Garantia */}
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-              <div className="flex items-start gap-3">
-                <HiInformationCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-semibold text-amber-900 text-sm mb-1">Garantia de 7 dias</h4>
-                  <p className="text-amber-800 text-xs leading-relaxed">
-                    Não ficou satisfeito? Cancele nos primeiros 7 dias e receba 100% do seu dinheiro de volta.
-                  </p>
-                </div>
-              </div>
+            <div className="text-center">
+              <p className="text-xs text-gray-500">
+                Garantia de 7 dias. Cancele a qualquer momento.
+              </p>
             </div>
 
             {/* Termos */}
             <div className="text-center">
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Ao continuar, você concorda com nossos{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-700 underline font-medium">
-                  Termos de Serviço
+              <p className="text-xs text-gray-400 leading-relaxed">
+                Ao continuar, você concorda com os{' '}
+                <a href="#" className="text-black hover:underline">
+                  termos de serviço
                 </a>
                 {' '}e{' '}
-                <a href="#" className="text-blue-600 hover:text-blue-700 underline font-medium">
-                  Política de Privacidade
+                <a href="#" className="text-black hover:underline">
+                  política de privacidade
                 </a>
               </p>
             </div>
           </div>
         </div>
-
-        {/* Debug Info (apenas em desenvolvimento) */}
-        {process.env.NODE_ENV === 'development' && typeof window !== 'undefined' && (
-          <div className="mt-8 bg-gray-100 border border-gray-300 rounded-lg p-4">
-            <div className="text-sm text-gray-700">
-              <p><strong>Debug (Desenvolvimento):</strong></p>
-              <p>Token: {localStorage.getItem('authToken') ? '✅ Presente' : '❌ Ausente'}</p>
-              <p>Usuário: {user.name} ({user.email})</p>
-              <p>Plano: {plan.name} - {plan.priceFormatted}</p>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -366,10 +302,10 @@ function PaymentContent() {
 export default function PaymentPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-700 text-lg">Carregando...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando...</p>
         </div>
       </div>
     }>
