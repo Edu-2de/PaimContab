@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
@@ -245,7 +244,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <AdminSidebar currentPage="dashboard" />
-      
+
       <div className="ml-64 min-h-screen">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
@@ -259,9 +258,7 @@ export default function AdminPage() {
                 <HiCalendarDays className="w-4 h-4" />
                 <span className="text-sm font-medium">Atualização em tempo real</span>
               </div>
-              <p className="text-sm font-semibold text-slate-700">
-                {new Date().toLocaleString('pt-BR')}
-              </p>
+              <p className="text-sm font-semibold text-slate-700">{new Date().toLocaleString('pt-BR')}</p>
             </div>
           </div>
         </div>
@@ -335,8 +332,8 @@ export default function AdminPage() {
                     </p>
                     <div className="flex items-center mt-2">
                       <div className="w-full bg-slate-200 rounded-full h-2">
-                        <div 
-                          className="bg-slate-700 h-2 rounded-full transition-all duration-500" 
+                        <div
+                          className="bg-slate-700 h-2 rounded-full transition-all duration-500"
                           style={{ width: `${Math.round((stats.activeUsers / stats.totalUsers) * 100)}%` }}
                         ></div>
                       </div>
@@ -423,7 +420,9 @@ export default function AdminPage() {
                         {user.company ? (
                           <div>
                             <div className="text-sm font-medium text-slate-900">{user.company.companyName}</div>
-                            <div className="text-sm text-slate-600">{user.company.businessSegment || 'Não informado'}</div>
+                            <div className="text-sm text-slate-600">
+                              {user.company.businessSegment || 'Não informado'}
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center">
@@ -435,8 +434,12 @@ export default function AdminPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {user.currentSubscription ? (
                           <div>
-                            <div className="text-sm font-medium text-slate-900">{user.currentSubscription.plan.name}</div>
-                            <div className="text-sm text-slate-600 font-medium">{formatCurrency(user.currentSubscription.amount)}</div>
+                            <div className="text-sm font-medium text-slate-900">
+                              {user.currentSubscription.plan.name}
+                            </div>
+                            <div className="text-sm text-slate-600 font-medium">
+                              {formatCurrency(user.currentSubscription.amount)}
+                            </div>
                           </div>
                         ) : (
                           <div className="flex items-center">
@@ -477,8 +480,8 @@ export default function AdminPage() {
                           <button
                             onClick={() => toggleUserStatus(user.id, user.isActive)}
                             className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
-                              user.isActive 
-                                ? 'text-slate-700 hover:bg-slate-100' 
+                              user.isActive
+                                ? 'text-slate-700 hover:bg-slate-100'
                                 : 'text-emerald-700 hover:bg-emerald-50'
                             }`}
                             title={user.isActive ? 'Desativar' : 'Ativar'}
@@ -509,8 +512,10 @@ export default function AdminPage() {
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-slate-700 font-medium">
                     Mostrando <span className="font-semibold">{(pagination.page - 1) * pagination.limit + 1}</span> a{' '}
-                    <span className="font-semibold">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> de{' '}
-                    <span className="font-semibold">{pagination.total}</span> usuários
+                    <span className="font-semibold">
+                      {Math.min(pagination.page * pagination.limit, pagination.total)}
+                    </span>{' '}
+                    de <span className="font-semibold">{pagination.total}</span> usuários
                   </p>
                   <div className="flex gap-1">
                     {Array.from({ length: pagination.pages }, (_, i) => (

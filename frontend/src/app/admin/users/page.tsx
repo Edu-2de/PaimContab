@@ -221,7 +221,7 @@ export default function UsersPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <AdminSidebar currentPage="users" />
-      
+
       <div className="ml-64 min-h-screen">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
@@ -345,9 +345,7 @@ export default function UsersPage() {
                           <div className="ml-4">
                             <div className="text-sm font-semibold text-slate-900">{user.name}</div>
                             <div className="text-sm text-slate-600">{user.email}</div>
-                            <div className="text-xs text-slate-400 font-medium uppercase">
-                              {user.role}
-                            </div>
+                            <div className="text-xs text-slate-400 font-medium uppercase">{user.role}</div>
                           </div>
                         </div>
                       </td>
@@ -355,10 +353,12 @@ export default function UsersPage() {
                         {user.company ? (
                           <div>
                             <div className="text-sm font-medium text-slate-900">{user.company.companyName}</div>
-                            <div className="text-sm text-slate-600">{user.company.businessSegment || 'Não informado'}</div>
+                            <div className="text-sm text-slate-600">
+                              {user.company.businessSegment || 'Não informado'}
+                            </div>
                             <div className="text-xs text-slate-400">
-                              {user.company.city && user.company.state 
-                                ? `${user.company.city}, ${user.company.state}` 
+                              {user.company.city && user.company.state
+                                ? `${user.company.city}, ${user.company.state}`
                                 : 'Localização não informada'}
                             </div>
                           </div>
@@ -372,8 +372,12 @@ export default function UsersPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         {user.currentSubscription ? (
                           <div>
-                            <div className="text-sm font-medium text-slate-900">{user.currentSubscription.plan.name}</div>
-                            <div className="text-sm text-slate-600 font-semibold">{formatCurrency(user.currentSubscription.amount)}</div>
+                            <div className="text-sm font-medium text-slate-900">
+                              {user.currentSubscription.plan.name}
+                            </div>
+                            <div className="text-sm text-slate-600 font-semibold">
+                              {formatCurrency(user.currentSubscription.amount)}
+                            </div>
                             {getPlanStatusBadge(user.currentSubscription.status)}
                           </div>
                         ) : (
@@ -412,9 +416,7 @@ export default function UsersPage() {
                           <button
                             onClick={() => toggleUserStatus(user.id, user.isActive)}
                             className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                              user.isActive 
-                                ? 'text-red-700 hover:bg-red-50' 
-                                : 'text-emerald-700 hover:bg-emerald-50'
+                              user.isActive ? 'text-red-700 hover:bg-red-50' : 'text-emerald-700 hover:bg-emerald-50'
                             }`}
                             title={user.isActive ? 'Desativar' : 'Ativar'}
                           >
@@ -447,8 +449,10 @@ export default function UsersPage() {
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-slate-700 font-medium">
                     Mostrando <span className="font-semibold">{(pagination.page - 1) * pagination.limit + 1}</span> a{' '}
-                    <span className="font-semibold">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> de{' '}
-                    <span className="font-semibold">{pagination.total}</span> usuários
+                    <span className="font-semibold">
+                      {Math.min(pagination.page * pagination.limit, pagination.total)}
+                    </span>{' '}
+                    de <span className="font-semibold">{pagination.total}</span> usuários
                   </p>
                   <div className="flex items-center gap-1">
                     <button
@@ -466,9 +470,9 @@ export default function UsersPage() {
                         const start = Math.max(1, pagination.page - 2);
                         pageNum = start + i;
                       }
-                      
+
                       if (pageNum > pagination.totalPages) return null;
-                      
+
                       return (
                         <button
                           key={pageNum}
@@ -484,7 +488,9 @@ export default function UsersPage() {
                       );
                     })}
                     <button
-                      onClick={() => loadUsers(Math.min(pagination.totalPages, pagination.page + 1), search, filterStatus)}
+                      onClick={() =>
+                        loadUsers(Math.min(pagination.totalPages, pagination.page + 1), search, filterStatus)
+                      }
                       disabled={pagination.page === pagination.totalPages}
                       className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >

@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
+import {
   HiOutlineHome,
   HiOutlineChartBarSquare,
   HiOutlineUsers,
@@ -13,7 +13,7 @@ import {
   HiOutlineArrowRightOnRectangle,
   HiChevronLeft,
   HiChevronRight,
-  HiOutlineUserCircle
+  HiOutlineUserCircle,
 } from 'react-icons/hi2';
 
 interface AdminSidebarProps {
@@ -24,44 +24,44 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const pathname = usePathname();
-  
+
   const navigationItems = [
     {
       name: 'Dashboard',
       href: '/admin/dashboard',
       icon: HiOutlineChartBarSquare,
-      key: 'dashboard'
+      key: 'dashboard',
     },
     {
       name: 'Usuários',
       href: '/admin/users',
       icon: HiOutlineUsers,
-      key: 'users'
+      key: 'users',
     },
     {
       name: 'Empresas',
       href: '/admin/companies',
       icon: HiOutlineBuildingOffice2,
-      key: 'companies'
+      key: 'companies',
     },
     {
       name: 'Assinaturas',
       href: '/admin/subscriptions',
       icon: HiOutlineCreditCard,
-      key: 'subscriptions'
+      key: 'subscriptions',
     },
     {
       name: 'Relatórios',
       href: '/admin/reports',
       icon: HiOutlineDocumentText,
-      key: 'reports'
+      key: 'reports',
     },
     {
       name: 'Configurações',
       href: '/admin/settings',
       icon: HiOutlineCog6Tooth,
-      key: 'settings'
-    }
+      key: 'settings',
+    },
   ];
 
   useEffect(() => {
@@ -93,7 +93,7 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
 
   const isActive = (itemKey: string) => {
     if (currentPage === itemKey) return true;
-    
+
     // Verifica se está na rota específica
     if (itemKey === 'dashboard' && pathname === '/admin/dashboard') return true;
     if (itemKey === 'users' && pathname?.startsWith('/admin/users')) return true;
@@ -101,15 +101,17 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
     if (itemKey === 'subscriptions' && pathname?.startsWith('/admin/subscriptions')) return true;
     if (itemKey === 'reports' && pathname?.startsWith('/admin/reports')) return true;
     if (itemKey === 'settings' && pathname?.startsWith('/admin/settings')) return true;
-    
+
     return false;
   };
 
   return (
-    <div className={`
+    <div
+      className={`
       fixed left-0 top-0 bg-white border-r border-gray-200 h-screen transition-all duration-300 ease-in-out flex flex-col z-50
       ${isCollapsed ? 'w-16' : 'w-64'}
-    `}>
+    `}
+    >
       {/* Logo/Header */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between">
@@ -124,11 +126,7 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
             className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all duration-200"
             title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
           >
-            {isCollapsed ? (
-              <HiChevronRight className="w-5 h-5" />
-            ) : (
-              <HiChevronLeft className="w-5 h-5" />
-            )}
+            {isCollapsed ? <HiChevronRight className="w-5 h-5" /> : <HiChevronLeft className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -136,34 +134,29 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
       {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-1">
-          {navigationItems.map((item) => {
+          {navigationItems.map(item => {
             const Icon = item.icon;
             const active = isActive(item.key);
-            
+
             return (
               <Link
                 key={item.key}
                 href={item.href}
                 className={`
                   group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                  ${active 
-                    ? 'bg-gray-900 text-white shadow-sm' 
-                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
-                  }
+                  ${active ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
                 title={isCollapsed ? item.name : undefined}
               >
-                <Icon className={`
+                <Icon
+                  className={`
                   w-5 h-5 flex-shrink-0 transition-colors duration-200
                   ${active ? 'text-white' : 'text-gray-400 group-hover:text-gray-500'}
-                `} />
-                {!isCollapsed && (
-                  <span className="truncate">{item.name}</span>
-                )}
-                {active && !isCollapsed && (
-                  <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full"></div>
-                )}
+                `}
+                />
+                {!isCollapsed && <span className="truncate">{item.name}</span>}
+                {active && !isCollapsed && <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full"></div>}
               </Link>
             );
           })}
@@ -206,29 +199,21 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
             <div className="flex-shrink-0">
               {user?.name ? (
                 <div className="w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center">
-                  <span className="text-sm font-semibold">
-                    {getInitials(user.name)}
-                  </span>
+                  <span className="text-sm font-semibold">{getInitials(user.name)}</span>
                 </div>
               ) : (
                 <HiOutlineUserCircle className="w-10 h-10 text-gray-400" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {user?.name || 'Administrador'}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {user?.email || 'admin@paimcontab.com'}
-              </p>
+              <p className="text-sm font-medium text-gray-900 truncate">{user?.name || 'Administrador'}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email || 'admin@paimcontab.com'}</p>
             </div>
           </div>
         ) : (
           <div className="flex justify-center">
             <div className="w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold">
-                {user?.name ? getInitials(user.name) : 'A'}
-              </span>
+              <span className="text-sm font-semibold">{user?.name ? getInitials(user.name) : 'A'}</span>
             </div>
           </div>
         )}
