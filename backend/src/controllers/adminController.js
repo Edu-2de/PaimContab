@@ -1,99 +1,188 @@
-const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_muito_forte_e_unica_para_jwt_2025';
-
-const requireAdmin = async (req, res, next) => {
+// Controller function to get dashboard statistics
+const getDashboard = async (req, res) => {
   try {
-    console.log('🔐 Verificando autenticação admin...');
-    
-    // Buscar token do header Authorization
-    const authHeader = req.header('Authorization');
-    console.log('📋 Auth header:', authHeader ? authHeader.substring(0, 30) + '...' : 'ausente');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('❌ Token não fornecido ou formato inválido');
-      return res.status(401).json({ 
-        message: 'Token de acesso requerido',
-        code: 'NO_TOKEN'
-      });
-    }
+    console.log('� Buscando estatísticas do dashboard...');
 
-    const token = authHeader.replace('Bearer ', '');
-    console.log('🎫 Token extraído:', token.substring(0, 20) + '...');
-    console.log('📋 JWT Secret usado:', JWT_SECRET.substring(0, 10) + '...');
-    
-    // Verificar se o token é válido
-    let decoded;
-    try {
-      decoded = jwt.verify(token, JWT_SECRET);
-      console.log('✅ Token decodificado com sucesso:', {
-        userId: decoded.userId,
-        email: decoded.email,
-        role: decoded.role,
-        exp: new Date(decoded.exp * 1000),
-        timeUntilExpiry: Math.round((decoded.exp * 1000 - Date.now()) / 1000 / 60) + ' minutos'
-      });
-    } catch (jwtError) {
-      console.log('❌ Erro JWT:', jwtError.name, '-', jwtError.message);
-      if (jwtError.name === 'TokenExpiredError') {
-        return res.status(403).json({ 
-          message: 'Token expirado',
-          code: 'TOKEN_EXPIRED'
-        });
-      } else if (jwtError.name === 'JsonWebTokenError') {
-        return res.status(403).json({ 
-          message: 'Token inválido',
-          code: 'INVALID_TOKEN'
-        });
-      } else {
-        return res.status(403).json({ 
-          message: 'Erro na validação do token',
-          code: 'TOKEN_ERROR'
-        });
-      }
-    }
-    
-    // Buscar usuário no banco
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId }
+    // Get total users
+    const totalUsers = await prisma.user.count();
+    console.log('� Total de usuários:', totalUsers);
+
+    // Get active users
+    const activeUsers = await prisma.user.count({
+      where: { isActive: true },
     });
+    console.log('✅ Usuários ativos:', activeUsers);
 
-    if (!user) {
-      console.log('❌ Usuário não encontrado no banco');
-      return res.status(401).json({ 
-        message: 'Usuário não encontrado',
-        code: 'USER_NOT_FOUND'
-      });
-    }
+    // Get users with paid plans
+    const paidUsers = await prisma.user.count({
+      where: { planStatus: 'paid' },
+    });
+    console.log('💳 Usuários com planos pagos:', paidUsers);
 
-    if (!user.isActive) {
-      console.log('❌ Usuário inativo');
-      return res.status(401).json({ 
-        message: 'Usuário inativo',
-        code: 'USER_INACTIVE'
-      });
-    }
+    // Get users with companies
+    const usersWithCompany = await prisma.user.count({
+      where: {
+        Company: {
+          some: {},
+        },
+      },
+    });
+    console.log('🏢 Usuários com empresa:', usersWithCompany);
 
-    if (user.role !== 'admin') {
-      console.log('❌ Usuário não é admin. Role atual:', user.role);
-      return res.status(403).json({ 
-        message: 'Acesso negado. Apenas administradores.',
-        code: 'NOT_ADMIN'
-      });
-    }
+    const stats = {
+      totalUsers,
+      activeUsers,
+      paidUsers,
+      usersWithCompany,
+      inactiveUsers: totalUsers - activeUsers,
+      freeUsers: totalUsers - paidUsers,
+    };
 
-    console.log('✅ Admin autenticado:', user.name, '- ID:', user.id);
-    req.user = user;
-    next();
+    console.log('✅ Dashboard carregado com sucesso');
+    res.json(stats);
   } catch (error) {
-    console.error('💥 Erro no middleware admin:', error);
-    res.status(500).json({ 
-      message: 'Erro interno do servidor',
-      code: 'SERVER_ERROR'
+    console.error('� Erro ao carregar dashboard:', error);
+    res.status(500).json({
+      message: 'Erro ao carregar dashboard',
+      error: error.message,
     });
   }
 };
 
-module.exports = requireAdmin;
+// Controller function to get all users
+const getAllUsers = async (req, res) => {
+  try {
+    console.log('👥 Buscando todos os usuários...');
+
+    const { page = 1, limit = 10, search = '' } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+
+    // Build search condition
+    const searchCondition = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    // Get users with pagination
+    const users = await prisma.user.findMany({
+      where: searchCondition,
+      include: {
+        Company: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: parseInt(limit),
+    });
+
+    // Get total count for pagination
+    const totalUsers = await prisma.user.count({
+      where: searchCondition,
+    });
+
+    const response = {
+      users,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: totalUsers,
+        totalPages: Math.ceil(totalUsers / parseInt(limit)),
+      },
+    };
+
+    console.log(`✅ ${users.length} usuários encontrados`);
+    res.json(response);
+  } catch (error) {
+    console.error('💥 Erro ao buscar usuários:', error);
+    res.status(500).json({
+      message: 'Erro ao buscar usuários',
+      error: error.message,
+    });
+  }
+};
+
+// Controller function to get user details
+const getUserDetails = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    console.log('🔍 Buscando detalhes do usuário:', userId);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        Company: true,
+      },
+    });
+
+    if (!user) {
+      console.log('❌ Usuário não encontrado');
+      return res.status(404).json({
+        message: 'Usuário não encontrado',
+      });
+    }
+
+    console.log('✅ Detalhes do usuário carregados:', user.name);
+    res.json(user);
+  } catch (error) {
+    console.error('💥 Erro ao buscar detalhes do usuário:', error);
+    res.status(500).json({
+      message: 'Erro ao buscar detalhes do usuário',
+      error: error.message,
+    });
+  }
+};
+
+// Controller function to update user status
+const updateUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { isActive, planStatus } = req.body;
+
+    console.log('⚡ Atualizando status do usuário:', userId, { isActive, planStatus });
+
+    const updateData = {};
+    if (typeof isActive === 'boolean') {
+      updateData.isActive = isActive;
+    }
+    if (planStatus) {
+      updateData.planStatus = planStatus;
+    }
+
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      include: {
+        Company: true,
+      },
+    });
+
+    console.log('✅ Status do usuário atualizado:', user.name);
+    res.json(user);
+  } catch (error) {
+    console.error('💥 Erro ao atualizar status do usuário:', error);
+
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        message: 'Usuário não encontrado',
+      });
+    }
+
+    res.status(500).json({
+      message: 'Erro ao atualizar status do usuário',
+      error: error.message,
+    });
+  }
+};
+
+module.exports = {
+  getDashboard,
+  getAllUsers,
+  getUserDetails,
+  updateUserStatus,
+};

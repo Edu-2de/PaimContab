@@ -131,8 +131,8 @@ export default function LoginRegisterPage() {
               console.log('🔧 Redirecionando para painel admin');
               window.location.href = '/admin/dashboard';
             } else {
-              console.log('👥 Redirecionando para dashboard normal');
-              window.location.href = '/dashboard';
+              console.log('👥 Redirecionando para home');
+              window.location.href = '/';
             }
           } else {
             setError('Erro: token ou dados do usuário não retornados.');
