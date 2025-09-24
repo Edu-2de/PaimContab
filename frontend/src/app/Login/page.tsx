@@ -64,32 +64,60 @@ export default function LoginRegisterPage() {
         if (!res.ok) {
           setError(data.message || 'Erro ao registrar.');
         } else {
-          console.log('Dados do usuário registrado:', data.user); // Debug
+          console.log('Dados do usuário registrado:', data.user);
 
           // Verificar se data.user existe antes de salvar
           if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user));
-            console.log('Usuário salvo no localStorage'); // Debug
+            console.log('Usuário salvo no localStorage');
             window.location.href = '/setup-company';
           } else {
             setError('Erro: dados do usuário não retornados.');
           }
         }
       } else {
+        console.log('🔐 Fazendo login com:', { email });
+        
         const res = await fetch('/api/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password: pass }),
         });
+        
         const data = await res.json();
+        console.log('📥 Resposta do login:', data);
+        
         if (!res.ok) {
           setError(data.message || 'E-mail ou senha inválidos.');
         } else {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          window.location.href = '/';
+          console.log('✅ Login bem-sucedido!');
+          
+          // 🔑 SALVAR TOKEN E USUÁRIO NO LOCALSTORAGE
+          if (data.token && data.user) {
+            console.log('💾 Salvando token:', data.token.substring(0, 20) + '...');
+            console.log('👤 Salvando usuário:', data.user);
+            
+            localStorage.setItem('authToken', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            console.log('✅ Dados salvos no localStorage');
+            
+            // Redirecionar baseado no role
+            if (data.user.role === 'admin') {
+              console.log('🔧 Redirecionando para painel admin');
+              window.location.href = '/admin/dashboard';
+            } else {
+              console.log('👥 Redirecionando para dashboard normal');
+              window.location.href = '/';
+            }
+          } else {
+            setError('Erro: token ou dados do usuário não retornados.');
+            console.error('❌ Token ou usuário não retornados:', { token: !!data.token, user: !!data.user });
+          }
         }
       }
-    } catch {
+    } catch (error) {
+      console.error('💥 Erro na requisição:', error);
       setError('Erro de conexão.');
     }
     setLoading(false);
