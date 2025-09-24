@@ -609,6 +609,17 @@ export default function AdminPage() {
             </div>
           )}
         </div>
+
+        {/* Show All Users Button */}
+        <div className="mt-6 text-center">
+          <Link
+            href="/admin/users"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Ver Todos os Usuários
+            <HiUsers className="w-5 h-5" />
+          </Link>
+        </div>
       </div>
 
       {/* User Details Modal */}
