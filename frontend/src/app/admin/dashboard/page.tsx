@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { useState, useEffect } from 'react';
+import AdminSidebar from '@/components/AdminSidebar';
+import Link from 'next/link';
 import {
   HiUsers,
   HiBuildingOffice,
@@ -11,6 +13,13 @@ import {
   HiUserCircle,
   HiCheckCircle,
   HiXCircle,
+  HiArrowTrendingUp,
+  HiArrowTrendingDown,
+  HiCalendarDays,
+  HiChartBarSquare,
+  HiUserPlus,
+  HiBanknotes,
+  HiClockIcon,
 } from 'react-icons/hi2';
 
 interface Company {
