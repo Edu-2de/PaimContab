@@ -372,7 +372,7 @@ const deleteUser = async (req, res) => {
     }
 
     // Usar uma transação para garantir que tudo seja deletado corretamente
-    await prisma.$transaction(async (prisma) => {
+    await prisma.$transaction(async prisma => {
       // Deletar sessões de consultoria
       if (user.ConsultingSession.length > 0) {
         await prisma.consultingSession.deleteMany({
@@ -430,4 +430,7 @@ module.exports = {
   getAllUsers,
   getUserDetails,
   updateUserStatus,
+  updateUser,
+  updateUserCompany,
+  deleteUser,
 };
