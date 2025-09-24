@@ -10,6 +10,10 @@ router.get('/dashboard', requireAdmin, adminController.getDashboard);
 router.get('/users', requireAdmin, adminController.getAllUsers);
 router.get('/users/:userId', requireAdmin, adminController.getUserDetails);
 router.patch('/users/:userId/status', requireAdmin, adminController.updateUserStatus);
+router.put('/users/:userId', requireAdmin, adminController.updateUser);
+router.delete('/users/:userId', requireAdmin, adminController.deleteUser);
 
+// Empresa do usuário
+router.put('/users/:userId/company', requireAdmin, adminController.updateUserCompany);
 
 module.exports = router;

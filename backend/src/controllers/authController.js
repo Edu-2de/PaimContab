@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_muito_forte';
+const JWT_SECRET = process.env.JWT_SECRET || 'sua_chave_secreta_muito_forte_e_unica_para_jwt_2025';
 
 exports.register = async (req, res) => {
   try {
@@ -13,7 +13,7 @@ exports.register = async (req, res) => {
 
     // Verificar se o usuário já existe
     const existingUser = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (existingUser) {
@@ -30,8 +30,8 @@ exports.register = async (req, res) => {
         email,
         password: hashedPassword,
         role: 'customer', // Por padrão é customer
-        isActive: true
-      }
+        isActive: true,
+      },
     });
 
     console.log('Status da resposta do backend:', 201);
@@ -43,8 +43,8 @@ exports.register = async (req, res) => {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
-        createdAt: user.createdAt
-      }
+        createdAt: user.createdAt,
+      },
     });
 
     res.status(201).json({
@@ -55,8 +55,8 @@ exports.register = async (req, res) => {
         email: user.email,
         role: user.role,
         isActive: user.isActive,
-        createdAt: user.createdAt
-      }
+        createdAt: user.createdAt,
+      },
     });
   } catch (error) {
     console.error('Erro no registro:', error);
@@ -72,7 +72,7 @@ exports.login = async (req, res) => {
 
     // Buscar usuário
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
 
     if (!user) {
@@ -94,7 +94,7 @@ exports.login = async (req, res) => {
     }
 
     // Gerar JWT com mais tempo (7 dias ao invés de 24h)
-    const tokenPayload = { 
+    const tokenPayload = {
       userId: user.id,
       email: user.email,
       role: user.role,
@@ -118,7 +118,7 @@ exports.login = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      isActive: user.isActive
+      isActive: user.isActive,
     };
 
     console.log('✅ Login bem-sucedido para:', userResponse.name, '- Role:', userResponse.role);
@@ -126,7 +126,7 @@ exports.login = async (req, res) => {
     res.json({
       message: 'Login realizado com sucesso',
       token,
-      user: userResponse
+      user: userResponse,
     });
   } catch (error) {
     console.error('💥 Erro no login:', error);

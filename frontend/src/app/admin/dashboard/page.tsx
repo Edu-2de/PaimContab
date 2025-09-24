@@ -1,25 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
+import AdminProtection from '@/components/AdminProtection';
 import Link from 'next/link';
 import {
   HiUsers,
   HiBuildingOffice,
   HiCreditCard,
-  HiCurrencyDollar,
   HiMagnifyingGlass,
   HiEye,
   HiUserCircle,
   HiCheckCircle,
   HiXCircle,
   HiArrowTrendingUp,
-  HiArrowTrendingDown,
-  HiCalendarDays,
   HiChartBarSquare,
-  HiUserPlus,
-  HiBanknotes,
-  HiClockIcon,
+  HiCalendarDays,
+  HiArrowUpRight,
 } from 'react-icons/hi2';
 
 interface Company {
@@ -67,12 +63,18 @@ interface DashboardStats {
 }
 
 export default function AdminPage() {
+  return (
+    <AdminProtection>
+      <AdminDashboardContent />
+    </AdminProtection>
+  );
+}
+
+function AdminDashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-  const [showUserModal, setShowUserModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -85,33 +87,23 @@ export default function AdminPage() {
     const user = localStorage.getItem('user');
     const token = localStorage.getItem('authToken');
 
-    console.log('🔐 Verificando acesso admin...');
-    console.log('Token presente:', !!token);
-    console.log('User presente:', !!user);
-
     if (!user || !token) {
-      console.log('❌ Sem token ou usuário, redirecionando para login');
       window.location.href = '/Login';
       return;
     }
 
     try {
       const userData = JSON.parse(user);
-      console.log('👤 Dados do usuário:', userData);
-      console.log('🔧 Role do usuário:', userData.role);
-
       if (userData.role !== 'admin') {
-        console.log('❌ Usuário não é admin, redirecionando para home');
         alert('Acesso negado. Esta área é restrita aos administradores.');
         window.location.href = '/';
         return;
       }
 
-      console.log('✅ Usuário é admin, carregando dados...');
       loadDashboardData();
       loadUsers();
     } catch (error) {
-      console.error('❌ Erro ao verificar dados do usuário:', error);
+      console.error('Erro ao verificar dados do usuário:', error);
       window.location.href = '/Login';
     }
   }, []);
@@ -119,10 +111,8 @@ export default function AdminPage() {
   const loadDashboardData = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      console.log('🔑 Token para dashboard:', token ? 'Presente' : 'Ausente');
 
       if (!token) {
-        console.log('❌ Sem token, redirecionando para login');
         window.location.href = '/Login';
         return;
       }
@@ -134,10 +124,7 @@ export default function AdminPage() {
         },
       });
 
-      console.log('📊 Dashboard response status:', response.status);
-
       if (response.status === 401) {
-        console.log('❌ Token inválido, removendo e redirecionando');
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         window.location.href = '/Login';
@@ -146,11 +133,7 @@ export default function AdminPage() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Dashboard data:', data);
         setStats(data);
-      } else {
-        const errorData = await response.text();
-        console.error('❌ Erro dashboard:', errorData);
       }
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
@@ -198,38 +181,6 @@ export default function AdminPage() {
     loadUsers(1, search);
   };
 
-  const viewUserDetails = async (userId: string) => {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        window.location.href = '/Login';
-        return;
-      }
-
-      const response = await fetch(`/api/admin/users/${userId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
-        window.location.href = '/Login';
-        return;
-      }
-
-      if (response.ok) {
-        const userData = await response.json();
-        setSelectedUser(userData);
-        setShowUserModal(true);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar detalhes do usuário:', error);
-    }
-  };
-
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
       const token = localStorage.getItem('authToken');
@@ -264,14 +215,14 @@ export default function AdminPage() {
 
   const getPlanStatusBadge = (status: string) => {
     const badges = {
-      active: { color: 'bg-green-100 text-green-800', text: 'Ativo' },
-      canceled: { color: 'bg-red-100 text-red-800', text: 'Cancelado' },
-      pending: { color: 'bg-yellow-100 text-yellow-800', text: 'Pendente' },
-      no_plan: { color: 'bg-gray-100 text-gray-800', text: 'Sem Plano' },
+      active: { color: 'bg-slate-700 text-white', text: 'Ativo' },
+      canceled: { color: 'bg-slate-200 text-slate-700', text: 'Cancelado' },
+      pending: { color: 'bg-slate-100 text-slate-600', text: 'Pendente' },
+      no_plan: { color: 'bg-gray-100 text-gray-500', text: 'Sem Plano' },
     };
     const badge = badges[status as keyof typeof badges] || badges.no_plan;
 
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>{badge.text}</span>;
+    return <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${badge.color}`}>{badge.text}</span>;
   };
 
   const formatCurrency = (value: number) => {
@@ -287,314 +238,326 @@ export default function AdminPage() {
 
   if (loading && !users.length) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
+      <div className="min-h-screen bg-slate-50">
+        <AdminSidebar currentPage="dashboard" />
+        <div className="ml-64 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-slate-300 border-t-slate-700 mx-auto mb-4"></div>
+            <p className="text-slate-600 font-medium">Carregando dashboard...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <h1 className="text-3xl font-bold text-slate-900">Painel Administrativo</h1>
-            <p className="text-slate-600 mt-2">Gerencie usuários, planos e acompanhe estatísticas</p>
+      <AdminSidebar currentPage="dashboard" />
+
+      <div className="ml-64 min-h-screen">
+        {/* Header */}
+        <div className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-slate-900">Dashboard</h1>
+              <p className="text-slate-600 mt-1 font-medium">Visão geral do sistema administrativo</p>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-2 text-slate-500 mb-1">
+                <HiCalendarDays className="w-4 h-4" />
+                <span className="text-sm font-medium">Atualização em tempo real</span>
+              </div>
+              <p className="text-sm font-semibold text-slate-700">{new Date().toLocaleString('pt-BR')}</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <HiUsers className="w-6 h-6 text-blue-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Total de Usuários</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.totalUsers}</p>
+        <div className="p-8 overflow-y-auto space-y-8">
+          {/* Estatísticas */}
+          {stats && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Card 1 - Total Usuários */}
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500 mb-2">Total de Usuários</p>
+                    <p className="text-3xl font-bold text-slate-900">{stats.totalUsers}</p>
+                    <div className="flex items-center mt-2">
+                      <span className="text-sm text-slate-600 font-medium">{stats.activeUsers} ativos</span>
+                      <div className="ml-2 w-1 h-1 bg-slate-300 rounded-full"></div>
+                      <span className="text-sm text-slate-500 ml-2">{stats.inactiveUsers} inativos</span>
+                    </div>
+                  </div>
+                  <div className="w-14 h-14 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <HiUsers className="w-7 h-7 text-slate-700" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <HiBuildingOffice className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Empresas Cadastradas</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.totalCompanies}</p>
+              {/* Card 2 - Empresas */}
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500 mb-2">Empresas Cadastradas</p>
+                    <p className="text-3xl font-bold text-slate-900">{stats.totalCompanies}</p>
+                    <div className="flex items-center mt-2">
+                      <span className="text-sm text-slate-600 font-medium">{stats.usersWithCompany} usuários</span>
+                      <div className="ml-2 w-1 h-1 bg-slate-300 rounded-full"></div>
+                      <span className="text-sm text-slate-500 ml-2">com empresa</span>
+                    </div>
+                  </div>
+                  <div className="w-14 h-14 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <HiBuildingOffice className="w-7 h-7 text-slate-700" />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <HiCreditCard className="w-6 h-6 text-purple-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Assinaturas Ativas</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.activeSubscriptions}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <HiCurrencyDollar className="w-6 h-6 text-yellow-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Receita Total</p>
-                  <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.totalRevenue)}</p>
+              {/* Card 3 - Assinaturas */}
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500 mb-2">Assinaturas Ativas</p>
+                    <p className="text-3xl font-bold text-slate-900">{stats.activeSubscriptions}</p>
+                    <div className="flex items-center mt-2">
+                      <HiArrowTrendingUp className="w-4 h-4 text-emerald-600" />
+                      <span className="text-sm text-emerald-600 font-medium ml-1">
+                        {Math.round((stats.activeSubscriptions / stats.totalUsers) * 100)}% dos usuários
+                      </span>
+                    </div>
+                  </div>
+                  <div className="w-14 h-14 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <HiCreditCard className="w-7 h-7 text-slate-700" />
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
-        )}
 
-        {/* Users Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="p-6 border-b border-slate-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-slate-900">Usuários</h2>
-
-              {/* Search */}
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <div className="relative">
-                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Buscar usuários..."
-                    className="pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-slate-500"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-colors"
-                >
-                  Buscar
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Usuário</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Empresa</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Plano</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Cadastro</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200">
-                {users.map(user => (
-                  <tr key={user.id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <HiUserCircle className="w-10 h-10 text-slate-400" />
-                        <div className="ml-3">
-                          <p className="font-medium text-slate-900">{user.name}</p>
-                          <p className="text-sm text-slate-500">{user.email}</p>
-                        </div>
+              {/* Card 4 - Taxa de Ativação */}
+              <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-500 mb-2">Taxa de Ativação</p>
+                    <p className="text-3xl font-bold text-slate-900">
+                      {Math.round((stats.activeUsers / stats.totalUsers) * 100)}%
+                    </p>
+                    <div className="flex items-center mt-2">
+                      <div className="w-full bg-slate-200 rounded-full h-2">
+                        <div
+                          className="bg-slate-700 h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.round((stats.activeUsers / stats.totalUsers) * 100)}%` }}
+                        ></div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.company ? (
-                        <div>
-                          <p className="font-medium text-slate-900">{user.company.companyName}</p>
-                          <p className="text-sm text-slate-500">{user.company.businessSegment}</p>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">Não cadastrada</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {user.currentSubscription ? (
-                        <div>
-                          <p className="font-medium text-slate-900">{user.currentSubscription.plan.name}</p>
-                          <p className="text-sm text-slate-500">{formatCurrency(user.currentSubscription.amount)}</p>
-                        </div>
-                      ) : (
-                        <span className="text-slate-400">Sem plano</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        {getPlanStatusBadge(user.planStatus)}
-                        {user.isActive ? (
-                          <HiCheckCircle className="w-5 h-5 text-green-500" />
-                        ) : (
-                          <HiXCircle className="w-5 h-5 text-red-500" />
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-slate-500">{formatDate(user.createdAt)}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => viewUserDetails(user.id)}
-                          className="p-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
-                        >
-                          <HiEye className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={() => toggleUserStatus(user.id, user.isActive)}
-                          className={`p-2 rounded-lg transition-colors ${
-                            user.isActive ? 'text-red-600 hover:bg-red-100' : 'text-green-600 hover:bg-green-100'
-                          }`}
-                        >
-                          {user.isActive ? <HiXCircle className="w-5 h-5" /> : <HiCheckCircle className="w-5 h-5" />}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <div className="px-6 py-4 border-t border-slate-200">
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-slate-700">
-                  Mostrando {(pagination.page - 1) * pagination.limit + 1} a{' '}
-                  {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} usuários
-                </p>
-                <div className="flex gap-2">
-                  {Array.from({ length: pagination.pages }, (_, i) => (
-                    <button
-                      key={i + 1}
-                      onClick={() => loadUsers(i + 1, search)}
-                      className={`px-3 py-1 rounded ${
-                        pagination.page === i + 1
-                          ? 'bg-slate-800 text-white'
-                          : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
+                    </div>
+                  </div>
+                  <div className="w-14 h-14 bg-slate-100 rounded-xl flex items-center justify-center">
+                    <HiChartBarSquare className="w-7 h-7 text-slate-700" />
+                  </div>
                 </div>
               </div>
             </div>
           )}
-        </div>
-      </div>
 
-      {/* User Details Modal */}
-      {showUserModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-slate-200">
+          {/* Tabela de Usuários */}
+          <div className="bg-white border border-slate-200 rounded-xl shadow-sm">
+            <div className="px-6 py-5 border-b border-slate-200 bg-slate-50/50 rounded-t-xl">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-slate-900">Detalhes do Usuário</h3>
-                <button onClick={() => setShowUserModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
-                  <HiXCircle className="w-6 h-6" />
-                </button>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Usuários Recentes</h2>
+                  <p className="text-sm text-slate-600 mt-1">Gerencie e visualize todos os usuários do sistema</p>
+                </div>
+
+                {/* Busca */}
+                <form onSubmit={handleSearch} className="flex gap-3">
+                  <div className="relative">
+                    <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      value={search}
+                      onChange={e => setSearch(e.target.value)}
+                      placeholder="Buscar usuários..."
+                      className="pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white text-gray-800"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="px-4 py-2.5 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors"
+                  >
+                    Buscar
+                  </button>
+                </form>
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
-              {/* User Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-slate-900 mb-3">Informações Pessoais</h4>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <span className="font-medium">Nome:</span> {selectedUser.name}
-                    </p>
-                    <p>
-                      <span className="font-medium">Email:</span> {selectedUser.email}
-                    </p>
-                    <p>
-                      <span className="font-medium">Função:</span> {selectedUser.role}
-                    </p>
-                    <p>
-                      <span className="font-medium">Status:</span> {selectedUser.isActive ? 'Ativo' : 'Inativo'}
-                    </p>
-                    <p>
-                      <span className="font-medium">Cadastro:</span> {formatDate(selectedUser.createdAt)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Company Info */}
-                {selectedUser.company && (
-                  <div>
-                    <h4 className="font-semibold text-slate-900 mb-3">Informações da Empresa</h4>
-                    <div className="space-y-2 text-sm">
-                      <p>
-                        <span className="font-medium">Nome:</span> {selectedUser.company.companyName}
-                      </p>
-                      <p>
-                        <span className="font-medium">Segmento:</span> {selectedUser.company.businessSegment}
-                      </p>
-                      <p>
-                        <span className="font-medium">Atividade:</span> {selectedUser.company.mainActivity}
-                      </p>
-                      <p>
-                        <span className="font-medium">Tipo:</span> {selectedUser.company.businessType}
-                      </p>
-                      <p>
-                        <span className="font-medium">CNPJ:</span> {selectedUser.company.cnpj || 'Não informado'}
-                      </p>
-                      <p>
-                        <span className="font-medium">Cidade:</span> {selectedUser.company.city}
-                      </p>
-                      <p>
-                        <span className="font-medium">Estado:</span> {selectedUser.company.state}
-                      </p>
-                      <p>
-                        <span className="font-medium">Funcionários:</span> {selectedUser.company.employeeCount}
-                      </p>
-                      <p>
-                        <span className="font-medium">Faturamento:</span>{' '}
-                        {formatCurrency(selectedUser.company.monthlyRevenue || 0)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Subscriptions */}
-              {selectedUser.subscriptions && selectedUser.subscriptions.length > 0 && (
-                <div>
-                  <h4 className="font-semibold text-slate-900 mb-3">Histórico de Assinaturas</h4>
-                  <div className="space-y-3">
-                    {selectedUser.subscriptions.map((sub: any) => (
-                      <div key={sub.id} className="p-4 border border-slate-200 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium">{sub.plan.name}</p>
-                            <p className="text-sm text-slate-600">
-                              {formatCurrency(sub.amount)} • {formatDate(sub.createdAt)}
-                            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Usuário
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Empresa
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Plano
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Cadastro
+                    </th>
+                    <th className="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      Ações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {users.map(user => (
+                    <tr key={user.id} className="hover:bg-slate-50 transition-colors duration-150">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center">
+                            <HiUserCircle className="w-6 h-6 text-slate-600" />
                           </div>
-                          {getPlanStatusBadge(sub.status)}
+                          <div className="ml-4">
+                            <div className="text-sm font-semibold text-slate-900">{user.name}</div>
+                            <div className="text-sm text-slate-600">{user.email}</div>
+                          </div>
                         </div>
-                      </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {user.company ? (
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">{user.company.companyName}</div>
+                            <div className="text-sm text-slate-600">
+                              {user.company.businessSegment || 'Não informado'}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-slate-300 rounded-full mr-2"></div>
+                            <span className="text-sm text-slate-500 font-medium">Não cadastrada</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        {user.currentSubscription ? (
+                          <div>
+                            <div className="text-sm font-medium text-slate-900">
+                              {user.currentSubscription.plan.name}
+                            </div>
+                            <div className="text-sm text-slate-600 font-medium">
+                              {formatCurrency(user.currentSubscription.amount)}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <div className="w-2 h-2 bg-slate-300 rounded-full mr-2"></div>
+                            <span className="text-sm text-slate-500 font-medium">Sem plano</span>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          {getPlanStatusBadge(user.planStatus)}
+                          {user.isActive ? (
+                            <div className="flex items-center gap-1">
+                              <HiCheckCircle className="w-4 h-4 text-emerald-600" />
+                              <span className="text-sm font-medium text-emerald-600">Ativo</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1">
+                              <HiXCircle className="w-4 h-4 text-slate-400" />
+                              <span className="text-sm font-medium text-slate-500">Inativo</span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-slate-600 font-medium">{formatDate(user.createdAt)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/admin/users/${user.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
+                            title="Ver detalhes"
+                          >
+                            <HiEye className="w-4 h-4" />
+                            <span>Ver</span>
+                          </Link>
+                          <button
+                            onClick={() => toggleUserStatus(user.id, user.isActive)}
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium ${
+                              user.isActive
+                                ? 'text-slate-700 hover:bg-slate-100'
+                                : 'text-emerald-700 hover:bg-emerald-50'
+                            }`}
+                            title={user.isActive ? 'Desativar' : 'Ativar'}
+                          >
+                            {user.isActive ? (
+                              <>
+                                <HiXCircle className="w-4 h-4" />
+                                <span>Desativar</span>
+                              </>
+                            ) : (
+                              <>
+                                <HiCheckCircle className="w-4 h-4" />
+                                <span>Ativar</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Paginação */}
+            {pagination.pages > 1 && (
+              <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/50">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-slate-700 font-medium">
+                    Mostrando <span className="font-semibold">{(pagination.page - 1) * pagination.limit + 1}</span> a{' '}
+                    <span className="font-semibold">
+                      {Math.min(pagination.page * pagination.limit, pagination.total)}
+                    </span>{' '}
+                    de <span className="font-semibold">{pagination.total}</span> usuários
+                  </p>
+                  <div className="flex gap-1">
+                    {Array.from({ length: pagination.pages }, (_, i) => (
+                      <button
+                        key={i + 1}
+                        onClick={() => loadUsers(i + 1, search)}
+                        className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                          pagination.page === i + 1
+                            ? 'bg-slate-700 text-white'
+                            : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-300'
+                        }`}
+                      >
+                        {i + 1}
+                      </button>
                     ))}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
+
+          {/* Botão Ver Todos */}
+          <div className="flex justify-center">
+            <Link
+              href="/admin/users"
+              className="inline-flex items-center gap-3 px-8 py-3 bg-slate-700 text-white rounded-xl hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-sm"
+            >
+              <span>Ver Todos os Usuários</span>
+              <HiArrowUpRight className="w-5 h-5" />
+            </Link>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -3,12 +3,11 @@ import { NextRequest } from 'next/server';
 
 const apiUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
   try {
     const { userId } = await params;
     const body = await request.json();
-
-    console.log('Frontend: Atualizando status do usuário:', userId, body);
+    console.log('Frontend: Atualizando empresa do usuário:', userId);
 
     // Buscar token do header Authorization
     const authHeader = request.headers.get('Authorization');
@@ -18,8 +17,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ message: 'Token de acesso requerido', code: 'NO_TOKEN' }, { status: 401 });
     }
 
-    const response = await fetch(`${apiUrl}/api/admin/users/${userId}/status`, {
-      method: 'PATCH',
+    const response = await fetch(`${apiUrl}/api/admin/users/${userId}/company`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
@@ -36,10 +35,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     const data = await response.json();
-    console.log('Frontend: Status atualizado com sucesso');
+    console.log('Frontend: Empresa atualizada para usuário:', data.name);
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Frontend: Erro na rota de atualização de status:', error);
+    console.error('Frontend: Erro na rota de atualização da empresa:', error);
     return NextResponse.json(
       {
         message: 'Erro interno do servidor',
