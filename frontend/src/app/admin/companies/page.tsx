@@ -55,7 +55,7 @@ export default function AdminCompaniesPage() {
         ...(filterStatus && { status: filterStatus }),
       });
 
-      const response = await fetch(`/api/admin/companies?${params}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/companies?${params}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
@@ -84,7 +84,7 @@ export default function AdminCompaniesPage() {
     }
 
     try {
-      const response = await fetch(`/api/admin/companies/${companyId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/companies/${companyId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
