@@ -287,79 +287,195 @@ export default function AdminPage() {
 
   if (loading && !users.length) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
+      <div className="flex">
+        <AdminSidebar currentPage="dashboard" />
+        <div className="flex-1 flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando dashboard...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <h1 className="text-3xl font-bold text-slate-900">Painel Administrativo</h1>
-            <p className="text-slate-600 mt-2">Gerencie usuários, planos e acompanhe estatísticas</p>
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar currentPage="dashboard" />
+      
+      <div className="flex-1 overflow-hidden">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard Administrativo</h1>
+              <p className="text-gray-600">Visão geral completa do sistema</p>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Última atualização</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {new Date().toLocaleString('pt-BR')}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <HiUsers className="w-6 h-6 text-blue-600" />
+        <div className="p-6 overflow-y-auto">
+          {/* Enhanced Stats Cards */}
+          {stats && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Total de Usuários</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
+                      <div className="flex items-center mt-2">
+                        <span className="text-xs text-gray-500">
+                          {stats.activeUsers} ativos
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-blue-100 rounded-full">
+                      <HiUsers className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Total de Usuários</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.totalUsers}</p>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Empresas Cadastradas</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.totalCompanies}</p>
+                      <div className="flex items-center mt-2">
+                        <span className="text-xs text-gray-500">
+                          {stats.usersWithCompany} usuários com empresa
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-green-100 rounded-full">
+                      <HiBuildingOffice className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Assinaturas Ativas</p>
+                      <p className="text-3xl font-bold text-gray-900">{stats.activeSubscriptions}</p>
+                      <div className="flex items-center mt-2">
+                        <HiArrowTrendingUp className="w-4 h-4 text-green-500 mr-1" />
+                        <span className="text-xs text-green-600">
+                          +{Math.round((stats.activeSubscriptions / stats.totalUsers) * 100)}% dos usuários
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-purple-100 rounded-full">
+                      <HiCreditCard className="w-6 h-6 text-purple-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Taxa de Ativação</p>
+                      <p className="text-3xl font-bold text-gray-900">
+                        {Math.round((stats.activeUsers / stats.totalUsers) * 100)}%
+                      </p>
+                      <div className="flex items-center mt-2">
+                        <span className="text-xs text-gray-500">
+                          {stats.inactiveUsers} usuários inativos
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-yellow-100 rounded-full">
+                      <HiChartBarSquare className="w-6 h-6 text-yellow-600" />
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <HiBuildingOffice className="w-6 h-6 text-green-600" />
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <HiUserPlus className="w-5 h-5 text-blue-600" />
+                    Ações Rápidas
+                  </h3>
+                  <div className="space-y-3">
+                    <Link
+                      href="/admin/users/new"
+                      className="block w-full text-left px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      Criar Novo Usuário
+                    </Link>
+                    <Link
+                      href="/admin/companies"
+                      className="block w-full text-left px-4 py-2 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      Gerenciar Empresas
+                    </Link>
+                    <Link
+                      href="/admin/reports"
+                      className="block w-full text-left px-4 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors"
+                    >
+                      Ver Relatórios
+                    </Link>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Empresas Cadastradas</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.totalCompanies}</p>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <HiCalendarDays className="w-5 h-5 text-green-600" />
+                    Atividade Recente
+                  </h3>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <span className="text-gray-600">Hoje: {stats.activeUsers} usuários ativos</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      <span className="text-gray-600">Total: {stats.totalCompanies} empresas</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                      <span className="text-gray-600">{stats.activeSubscriptions} assinaturas ativas</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <HiBanknotes className="w-5 h-5 text-yellow-600" />
+                    Resumo Financeiro
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Assinaturas Ativas</span>
+                      <span className="font-medium">{stats.activeSubscriptions}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Taxa de Conversão</span>
+                      <span className="font-medium text-green-600">
+                        {Math.round((stats.activeSubscriptions / stats.totalUsers) * 100)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Usuários Ativos</span>
+                      <span className="font-medium">{stats.activeUsers}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
+            </>
+          )}
 
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <HiCreditCard className="w-6 h-6 text-purple-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Assinaturas Ativas</p>
-                  <p className="text-2xl font-bold text-slate-900">{stats.activeSubscriptions}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-yellow-100 rounded-lg">
-                  <HiCurrencyDollar className="w-6 h-6 text-yellow-600" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm text-slate-600">Receita Total</p>
-                  <p className="text-2xl font-bold text-slate-900">{formatCurrency(stats.totalRevenue)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Users Table */}
+          {/* Users Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200">
           <div className="p-6 border-b border-slate-200">
             <div className="flex items-center justify-between">
