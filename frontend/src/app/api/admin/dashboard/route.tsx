@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log('Frontend: Buscando dashboard em:', `${apiUrl}/api/admin/dashboard`);
     
-    // Buscar token dos cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get('authToken')?.value;
+    // Buscar token do header Authorization
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
     
     console.log('Frontend: Token encontrado:', token ? 'SIM' : 'NÃO');
     

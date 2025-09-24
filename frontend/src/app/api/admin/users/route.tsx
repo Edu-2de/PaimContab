@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const page = searchParams.get('page') || '1';
@@ -12,9 +12,9 @@ export async function GET(request: Request) {
 
     console.log('Frontend: Buscando usuários com parâmetros:', { page, limit, search });
     
-    // Buscar token dos cookies
-    const cookieStore = await cookies();
-    const token = cookieStore.get('authToken')?.value;
+    // Buscar token do header Authorization
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
     
     if (!token) {
       return NextResponse.json(

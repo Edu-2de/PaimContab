@@ -69,16 +69,76 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-    loadDashboardData();
-    loadUsers();
+    // Verificar se usuário é admin antes de carregar dados
+    const user = localStorage.getItem('user');
+    const token = localStorage.getItem('authToken');
+    
+    console.log('🔐 Verificando acesso admin...');
+    console.log('Token presente:', !!token);
+    console.log('User presente:', !!user);
+    
+    if (!user || !token) {
+      console.log('❌ Sem token ou usuário, redirecionando para login');
+      window.location.href = '/Login';
+      return;
+    }
+    
+    try {
+      const userData = JSON.parse(user);
+      console.log('👤 Dados do usuário:', userData);
+      console.log('🔧 Role do usuário:', userData.role);
+      
+      if (userData.role !== 'admin') {
+        console.log('❌ Usuário não é admin, redirecionando para home');
+        alert('Acesso negado. Esta área é restrita aos administradores.');
+        window.location.href = '/';
+        return;
+      }
+      
+      console.log('✅ Usuário é admin, carregando dados...');
+      loadDashboardData();
+      loadUsers();
+    } catch (error) {
+      console.error('❌ Erro ao verificar dados do usuário:', error);
+      window.location.href = '/Login';
+    }
   }, []);
 
   const loadDashboardData = async () => {
     try {
-      const response = await fetch('/api/admin/dashboard');
+      const token = localStorage.getItem('authToken');
+      console.log('🔑 Token para dashboard:', token ? 'Presente' : 'Ausente');
+      
+      if (!token) {
+        console.log('❌ Sem token, redirecionando para login');
+        window.location.href = '/Login';
+        return;
+      }
+      
+      const response = await fetch('/api/admin/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      console.log('📊 Dashboard response status:', response.status);
+      
+      if (response.status === 401) {
+        console.log('❌ Token inválido, removendo e redirecionando');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/Login';
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Dashboard data:', data);
         setStats(data);
+      } else {
+        const errorData = await response.text();
+        console.error('❌ Erro dashboard:', errorData);
       }
     } catch (error) {
       console.error('Erro ao carregar dashboard:', error);
@@ -88,9 +148,30 @@ export default function AdminPage() {
   const loadUsers = async (page = 1, searchTerm = "") => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('authToken');
+      
+      if (!token) {
+        window.location.href = '/Login';
+        return;
+      }
+      
       const response = await fetch(
-        `/api/admin/users?page=${page}&limit=10&search=${searchTerm}`
+        `/api/admin/users?page=${page}&limit=10&search=${searchTerm}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
+      
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/Login';
+        return;
+      }
+      
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users);
@@ -110,7 +191,26 @@ export default function AdminPage() {
 
   const viewUserDetails = async (userId: string) => {
     try {
-      const response = await fetch(`/api/admin/users/${userId}`);
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = '/Login';
+        return;
+      }
+      
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/Login';
+        return;
+      }
+      
       if (response.ok) {
         const userData = await response.json();
         setSelectedUser(userData);
@@ -123,11 +223,27 @@ export default function AdminPage() {
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
     try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        window.location.href = '/Login';
+        return;
+      }
+      
       const response = await fetch(`/api/admin/users/${userId}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ isActive: !currentStatus })
       });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        window.location.href = '/Login';
+        return;
+      }
       
       if (response.ok) {
         loadUsers(pagination.page, search);
