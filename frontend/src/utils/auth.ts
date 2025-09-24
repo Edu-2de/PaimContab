@@ -93,7 +93,14 @@ export const tokenManager = {
 // Hook personalizado para usar em componentes React
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
+  type User = {
+    userId: unknown;
+    email: unknown;
+    role: unknown;
+    isActive: unknown;
+  } | null;
+
+  const [user, setUser] = useState<User>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
