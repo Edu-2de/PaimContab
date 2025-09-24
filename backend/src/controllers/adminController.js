@@ -16,29 +16,33 @@ const getDashboard = async (req, res) => {
     });
     console.log('✅ Usuários ativos:', activeUsers);
 
-    // Get users with paid plans
-    const paidUsers = await prisma.user.count({
-      where: { planStatus: 'paid' },
-    });
-    console.log('💳 Usuários com planos pagos:', paidUsers);
-
-    // Get users with companies
+    // Get users with companies (Company é one-to-one, não many)
     const usersWithCompany = await prisma.user.count({
       where: {
         Company: {
-          some: {},
-        },
-      },
+          isNot: null
+        }
+      }
     });
     console.log('🏢 Usuários com empresa:', usersWithCompany);
+
+    // Get active subscriptions 
+    const activeSubscriptions = await prisma.subscription.count({
+      where: { isActive: true }
+    });
+    console.log('💳 Assinaturas ativas:', activeSubscriptions);
+
+    // Get total companies
+    const totalCompanies = await prisma.company.count();
+    console.log('🏢 Total de empresas:', totalCompanies);
 
     const stats = {
       totalUsers,
       activeUsers,
-      paidUsers,
       usersWithCompany,
+      totalCompanies,
+      activeSubscriptions,
       inactiveUsers: totalUsers - activeUsers,
-      freeUsers: totalUsers - paidUsers,
     };
 
     console.log('✅ Dashboard carregado com sucesso');
