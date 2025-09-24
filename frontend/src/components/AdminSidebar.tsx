@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { 
+import {
   HiOutlineHome,
   HiOutlineChartBarSquare,
   HiOutlineUsers,
@@ -10,7 +10,7 @@ import {
   HiOutlineDocumentText,
   HiOutlineArrowRightOnRectangle,
   HiChevronLeft,
-  HiChevronRight
+  HiChevronRight,
 } from 'react-icons/hi2';
 
 interface AdminSidebarProps {
@@ -19,44 +19,44 @@ interface AdminSidebarProps {
 
 export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  
+
   const navigationItems = [
     {
       name: 'Dashboard',
       href: '/admin/dashboard',
       icon: HiOutlineChartBarSquare,
-      key: 'dashboard'
+      key: 'dashboard',
     },
     {
       name: 'Usuários',
       href: '/admin/users',
       icon: HiOutlineUsers,
-      key: 'users'
+      key: 'users',
     },
     {
       name: 'Empresas',
       href: '/admin/companies',
       icon: HiOutlineBuildingOffice2,
-      key: 'companies'
+      key: 'companies',
     },
     {
       name: 'Assinaturas',
       href: '/admin/subscriptions',
       icon: HiOutlineCreditCard,
-      key: 'subscriptions'
+      key: 'subscriptions',
     },
     {
       name: 'Relatórios',
       href: '/admin/reports',
       icon: HiOutlineDocumentText,
-      key: 'reports'
+      key: 'reports',
     },
     {
       name: 'Configurações',
       href: '/admin/settings',
       icon: HiOutlineCog6Tooth,
-      key: 'settings'
-    }
+      key: 'settings',
+    },
   ];
 
   const handleLogout = () => {
@@ -66,10 +66,12 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
   };
 
   return (
-    <div className={`
+    <div
+      className={`
       bg-gray-900 text-white min-h-screen transition-all duration-300 relative
       ${isCollapsed ? 'w-16' : 'w-64'}
-    `}>
+    `}
+    >
       {/* Logo/Header */}
       <div className="p-4 border-b border-gray-800">
         <div className="flex items-center justify-between">
@@ -83,11 +85,7 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="p-1 rounded-lg hover:bg-gray-800 transition-colors"
           >
-            {isCollapsed ? (
-              <HiChevronRight className="w-5 h-5" />
-            ) : (
-              <HiChevronLeft className="w-5 h-5" />
-            )}
+            {isCollapsed ? <HiChevronRight className="w-5 h-5" /> : <HiChevronLeft className="w-5 h-5" />}
           </button>
         </div>
       </div>
@@ -95,26 +93,21 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
       {/* Navigation */}
       <nav className="p-4 flex-1">
         <div className="space-y-2">
-          {navigationItems.map((item) => {
+          {navigationItems.map(item => {
             const Icon = item.icon;
             const isActive = currentPage === item.key;
-            
+
             return (
               <a
                 key={item.key}
                 href={item.href}
                 className={`
                   flex items-center gap-3 px-3 py-2 rounded-lg transition-colors
-                  ${isActive 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
-                  }
+                  ${isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}
                 `}
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="font-medium">{item.name}</span>
-                )}
+                {!isCollapsed && <span className="font-medium">{item.name}</span>}
               </a>
             );
           })}
