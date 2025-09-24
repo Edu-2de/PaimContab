@@ -19,7 +19,7 @@ import {
   UsersIcon,
   ChartBarSquareIcon,
   DocumentTextIcon,
-  Cog6ToothIcon
+  Cog6ToothIcon,
 } from '@heroicons/react/24/outline';
 
 interface User {
@@ -72,7 +72,7 @@ export default function UserDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const userId = params?.userId as string;
-  
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -80,7 +80,7 @@ export default function UserDetailsPage() {
   const [editForm, setEditForm] = useState({
     name: '',
     email: '',
-    isActive: true
+    isActive: true,
   });
 
   useEffect(() => {
@@ -99,9 +99,9 @@ export default function UserDetailsPage() {
 
       const response = await fetch(`/api/admin/users/${userId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
 
       if (!response.ok) {
@@ -117,7 +117,7 @@ export default function UserDetailsPage() {
       setEditForm({
         name: data.user.name,
         email: data.user.email,
-        isActive: data.user.isActive
+        isActive: data.user.isActive,
       });
     } catch (error: any) {
       setError(error.message);
@@ -137,10 +137,10 @@ export default function UserDetailsPage() {
       const response = await fetch(`/api/admin/users/${userId}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(editForm)
+        body: JSON.stringify(editForm),
       });
 
       if (!response.ok) {
@@ -166,10 +166,10 @@ export default function UserDetailsPage() {
       const response = await fetch(`/api/admin/users/${userId}/status`, {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ isActive: !user?.isActive })
+        body: JSON.stringify({ isActive: !user?.isActive }),
       });
 
       if (!response.ok) {
@@ -187,14 +187,14 @@ export default function UserDetailsPage() {
     return new Date(dateString).toLocaleDateString('pt-BR', {
       year: 'numeric',
       month: 'long',
-      day: 'numeric'
+      day: 'numeric',
     });
   };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(value);
   };
 
@@ -203,14 +203,22 @@ export default function UserDetailsPage() {
       active: 'bg-green-100 text-green-800',
       pending: 'bg-yellow-100 text-yellow-800',
       inactive: 'bg-gray-100 text-gray-800',
-      cancelled: 'bg-red-100 text-red-800'
+      cancelled: 'bg-red-100 text-red-800',
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status as keyof typeof styles] || styles.inactive}`}>
-        {status === 'active' ? 'Ativa' : 
-         status === 'pending' ? 'Pendente' : 
-         status === 'cancelled' ? 'Cancelada' : 'Inativa'}
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${
+          styles[status as keyof typeof styles] || styles.inactive
+        }`}
+      >
+        {status === 'active'
+          ? 'Ativa'
+          : status === 'pending'
+          ? 'Pendente'
+          : status === 'cancelled'
+          ? 'Cancelada'
+          : 'Inativa'}
       </span>
     );
   };
@@ -260,10 +268,7 @@ export default function UserDetailsPage() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
-            <Link
-              href="/admin/dashboard"
-              className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            >
+            <Link href="/admin/dashboard" className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <ArrowLeftIcon className="w-6 h-6" />
             </Link>
             <div className="flex-1">
@@ -320,14 +325,14 @@ export default function UserDetailsPage() {
                         <input
                           type="text"
                           value={editForm.name}
-                          onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                          onChange={e => setEditForm({ ...editForm, name: e.target.value })}
                           className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                           placeholder="Nome do usuário"
                         />
                         <input
                           type="email"
                           value={editForm.email}
-                          onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                          onChange={e => setEditForm({ ...editForm, email: e.target.value })}
                           className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
                           placeholder="Email do usuário"
                         />
@@ -336,7 +341,7 @@ export default function UserDetailsPage() {
                             <input
                               type="checkbox"
                               checked={editForm.isActive}
-                              onChange={(e) => setEditForm({...editForm, isActive: e.target.checked})}
+                              onChange={e => setEditForm({ ...editForm, isActive: e.target.checked })}
                               className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             />
                             <span className="text-sm font-medium text-gray-700">Usuário ativo</span>
@@ -363,9 +368,7 @@ export default function UserDetailsPage() {
                         <p className="text-gray-600">{user.email}</p>
                         <div className="flex items-center gap-3 mt-2">
                           <span className="text-sm font-medium text-gray-500">Função:</span>
-                          <span className="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
-                            {user.role}
-                          </span>
+                          <span className="text-sm bg-gray-100 text-gray-800 px-2 py-1 rounded-full">{user.role}</span>
                           {user.isActive ? (
                             <div className="flex items-center gap-1 text-green-600">
                               <HiCheckCircle className="w-4 h-4" />
@@ -442,7 +445,9 @@ export default function UserDetailsPage() {
                         <h4 className="text-sm font-medium text-gray-500 mb-1">Localização</h4>
                         <div className="flex items-center gap-2 text-gray-900">
                           <HiMapPin className="w-4 h-4 text-gray-400" />
-                          <span>{user.company.city}, {user.company.state}</span>
+                          <span>
+                            {user.company.city}, {user.company.state}
+                          </span>
                         </div>
                       </div>
                       <div>
@@ -456,7 +461,11 @@ export default function UserDetailsPage() {
                         <h4 className="text-sm font-medium text-gray-500 mb-1">Faturamento Mensal</h4>
                         <div className="flex items-center gap-2 text-gray-900">
                           <HiCurrencyDollar className="w-4 h-4 text-gray-400" />
-                          <span>{user.company.monthlyRevenue ? formatCurrency(user.company.monthlyRevenue) : 'Não informado'}</span>
+                          <span>
+                            {user.company.monthlyRevenue
+                              ? formatCurrency(user.company.monthlyRevenue)
+                              : 'Não informado'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -476,7 +485,7 @@ export default function UserDetailsPage() {
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
-                    {user.subscriptions.map((subscription) => (
+                    {user.subscriptions.map(subscription => (
                       <div key={subscription.id} className="border border-gray-200 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div>
@@ -494,9 +503,7 @@ export default function UserDetailsPage() {
                           </div>
                           <div>
                             <span className="text-gray-500">Iniciado em:</span>
-                            <span className="ml-2 font-medium text-gray-900">
-                              {formatDate(subscription.createdAt)}
-                            </span>
+                            <span className="ml-2 font-medium text-gray-900">{formatDate(subscription.createdAt)}</span>
                           </div>
                         </div>
                         {subscription.plan.features && subscription.plan.features.length > 0 && (
@@ -548,9 +555,7 @@ export default function UserDetailsPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Empresa</span>
-                  <span className="font-semibold text-gray-900">
-                    {user.company ? 'Cadastrada' : 'Não cadastrada'}
-                  </span>
+                  <span className="font-semibold text-gray-900">{user.company ? 'Cadastrada' : 'Não cadastrada'}</span>
                 </div>
               </div>
             </div>
