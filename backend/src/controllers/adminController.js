@@ -20,15 +20,15 @@ const getDashboard = async (req, res) => {
     const usersWithCompany = await prisma.user.count({
       where: {
         Company: {
-          isNot: null
-        }
-      }
+          isNot: null,
+        },
+      },
     });
     console.log('🏢 Usuários com empresa:', usersWithCompany);
 
-    // Get active subscriptions 
+    // Get active subscriptions
     const activeSubscriptions = await prisma.subscription.count({
-      where: { isActive: true }
+      where: { isActive: true },
     });
     console.log('💳 Assinaturas ativas:', activeSubscriptions);
 
