@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/AdminSidebar';
+import AdminProtection from '@/components/AdminProtection';
 import Link from 'next/link';
 import {
   HiArrowLeft,
@@ -83,6 +84,14 @@ interface User {
 }
 
 export default function UserDetailsPage() {
+  return (
+    <AdminProtection>
+      <UserDetailsPageContent />
+    </AdminProtection>
+  );
+}
+
+function UserDetailsPageContent() {
   const params = useParams();
   const router = useRouter();
   const userId = params?.userId as string;

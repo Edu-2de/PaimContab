@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
+import AdminProtection from '../../../components/AdminProtection';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -37,6 +38,14 @@ interface Subscription {
 }
 
 export default function AdminSubscriptionsPage() {
+  return (
+    <AdminProtection>
+      <AdminSubscriptionsContent />
+    </AdminProtection>
+  );
+}
+
+function AdminSubscriptionsContent() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

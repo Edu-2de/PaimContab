@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
+import AdminProtection from '../../../components/AdminProtection';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -36,6 +37,14 @@ interface Company {
 }
 
 export default function AdminCompaniesPage() {
+  return (
+    <AdminProtection>
+      <AdminCompaniesContent />
+    </AdminProtection>
+  );
+}
+
+function AdminCompaniesContent() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

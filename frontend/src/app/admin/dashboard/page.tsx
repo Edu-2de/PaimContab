@@ -63,6 +63,14 @@ interface DashboardStats {
 }
 
 export default function AdminPage() {
+  return (
+    <AdminProtection>
+      <AdminDashboardContent />
+    </AdminProtection>
+  );
+}
+
+function AdminDashboardContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,9 +251,8 @@ export default function AdminPage() {
   }
 
   return (
-    <AdminProtection>
-      <div className="min-h-screen bg-slate-50">
-        <AdminSidebar currentPage="dashboard" />
+    <div className="min-h-screen bg-slate-50">
+      <AdminSidebar currentPage="dashboard" />
 
       <div className="ml-64 min-h-screen">
         {/* Header */}
@@ -551,6 +558,6 @@ export default function AdminPage() {
           </div>
         </div>
       </div>
-    </AdminProtection>
+    </div>
   );
 }

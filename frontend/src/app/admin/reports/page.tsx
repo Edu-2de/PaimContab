@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
+import AdminProtection from '../../../components/AdminProtection';
 import {
   HiChartBarSquare,
   HiUsers,
@@ -28,6 +29,14 @@ interface DashboardStats {
 }
 
 export default function AdminReportsPage() {
+  return (
+    <AdminProtection>
+      <AdminReportsContent />
+    </AdminProtection>
+  );
+}
+
+function AdminReportsContent() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPeriod, setSelectedPeriod] = useState('month');
@@ -35,7 +44,7 @@ export default function AdminReportsPage() {
   const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/reports?period=${selectedPeriod}`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/reports?period=${selectedPeriod}`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },

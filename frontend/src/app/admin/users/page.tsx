@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
+import AdminProtection from '@/components/AdminProtection';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -62,6 +63,14 @@ interface UsersResponse {
 }
 
 export default function UsersPage() {
+  return (
+    <AdminProtection>
+      <UsersPageContent />
+    </AdminProtection>
+  );
+}
+
+function UsersPageContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

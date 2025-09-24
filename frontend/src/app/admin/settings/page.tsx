@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
+import AdminProtection from '../../../components/AdminProtection';
 import {
   HiCog6Tooth,
   HiShieldCheck,
@@ -26,6 +27,14 @@ interface SystemSettings {
 }
 
 export default function AdminSettingsPage() {
+  return (
+    <AdminProtection>
+      <AdminSettingsContent />
+    </AdminProtection>
+  );
+}
+
+function AdminSettingsContent() {
   const [settings, setSettings] = useState<SystemSettings>({
     siteName: '',
     siteDescription: '',
