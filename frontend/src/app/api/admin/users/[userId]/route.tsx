@@ -1,18 +1,31 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     const { userId } = await params;
     console.log('Frontend: Buscando detalhes do usuário:', userId);
     
+    // Buscar token do header Authorization
+    const authHeader = request.headers.get('Authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return NextResponse.json(
+        { message: 'Token de acesso requerido', code: 'NO_TOKEN' },
+        { status: 401 }
+      );
+    }
+    
     const response = await fetch(`${apiUrl}/api/admin/users/${userId}`, {
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       cache: 'no-store'
     });
