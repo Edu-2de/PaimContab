@@ -168,5 +168,5 @@ export const apiClient = {
       console.error('Erro na requisição PATCH:', error);
       return { success: false, error: 'Erro de conexão' };
     }
-  }
+  },
 };

@@ -30,7 +30,7 @@ export const tokenManager = {
       // Decodificar o payload do JWT (sem verificar assinatura)
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Math.floor(Date.now() / 1000);
-      
+
       // Verificar se o token não expirou
       return payload.exp > currentTime;
     } catch (error) {
@@ -50,7 +50,7 @@ export const tokenManager = {
         userId: payload.userId,
         email: payload.email,
         role: payload.role,
-        isActive: payload.isActive
+        isActive: payload.isActive,
       };
     } catch (error) {
       console.error('Erro ao decodificar token:', error);
@@ -79,13 +79,15 @@ export const tokenManager = {
   // Headers padrão para requisições autenticadas
   getAuthHeaders: () => {
     const token = tokenManager.getToken();
-    return token ? {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    } : {
-      'Content-Type': 'application/json'
-    };
-  }
+    return token
+      ? {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      : {
+          'Content-Type': 'application/json',
+        };
+  },
 };
 
 // Hook personalizado para usar em componentes React
@@ -98,14 +100,14 @@ export const useAuth = () => {
     const checkAuth = () => {
       const isValid = tokenManager.isTokenValid();
       setIsAuthenticated(isValid);
-      
+
       if (isValid) {
         const userData = tokenManager.getUserFromToken();
         setUser(userData);
       } else {
         setUser(null);
       }
-      
+
       setLoading(false);
     };
 

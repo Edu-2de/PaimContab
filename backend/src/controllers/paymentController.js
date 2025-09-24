@@ -11,11 +11,11 @@ async function notifyAdmins(user, plan, subscription) {
   try {
     const admins = await prisma.user.findMany({
       where: { role: 'admin' },
-      select: { email: true, name: true }
+      select: { email: true, name: true },
     });
 
     const adminEmails = admins.map(admin => admin.email);
-    
+
     if (adminEmails.length > 0) {
       await resend.emails.send({
         from: 'PaimContab <noreply@paimcontab.com>',
@@ -33,7 +33,7 @@ async function notifyAdmins(user, plan, subscription) {
             <hr>
             <p>Acesse o painel administrativo para mais detalhes.</p>
           </div>
-        `
+        `,
       });
 
       console.log('Email enviado para admins via Resend:', adminEmails);
@@ -54,15 +54,15 @@ exports.createCheckoutSession = async (req, res) => {
   try {
     // 🔧 USAR O USUÁRIO DO TOKEN (middleware authMiddleware já populou req.user)
     const user = req.user;
-    
-    console.log('👤 Dados do token:', { 
-      userId: user.userId, 
-      email: user.email 
+
+    console.log('👤 Dados do token:', {
+      userId: user.userId,
+      email: user.email,
     });
 
     // Buscar usuário completo no banco pelo ID do token
-    const fullUser = await prisma.user.findUnique({ 
-      where: { id: user.userId } 
+    const fullUser = await prisma.user.findUnique({
+      where: { id: user.userId },
     });
 
     if (!fullUser) {
@@ -72,9 +72,9 @@ exports.createCheckoutSession = async (req, res) => {
 
     // Planos disponíveis (hardcoded por enquanto)
     const plans = {
-      'essencial': { name: 'Essencial', price: 19.0 },
-      'profissional': { name: 'Profissional', price: 39.0 },
-      'premium': { name: 'Premium', price: 69.0 }
+      essencial: { name: 'Essencial', price: 19.0 },
+      profissional: { name: 'Profissional', price: 39.0 },
+      premium: { name: 'Premium', price: 69.0 },
     };
 
     const plan = plans[planId];
@@ -109,18 +109,19 @@ exports.createCheckoutSession = async (req, res) => {
         userId: fullUser.id,
         planId: planId,
       },
-      success_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${
+        process.env.FRONTEND_URL || 'http://localhost:3001'
+      }/PaymentSuccess?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3001'}/PaymentCanceled`,
     });
 
     console.log('✅ Sessão de checkout criada:', session.id);
     res.json({ url: session.url });
-
   } catch (error) {
     console.error('❌ Erro detalhado ao criar sessão:', error);
-    res.status(500).json({ 
+    res.status(500).json({
       message: 'Erro interno do servidor',
-      error: error.message 
+      error: error.message,
     });
   }
 };
@@ -147,15 +148,15 @@ exports.stripeWebhook = async (req, res) => {
     case 'checkout.session.completed':
       const session = event.data.object;
       console.log('💳 Checkout session completed:', session.id);
-      
+
       try {
         // Buscar usuário e plano pelos metadados
         const user = await prisma.user.findUnique({
-          where: { id: session.metadata.userId }
+          where: { id: session.metadata.userId },
         });
-        
+
         const plan = await prisma.plan.findUnique({
-          where: { id: session.metadata.planId }
+          where: { id: session.metadata.planId },
         });
 
         if (!user || !plan) {
@@ -174,7 +175,7 @@ exports.stripeWebhook = async (req, res) => {
           include: {
             user: true,
             plan: true,
-          }
+          },
         });
 
         console.log('✅ Assinatura criada:', subscription.id);
@@ -182,7 +183,6 @@ exports.stripeWebhook = async (req, res) => {
         // Enviar email para admins (descomente quando configurar o email)
         // await notifyAdmins(subscription.user, subscription.plan, subscription);
         console.log('📧 Email para admins desabilitado temporariamente');
-        
       } catch (error) {
         console.error('❌ Erro ao criar assinatura:', error);
       }
@@ -191,16 +191,15 @@ exports.stripeWebhook = async (req, res) => {
     case 'invoice.payment_succeeded':
       const invoice = event.data.object;
       console.log('💰 Payment succeeded:', invoice.id);
-      
+
       try {
         // Encontrar assinatura pelo customer
         const customerId = invoice.customer;
         const stripeCustomer = await stripe.customers.retrieve(customerId);
-        
+
         // Aqui você pode atualizar o status da assinatura se necessário
         // Por exemplo, reativar se estava suspensa por falta de pagamento
         console.log('✅ Pagamento processado para:', stripeCustomer.email);
-        
       } catch (error) {
         console.error('❌ Erro ao processar pagamento:', error);
       }
@@ -209,15 +208,14 @@ exports.stripeWebhook = async (req, res) => {
     case 'invoice.payment_failed':
       const failedInvoice = event.data.object;
       console.log('❌ Payment failed:', failedInvoice.id);
-      
+
       try {
         // Aqui você pode suspender a assinatura ou enviar email de cobrança
         const customerId = failedInvoice.customer;
         const stripeCustomer = await stripe.customers.retrieve(customerId);
-        
+
         console.log('⚠️ Falha no pagamento para:', stripeCustomer.email);
         // TODO: Implementar lógica de suspensão ou retry
-        
       } catch (error) {
         console.error('❌ Erro ao processar falha de pagamento:', error);
       }
@@ -226,11 +224,10 @@ exports.stripeWebhook = async (req, res) => {
     case 'customer.subscription.updated':
       const updatedSubscription = event.data.object;
       console.log('🔄 Subscription updated:', updatedSubscription.id);
-      
+
       try {
         // Atualizar status da assinatura no banco
         // TODO: Implementar lógica para sincronizar com o banco local
-        
       } catch (error) {
         console.error('❌ Erro ao atualizar assinatura:', error);
       }
@@ -239,11 +236,10 @@ exports.stripeWebhook = async (req, res) => {
     case 'customer.subscription.deleted':
       const deletedSubscription = event.data.object;
       console.log('🗑️ Subscription deleted:', deletedSubscription.id);
-      
+
       try {
         // Desativar assinatura no banco
         // TODO: Implementar lógica para desativar assinatura local
-        
       } catch (error) {
         console.error('❌ Erro ao deletar assinatura:', error);
       }
@@ -261,7 +257,7 @@ exports.stripeWebhook = async (req, res) => {
 exports.getPlans = async (req, res) => {
   try {
     const plans = await prisma.plan.findMany({
-      orderBy: { price: 'asc' }
+      orderBy: { price: 'asc' },
     });
     res.json(plans);
   } catch (error) {

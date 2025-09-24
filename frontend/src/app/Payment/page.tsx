@@ -1,12 +1,7 @@
 'use client';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { 
-  HiArrowLeft, 
-  HiCreditCard, 
-  HiShieldCheck, 
-  HiCheckCircle
-} from 'react-icons/hi2';
+import { HiArrowLeft, HiCreditCard, HiShieldCheck, HiCheckCircle } from 'react-icons/hi2';
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -105,24 +100,9 @@ function PaymentContent() {
 
   // Benefícios essenciais por plano
   const planBenefits = {
-    'essencial': [
-      'Controle de receitas e despesas',
-      'Relatórios mensais',
-      'Suporte via chat',
-      'Backup automático'
-    ],
-    'profissional': [
-      'Tudo do Essencial',
-      'Relatórios avançados',
-      'Integração bancária',
-      'Suporte prioritário'
-    ],
-    'premium': [
-      'Tudo do Profissional',
-      'Consultoria mensal',
-      'API para integrações',
-      'Suporte 24/7'
-    ]
+    essencial: ['Controle de receitas e despesas', 'Relatórios mensais', 'Suporte via chat', 'Backup automático'],
+    profissional: ['Tudo do Essencial', 'Relatórios avançados', 'Integração bancária', 'Suporte prioritário'],
+    premium: ['Tudo do Profissional', 'Consultoria mensal', 'API para integrações', 'Suporte 24/7'],
   };
 
   const currentBenefits = planBenefits[plan.id as keyof typeof planBenefits] || [];
@@ -139,7 +119,7 @@ function PaymentContent() {
             <HiArrowLeft className="w-4 h-4" />
             Voltar
           </button>
-          
+
           <div className="max-w-2xl">
             <h1 className="text-3xl font-bold text-black mb-4">Finalizar assinatura</h1>
             <p className="text-gray-600">
@@ -177,7 +157,7 @@ function PaymentContent() {
             {/* Informações de Cobrança */}
             <div className="border border-gray-200 rounded-lg p-6">
               <h3 className="font-semibold text-black mb-4">Detalhes da cobrança</h3>
-              
+
               <div className="space-y-3">
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Plano {plan.name}</span>
@@ -193,7 +173,7 @@ function PaymentContent() {
                     {new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
-                
+
                 <div className="border-t border-gray-200 pt-3 mt-4">
                   <div className="flex justify-between">
                     <span className="font-semibold text-black">Total</span>
@@ -220,9 +200,7 @@ function PaymentContent() {
               <h3 className="font-semibold text-black mb-4">Conta</h3>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600 font-medium text-sm">
-                    {user.name.charAt(0).toUpperCase()}
-                  </span>
+                  <span className="text-gray-600 font-medium text-sm">{user.name.charAt(0).toUpperCase()}</span>
                 </div>
                 <div>
                   <div className="font-medium text-black text-sm">{user.name}</div>
@@ -277,9 +255,7 @@ function PaymentContent() {
 
             {/* Garantia */}
             <div className="text-center">
-              <p className="text-xs text-gray-500">
-                Garantia de 7 dias. Cancele a qualquer momento.
-              </p>
+              <p className="text-xs text-gray-500">Garantia de 7 dias. Cancele a qualquer momento.</p>
             </div>
 
             {/* Termos */}
@@ -288,8 +264,8 @@ function PaymentContent() {
                 Ao continuar, você concorda com os{' '}
                 <a href="#" className="text-black hover:underline">
                   termos de serviço
-                </a>
-                {' '}e{' '}
+                </a>{' '}
+                e{' '}
                 <a href="#" className="text-black hover:underline">
                   política de privacidade
                 </a>
@@ -304,14 +280,16 @@ function PaymentContent() {
 
 export default function PaymentPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-black mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <PaymentContent />
     </Suspense>
   );
