@@ -76,7 +76,7 @@ export default function AdminSidebar({ currentPage = 'dashboard', onToggle }: Ad
   useEffect(() => {
     const sidebarWidth = isCollapsed ? '4rem' : '16rem';
     document.documentElement.style.setProperty('--admin-sidebar-width', sidebarWidth);
-    
+
     let styleElement = document.getElementById('admin-sidebar-styles');
     if (!styleElement) {
       styleElement = document.createElement('style');
