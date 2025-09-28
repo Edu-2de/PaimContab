@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
+import MeiSidebar from '../../../components/MeiSidebar';
 import {
   HiChartBarSquare,
   HiDocumentText,
@@ -11,9 +12,18 @@ import {
   HiCalendarDays,
   HiUser,
   HiArrowRightOnRectangle,
+  HiExclamationTriangle,
+  HiBell,
+  HiEye,
+  HiArrowUpRight,
+  HiArrowDownRight,
+  HiChartPie,
+  HiClock,
+  HiCheckCircle,
+  HiXMarkIcon,
 } from 'react-icons/hi2';
 import { HiReceiptTax } from 'react-icons/hi';
-import { FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiTrendingUp, FiTrendingDown, FiCalendar, FiFileText } from 'react-icons/fi';
 
 interface User {
   id: string;
@@ -28,35 +38,75 @@ interface Company {
   cnpj?: string;
 }
 
-type Row = {
+interface DashboardMetrics {
+  totalReceita: number;
+  totalDespesa: number;
+  lucroLiquido: number;
+  limiteFaturamento: number;
+  faturamentoAtual: number;
+  proximoDAS: string;
+  valorDAS: number;
+}
+
+interface RecentTransaction {
+  id: string;
   type: 'Receita' | 'Despesa';
-  desc: string;
+  description: string;
   value: number;
   date: string;
-};
+  category: string;
+}
+
+interface NotificationItem {
+  id: string;
+  type: 'warning' | 'info' | 'success';
+  title: string;
+  message: string;
+  date: string;
+}
 
 function formatCurrency(v: number) {
   return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('pt-BR');
+}
+
 function MeiDashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'financas' | 'impostos' | 'relatorios'>('overview');
-  const [data, setData] = useState<Row[]>([
-    { type: 'Receita', desc: 'Serviço de consultoria', value: 1500, date: '2024-09-15' },
-    { type: 'Despesa', desc: 'Material de escritório', value: 400, date: '2024-09-10' },
-    { type: 'Receita', desc: 'Venda de produto', value: 800, date: '2024-09-20' },
+  const [currentPage, setCurrentPage] = useState('dashboard');
+  
+  // Dados mockados para demonstração - em produção viria da API
+  const [metrics] = useState<DashboardMetrics>({
+    totalReceita: 45600.00,
+    totalDespesa: 12300.00,
+    lucroLiquido: 33300.00,
+    limiteFaturamento: 81000.00,
+    faturamentoAtual: 45600.00,
+    proximoDAS: '2024-10-20',
+    valorDAS: 456.00
+  });
+
+  const [recentTransactions] = useState<RecentTransaction[]>([
+    { id: '1', type: 'Receita', description: 'Serviço de consultoria', value: 2500, date: '2024-09-25', category: 'Serviços' },
+    { id: '2', type: 'Despesa', description: 'Internet e telefone', value: 150, date: '2024-09-24', category: 'Utilities' },
+    { id: '3', type: 'Receita', description: 'Venda de produto', value: 800, date: '2024-09-23', category: 'Vendas' },
+    { id: '4', type: 'Despesa', description: 'Material de escritório', value: 200, date: '2024-09-22', category: 'Suprimentos' },
   ]);
-  const [editIdx, setEditIdx] = useState<number | null>(null);
+
+  const [notifications] = useState<NotificationItem[]>([
+    { id: '1', type: 'warning', title: 'DAS Vencendo', message: 'O DAS de setembro vence em 5 dias', date: '2024-09-25' },
+    { id: '2', type: 'info', title: 'Limite de Faturamento', message: 'Você já atingiu 56% do limite anual', date: '2024-09-24' },
+    { id: '3', type: 'success', title: 'Meta Atingida', message: 'Parabéns! Meta de setembro foi atingida', date: '2024-09-23' },
+  ]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       const userObj = JSON.parse(userData);
       setUser(userObj);
-
-      // Buscar dados da empresa
       fetchCompanyData(userObj.id);
     }
   }, []);
