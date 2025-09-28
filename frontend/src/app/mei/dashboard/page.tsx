@@ -168,12 +168,12 @@ function MeiDashboardContent() {
               <div>
                 <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
                 <p className="text-slate-600 mt-1 text-sm">
-                  {company?.name || 'Minha Empresa'} • {' '}
-                  {new Date().toLocaleDateString('pt-BR', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {company?.name || 'Minha Empresa'} •{' '}
+                  {new Date().toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
                   })}
                 </p>
               </div>
@@ -315,21 +315,19 @@ function MeiDashboardContent() {
                 <p className="text-sm text-slate-600">utilizado</p>
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="relative">
                 <div className="w-full bg-slate-200 rounded-full h-3">
-                  <div 
+                  <div
                     className={`h-3 rounded-full transition-all duration-1000 ${
-                      percentualLimite > 90 ? 'bg-red-500' :
-                      percentualLimite > 80 ? 'bg-amber-500' :
-                      'bg-emerald-500'
+                      percentualLimite > 90 ? 'bg-red-500' : percentualLimite > 80 ? 'bg-amber-500' : 'bg-emerald-500'
                     }`}
                     style={{ width: `${Math.min(percentualLimite, 100)}%` }}
                   ></div>
                 </div>
               </div>
-              
+
               <div className="flex justify-between items-center text-sm">
                 <div className="text-slate-600">
                   <span className="font-medium text-slate-900">{formatCurrency(metrics.faturamentoAtual)}</span>
@@ -340,7 +338,7 @@ function MeiDashboardContent() {
                   <span className="font-medium text-slate-900">{formatCurrency(metrics.limiteFaturamento)}</span>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
                 <div className="text-center">
                   <p className="text-xs text-slate-500 uppercase tracking-wide">Restante</p>
@@ -372,24 +370,26 @@ function MeiDashboardContent() {
             <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-semibold text-slate-900">Movimentações Recentes</h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
-                  Ver todas
-                </button>
+                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver todas</button>
               </div>
-              
+
               <div className="space-y-3">
-                {recentTransactions.map((transaction) => (
-                  <div key={transaction.id} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                {recentTransactions.map(transaction => (
+                  <div
+                    key={transaction.id}
+                    className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0"
+                  >
                     <div className="flex items-center space-x-3">
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-                        transaction.type === 'Receita' 
-                          ? 'bg-emerald-50 text-emerald-600' 
-                          : 'bg-red-50 text-red-600'
-                      }`}>
-                        {transaction.type === 'Receita' ? 
-                          <HiArrowUpRight className="w-5 h-5" /> : 
+                      <div
+                        className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                          transaction.type === 'Receita' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+                        }`}
+                      >
+                        {transaction.type === 'Receita' ? (
+                          <HiArrowUpRight className="w-5 h-5" />
+                        ) : (
                           <HiArrowDownRight className="w-5 h-5" />
-                        }
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-slate-900">{transaction.description}</p>
@@ -401,10 +401,13 @@ function MeiDashboardContent() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-semibold ${
-                        transaction.type === 'Receita' ? 'text-emerald-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'Receita' ? '+' : '-'}{formatCurrency(transaction.value)}
+                      <p
+                        className={`font-semibold ${
+                          transaction.type === 'Receita' ? 'text-emerald-600' : 'text-red-600'
+                        }`}
+                      >
+                        {transaction.type === 'Receita' ? '+' : '-'}
+                        {formatCurrency(transaction.value)}
                       </p>
                     </div>
                   </div>
@@ -418,24 +421,27 @@ function MeiDashboardContent() {
                 <h3 className="text-lg font-semibold text-slate-900">Atividades</h3>
                 <HiBell className="w-5 h-5 text-slate-400" />
               </div>
-              
+
               <div className="space-y-4">
-                {notifications.map((notification) => (
+                {notifications.map(notification => (
                   <div key={notification.id} className="relative">
                     <div className="flex items-start space-x-3">
-                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                        notification.type === 'warning' 
-                          ? 'bg-amber-50 text-amber-600' 
-                          : notification.type === 'success'
-                          ? 'bg-emerald-50 text-emerald-600'
-                          : 'bg-blue-50 text-blue-600'
-                      }`}>
-                        {notification.type === 'warning' ? 
-                          <HiExclamationTriangle className="w-4 h-4" /> :
-                          notification.type === 'success' ?
-                          <HiCheckCircle className="w-4 h-4" /> :
+                      <div
+                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                          notification.type === 'warning'
+                            ? 'bg-amber-50 text-amber-600'
+                            : notification.type === 'success'
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-blue-50 text-blue-600'
+                        }`}
+                      >
+                        {notification.type === 'warning' ? (
+                          <HiExclamationTriangle className="w-4 h-4" />
+                        ) : notification.type === 'success' ? (
+                          <HiCheckCircle className="w-4 h-4" />
+                        ) : (
                           <HiBell className="w-4 h-4" />
-                        }
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-900">{notification.title}</p>
@@ -463,7 +469,7 @@ function MeiDashboardContent() {
                   Adicionar Receita
                 </span>
               </button>
-              
+
               <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 transition-all duration-200">
                 <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
                   <HiArrowDownRight className="w-6 h-6 text-red-600" />
@@ -472,16 +478,14 @@ function MeiDashboardContent() {
                   Registrar Despesa
                 </span>
               </button>
-              
+
               <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-amber-300 hover:bg-amber-50 transition-all duration-200">
                 <div className="p-3 bg-amber-100 rounded-lg group-hover:bg-amber-200 transition-colors">
                   <HiCalculator className="w-6 h-6 text-amber-600" />
                 </div>
-                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-amber-700">
-                  Calcular DAS
-                </span>
+                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-amber-700">Calcular DAS</span>
               </button>
-              
+
               <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
                 <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
                   <HiDocumentText className="w-6 h-6 text-blue-600" />

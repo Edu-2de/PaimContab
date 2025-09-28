@@ -41,8 +41,8 @@ function calculateDAS(revenue: number): number {
   // Para MEI: Anexo XI do Simples Nacional
   // Alíquota única de 6% sobre a receita bruta até R$ 6.750 por mês (R$ 81.000 por ano)
   const DAS_RATE = 0.06;
-  const MIN_DAS_VALUE = 66.60; // Valor mínimo do DAS MEI 2024
-  
+  const MIN_DAS_VALUE = 66.6; // Valor mínimo do DAS MEI 2024
+
   const calculatedDAS = revenue * DAS_RATE;
   return Math.max(calculatedDAS, MIN_DAS_VALUE);
 }
@@ -51,7 +51,7 @@ function DASContent() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [customRevenue, setCustomRevenue] = useState('');
   const [showCalculator, setShowCalculator] = useState(false);
-  
+
   // Dados mockados de receitas mensais
   const [monthlyRevenues] = useState<MonthlyRevenue[]>([
     { month: '2024-09', revenue: 4500 },
@@ -59,7 +59,7 @@ function DASContent() {
     { month: '2024-07', revenue: 5200 },
     { month: '2024-06', revenue: 2900 },
     { month: '2024-05', revenue: 4100 },
-    { month: '2024-04', revenue: 3600 }
+    { month: '2024-04', revenue: 3600 },
   ]);
 
   // Histórico de DAS
@@ -69,7 +69,7 @@ function DASContent() {
       revenue: 4500,
       dasValue: 270,
       dueDate: '2024-10-20',
-      isPaid: false
+      isPaid: false,
     },
     {
       month: '2024-08',
@@ -77,7 +77,7 @@ function DASContent() {
       dasValue: 228,
       dueDate: '2024-09-20',
       isPaid: true,
-      paymentDate: '2024-09-18'
+      paymentDate: '2024-09-18',
     },
     {
       month: '2024-07',
@@ -85,7 +85,7 @@ function DASContent() {
       dasValue: 312,
       dueDate: '2024-08-20',
       isPaid: true,
-      paymentDate: '2024-08-15'
+      paymentDate: '2024-08-15',
     },
     {
       month: '2024-06',
@@ -93,8 +93,8 @@ function DASContent() {
       dasValue: 174,
       dueDate: '2024-07-20',
       isPaid: true,
-      paymentDate: '2024-07-19'
-    }
+      paymentDate: '2024-07-19',
+    },
   ]);
 
   const currentRevenue = monthlyRevenues.find(r => r.month === selectedMonth)?.revenue || 0;
@@ -115,11 +115,9 @@ function DASContent() {
   };
 
   const markAsPaid = (month: string) => {
-    setDasHistory(prev => 
-      prev.map(das => 
-        das.month === month 
-          ? { ...das, isPaid: true, paymentDate: new Date().toISOString().slice(0, 10) }
-          : das
+    setDasHistory(prev =>
+      prev.map(das =>
+        das.month === month ? { ...das, isPaid: true, paymentDate: new Date().toISOString().slice(0, 10) } : das
       )
     );
   };
@@ -127,7 +125,7 @@ function DASContent() {
   return (
     <div className="min-h-screen bg-slate-50">
       <MeiSidebar currentPage="das" />
-      
+
       <div className="mei-content-wrapper">
         {/* Header */}
         <div className="bg-white shadow-sm border-b border-slate-200">
@@ -135,9 +133,7 @@ function DASContent() {
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-2xl font-semibold text-slate-900">DAS e Impostos</h1>
-                <p className="text-slate-600 mt-1 text-sm">
-                  Calcule e gerencie seus impostos MEI
-                </p>
+                <p className="text-slate-600 mt-1 text-sm">Calcule e gerencie seus impostos MEI</p>
               </div>
               <button
                 onClick={() => setShowCalculator(!showCalculator)}
@@ -158,41 +154,37 @@ function DASContent() {
                 <HiCalculator className="w-5 h-5" />
                 Calculadora de DAS
               </h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Receita Bruta Mensal (R$)
-                  </label>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Receita Bruta Mensal (R$)</label>
                   <input
                     type="number"
                     step="0.01"
                     value={customRevenue}
-                    onChange={(e) => setCustomRevenue(e.target.value)}
+                    onChange={e => setCustomRevenue(e.target.value)}
                     placeholder="Digite a receita do mês"
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                
+
                 <div className="bg-blue-50 rounded-lg p-4">
                   <h4 className="text-sm font-medium text-blue-900 mb-2">DAS Calculado</h4>
                   <p className="text-2xl font-bold text-blue-600">
                     {customRevenue ? formatCurrency(customDAS) : 'R$ 0,00'}
                   </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    Alíquota: 6% | Vencimento: dia 20 do mês seguinte
-                  </p>
+                  <p className="text-xs text-blue-600 mt-1">Alíquota: 6% | Vencimento: dia 20 do mês seguinte</p>
                 </div>
               </div>
-              
+
               <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <div className="flex">
                   <HiInformationCircle className="w-5 h-5 text-amber-500 mt-0.5 mr-3" />
                   <div>
                     <h4 className="text-sm font-medium text-amber-800">Como funciona o cálculo</h4>
                     <p className="text-xs text-amber-700 mt-1">
-                      O DAS MEI é calculado com alíquota de 6% sobre a receita bruta mensal, com valor mínimo de R$ 66,60.
-                      O pagamento deve ser feito até o dia 20 do mês seguinte ao da competência.
+                      O DAS MEI é calculado com alíquota de 6% sobre a receita bruta mensal, com valor mínimo de R$
+                      66,60. O pagamento deve ser feito até o dia 20 do mês seguinte ao da competência.
                     </p>
                   </div>
                 </div>
@@ -248,7 +240,9 @@ function DASContent() {
                 <div>
                   <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Próximo DAS</p>
                   <p className="text-2xl font-semibold text-slate-900">{formatCurrency(calculatedDAS)}</p>
-                  <p className="text-xs text-slate-500">Venc: 20/{(parseInt(selectedMonth.split('-')[1]) + 1).toString().padStart(2, '0')}</p>
+                  <p className="text-xs text-slate-500">
+                    Venc: 20/{(parseInt(selectedMonth.split('-')[1]) + 1).toString().padStart(2, '0')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -259,30 +253,28 @@ function DASContent() {
         <div className="px-8 py-4">
           <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">DAS do Mês Atual</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
-                      Selecionar Competência
-                    </label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Selecionar Competência</label>
                     <select
                       value={selectedMonth}
-                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      onChange={e => setSelectedMonth(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       {monthlyRevenues.map(month => (
                         <option key={month.month} value={month.month}>
-                          {new Date(month.month + '-01').toLocaleDateString('pt-BR', { 
-                            month: 'long', 
-                            year: 'numeric' 
+                          {new Date(month.month + '-01').toLocaleDateString('pt-BR', {
+                            month: 'long',
+                            year: 'numeric',
                           })}
                         </option>
                       ))}
                     </select>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-sm text-slate-600">Receita Bruta:</span>
@@ -305,7 +297,7 @@ function DASContent() {
                   </div>
                 </div>
               </div>
-              
+
               <div className="bg-blue-50 rounded-lg p-4">
                 <h4 className="text-sm font-medium text-blue-900 mb-3">Guia de Pagamento</h4>
                 <div className="space-y-2 text-sm">
@@ -319,14 +311,17 @@ function DASContent() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-blue-800">Vencimento:</span>
-                    <span className="font-medium text-blue-900">20/{(parseInt(selectedMonth.split('-')[1]) + 1).toString().padStart(2, '0')}/{selectedMonth.split('-')[0]}</span>
+                    <span className="font-medium text-blue-900">
+                      20/{(parseInt(selectedMonth.split('-')[1]) + 1).toString().padStart(2, '0')}/
+                      {selectedMonth.split('-')[0]}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-blue-800">Valor:</span>
                     <span className="font-bold text-blue-900">{formatCurrency(calculatedDAS)}</span>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-2 mt-4">
                   <button className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
                     <HiArrowDownTray className="w-4 h-4" />
@@ -374,56 +369,48 @@ function DASContent() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {dasHistory.map((das) => {
+                  {dasHistory.map(das => {
                     const daysUntilDue = getDaysUntilDue(das.dueDate);
-                    
+
                     return (
                       <tr key={das.month} className="hover:bg-slate-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">
-                            {new Date(das.month + '-01').toLocaleDateString('pt-BR', { 
-                              month: 'long', 
-                              year: 'numeric' 
+                            {new Date(das.month + '-01').toLocaleDateString('pt-BR', {
+                              month: 'long',
+                              year: 'numeric',
                             })}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-slate-900">
-                            {formatCurrency(das.revenue)}
-                          </div>
+                          <div className="text-sm font-medium text-slate-900">{formatCurrency(das.revenue)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-slate-900">
-                            {formatCurrency(das.dasValue)}
-                          </div>
+                          <div className="text-sm font-semibold text-slate-900">{formatCurrency(das.dasValue)}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-slate-900">{formatDate(das.dueDate)}</div>
                           {!das.isPaid && daysUntilDue <= 7 && daysUntilDue >= 0 && (
-                            <div className="text-xs text-amber-600">
-                              Vence em {daysUntilDue} dias
-                            </div>
+                            <div className="text-xs text-amber-600">Vence em {daysUntilDue} dias</div>
                           )}
                           {!das.isPaid && daysUntilDue < 0 && (
-                            <div className="text-xs text-red-600">
-                              Vencido há {Math.abs(daysUntilDue)} dias
-                            </div>
+                            <div className="text-xs text-red-600">Vencido há {Math.abs(daysUntilDue)} dias</div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                            das.isPaid 
-                              ? 'bg-green-100 text-green-800'
-                              : daysUntilDue < 0
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}>
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                              das.isPaid
+                                ? 'bg-green-100 text-green-800'
+                                : daysUntilDue < 0
+                                ? 'bg-red-100 text-red-800'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
                             {das.isPaid ? 'Pago' : daysUntilDue < 0 ? 'Vencido' : 'Pendente'}
                           </span>
                           {das.isPaid && das.paymentDate && (
-                            <div className="text-xs text-slate-500 mt-1">
-                              Pago em {formatDate(das.paymentDate)}
-                            </div>
+                            <div className="text-xs text-slate-500 mt-1">Pago em {formatDate(das.paymentDate)}</div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -435,9 +422,7 @@ function DASContent() {
                               Marcar como Pago
                             </button>
                           ) : (
-                            <button className="text-blue-600 hover:text-blue-900 text-sm">
-                              Baixar Comprovante
-                            </button>
+                            <button className="text-blue-600 hover:text-blue-900 text-sm">Baixar Comprovante</button>
                           )}
                         </td>
                       </tr>
