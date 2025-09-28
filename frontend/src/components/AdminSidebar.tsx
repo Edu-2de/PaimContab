@@ -105,6 +105,7 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
     if (itemKey === 'dashboard' && pathname === '/admin/dashboard') return true;
     if (itemKey === 'users' && pathname?.startsWith('/admin/users')) return true;
     if (itemKey === 'companies' && pathname?.startsWith('/admin/companies')) return true;
+    if (itemKey === 'mei-dashboards' && pathname?.startsWith('/admin/mei-dashboards')) return true;
     if (itemKey === 'subscriptions' && pathname?.startsWith('/admin/subscriptions')) return true;
     if (itemKey === 'reports' && pathname?.startsWith('/admin/reports')) return true;
     if (itemKey === 'settings' && pathname?.startsWith('/admin/settings')) return true;
