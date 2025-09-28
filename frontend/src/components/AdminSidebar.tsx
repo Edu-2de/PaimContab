@@ -14,6 +14,7 @@ import {
   HiChevronLeft,
   HiChevronRight,
   HiOutlineUserCircle,
+  HiOutlineRectangleStack,
 } from 'react-icons/hi2';
 
 interface AdminSidebarProps {

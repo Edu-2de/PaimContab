@@ -89,7 +89,7 @@ export default function AdminMeiDashboardPage() {
               return {
                 ...user,
                 hasActiveSubscription: false,
-                company: null,
+                company: undefined,
               } as UserWithCompany;
             }
           })
