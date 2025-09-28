@@ -62,7 +62,7 @@ export default function MeiProtection({ children }: MeiProtectionProps) {
         if (response.ok) {
           const subscriptionData = await response.json();
           setSubscription(subscriptionData);
-          
+
           if (subscriptionData && subscriptionData.isActive) {
             setHasAccess(true);
           } else {
@@ -102,13 +102,11 @@ export default function MeiProtection({ children }: MeiProtectionProps) {
             <div className="mb-6">
               <HiExclamationTriangle className="mx-auto h-16 w-16 text-orange-500" />
             </div>
-            
+
             <h1 className="text-2xl font-bold text-gray-900 mb-4">Plano Necessário</h1>
-            
-            <p className="text-gray-600 mb-2">
-              Para acessar o Dashboard MEI, você precisa de um plano ativo.
-            </p>
-            
+
+            <p className="text-gray-600 mb-2">Para acessar o Dashboard MEI, você precisa de um plano ativo.</p>
+
             <p className="text-sm text-gray-500 mb-8">
               Escolha um de nossos planos e tenha acesso completo às ferramentas de gestão do seu MEI.
             </p>
@@ -132,7 +130,7 @@ export default function MeiProtection({ children }: MeiProtectionProps) {
                 <HiCreditCard className="w-5 h-5" />
                 Ver Planos
               </button>
-              
+
               <button
                 onClick={() => router.push('/')}
                 className="w-full flex items-center justify-center gap-2 text-gray-600 hover:text-gray-800 py-2 text-sm transition-colors"
