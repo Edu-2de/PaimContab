@@ -77,29 +77,68 @@ function MeiDashboardContent() {
   const [user, setUser] = useState<User | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
-  
+
   // Dados mockados para demonstração - em produção viria da API
   const [metrics] = useState<DashboardMetrics>({
-    totalReceita: 45600.00,
-    totalDespesa: 12300.00,
-    lucroLiquido: 33300.00,
-    limiteFaturamento: 81000.00,
-    faturamentoAtual: 45600.00,
+    totalReceita: 45600.0,
+    totalDespesa: 12300.0,
+    lucroLiquido: 33300.0,
+    limiteFaturamento: 81000.0,
+    faturamentoAtual: 45600.0,
     proximoDAS: '2024-10-20',
-    valorDAS: 456.00
+    valorDAS: 456.0,
   });
 
   const [recentTransactions] = useState<RecentTransaction[]>([
-    { id: '1', type: 'Receita', description: 'Serviço de consultoria', value: 2500, date: '2024-09-25', category: 'Serviços' },
-    { id: '2', type: 'Despesa', description: 'Internet e telefone', value: 150, date: '2024-09-24', category: 'Utilities' },
+    {
+      id: '1',
+      type: 'Receita',
+      description: 'Serviço de consultoria',
+      value: 2500,
+      date: '2024-09-25',
+      category: 'Serviços',
+    },
+    {
+      id: '2',
+      type: 'Despesa',
+      description: 'Internet e telefone',
+      value: 150,
+      date: '2024-09-24',
+      category: 'Utilities',
+    },
     { id: '3', type: 'Receita', description: 'Venda de produto', value: 800, date: '2024-09-23', category: 'Vendas' },
-    { id: '4', type: 'Despesa', description: 'Material de escritório', value: 200, date: '2024-09-22', category: 'Suprimentos' },
+    {
+      id: '4',
+      type: 'Despesa',
+      description: 'Material de escritório',
+      value: 200,
+      date: '2024-09-22',
+      category: 'Suprimentos',
+    },
   ]);
 
   const [notifications] = useState<NotificationItem[]>([
-    { id: '1', type: 'warning', title: 'DAS Vencendo', message: 'O DAS de setembro vence em 5 dias', date: '2024-09-25' },
-    { id: '2', type: 'info', title: 'Limite de Faturamento', message: 'Você já atingiu 56% do limite anual', date: '2024-09-24' },
-    { id: '3', type: 'success', title: 'Meta Atingida', message: 'Parabéns! Meta de setembro foi atingida', date: '2024-09-23' },
+    {
+      id: '1',
+      type: 'warning',
+      title: 'DAS Vencendo',
+      message: 'O DAS de setembro vence em 5 dias',
+      date: '2024-09-25',
+    },
+    {
+      id: '2',
+      type: 'info',
+      title: 'Limite de Faturamento',
+      message: 'Você já atingiu 56% do limite anual',
+      date: '2024-09-24',
+    },
+    {
+      id: '3',
+      type: 'success',
+      title: 'Meta Atingida',
+      message: 'Parabéns! Meta de setembro foi atingida',
+      date: '2024-09-23',
+    },
   ]);
 
   useEffect(() => {

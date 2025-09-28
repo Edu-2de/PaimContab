@@ -49,56 +49,56 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
       href: '/mei/dashboard',
       icon: HiOutlineChartBarSquare,
       key: 'dashboard',
-      description: 'Visão geral'
+      description: 'Visão geral',
     },
     {
       name: 'Receitas',
       href: '/mei/receitas',
       icon: HiOutlineCurrencyDollar,
       key: 'receitas',
-      description: 'Controle de receitas'
+      description: 'Controle de receitas',
     },
     {
       name: 'Despesas',
       href: '/mei/despesas',
       icon: HiOutlineReceiptRefund,
       key: 'despesas',
-      description: 'Controle de gastos'
+      description: 'Controle de gastos',
     },
     {
       name: 'DAS e Impostos',
       href: '/mei/das',
       icon: HiOutlineCalculator,
       key: 'das',
-      description: 'Impostos e obrigações'
+      description: 'Impostos e obrigações',
     },
     {
       name: 'Relatórios',
       href: '/mei/relatorios',
       icon: HiOutlineClipboardDocumentList,
       key: 'relatorios',
-      description: 'DRE e análises'
+      description: 'DRE e análises',
     },
     {
       name: 'Calendário',
       href: '/mei/calendario',
       icon: HiOutlineCalendar,
       key: 'calendario',
-      description: 'Prazos e eventos'
+      description: 'Prazos e eventos',
     },
     {
       name: 'Clientes',
       href: '/mei/clientes',
       icon: HiOutlineUserCircle,
       key: 'clientes',
-      description: 'Base de clientes'
+      description: 'Base de clientes',
     },
     {
       name: 'Notas Fiscais',
       href: '/mei/notas',
       icon: HiOutlineDocumentText,
       key: 'notas',
-      description: 'Emissão de NFs'
+      description: 'Emissão de NFs',
     },
   ];
 
@@ -107,20 +107,20 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
       name: 'Notificações',
       href: '/mei/notificacoes',
       icon: HiOutlineBell,
-      key: 'notificacoes'
+      key: 'notificacoes',
     },
     {
       name: 'Configurações',
       href: '/mei/configuracoes',
       icon: HiOutlineCog6Tooth,
-      key: 'configuracoes'
-    }
+      key: 'configuracoes',
+    },
   ];
 
   useEffect(() => {
     const sidebarWidth = isCollapsed ? '4rem' : '18rem';
     document.documentElement.style.setProperty('--mei-sidebar-width', sidebarWidth);
-    
+
     let styleElement = document.getElementById('mei-sidebar-styles');
     if (!styleElement) {
       styleElement = document.createElement('style');
@@ -157,7 +157,7 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
     // Simular dados da empresa - idealmente viria da API
     setCompany({
       name: 'Minha Empresa MEI',
-      cnpj: '12.345.678/0001-90'
+      cnpj: '12.345.678/0001-90',
     });
   }, []);
 
@@ -203,14 +203,8 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
                 <HiOutlineBuildingOffice2 className="w-6 h-6 text-blue-200" />
                 <h1 className="text-xl font-bold">MEI Dashboard</h1>
               </div>
-              <p className="text-blue-200 text-sm">
-                {company?.name || 'Minha Empresa'}
-              </p>
-              {company?.cnpj && (
-                <p className="text-blue-300 text-xs mt-1">
-                  CNPJ: {company.cnpj}
-                </p>
-              )}
+              <p className="text-blue-200 text-sm">{company?.name || 'Minha Empresa'}</p>
+              {company?.cnpj && <p className="text-blue-300 text-xs mt-1">CNPJ: {company.cnpj}</p>}
             </div>
           )}
           <button
@@ -236,9 +230,10 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
                 href={item.href}
                 className={`
                   group flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 relative
-                  ${active 
-                    ? 'bg-white/20 text-white shadow-md backdrop-blur-sm' 
-                    : 'text-blue-100 hover:text-white hover:bg-white/10'
+                  ${
+                    active
+                      ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
+                      : 'text-blue-100 hover:text-white hover:bg-white/10'
                   }
                   ${isCollapsed ? 'justify-center' : ''}
                 `}
@@ -256,9 +251,7 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
                     <div className="text-xs text-blue-200 truncate">{item.description}</div>
                   </div>
                 )}
-                {active && !isCollapsed && (
-                  <div className="w-2 h-2 bg-white rounded-full"></div>
-                )}
+                {active && !isCollapsed && <div className="w-2 h-2 bg-white rounded-full"></div>}
               </Link>
             );
           })}
@@ -277,10 +270,7 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
                   href={item.href}
                   className={`
                     group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                    ${active 
-                      ? 'bg-white/20 text-white' 
-                      : 'text-blue-100 hover:text-white hover:bg-white/10'
-                    }
+                    ${active ? 'bg-white/20 text-white' : 'text-blue-100 hover:text-white hover:bg-white/10'}
                     ${isCollapsed ? 'justify-center' : ''}
                   `}
                   title={isCollapsed ? item.name : undefined}
