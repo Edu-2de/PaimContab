@@ -1,5 +1,18 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import MeiProtection from '../../../components/MeiProtection';
+import { 
+  HiChartBarSquare, 
+  HiDocumentText, 
+  HiCalculator,
+  HiArrowTrendingUp,
+  HiCurrencyDollar,
+  HiCalendarDays,
+  HiUser,
+  HiArrowRightOnRectangle
+} from 'react-icons/hi2';
+import { HiReceiptTax } from 'react-icons/hi';
 import { useState, useRef, useEffect } from 'react';
 import MeiProtection from '../../components/MeiProtection';
 import {
