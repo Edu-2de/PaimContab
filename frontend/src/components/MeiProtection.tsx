@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { HiExclamationTriangle, HiHome, HiCreditCard } from 'react-icons/hi2';
 
 interface MeiProtectionProps {
