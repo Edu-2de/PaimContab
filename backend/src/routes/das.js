@@ -8,7 +8,7 @@ const {
   markDASAsPaid,
   markDASAsPending,
   getDASStats,
-  autoCalculateDAS
+  autoCalculateDAS,
 } = require('../controllers/dasController');
 
 // Aplicar middleware de autenticação em todas as rotas

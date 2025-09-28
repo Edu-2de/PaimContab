@@ -7,7 +7,7 @@ const {
   createDespesa,
   updateDespesa,
   deleteDespesa,
-  getDespesasStats
+  getDespesasStats,
 } = require('../controllers/despesaController');
 
 // Aplicar middleware de autenticação em todas as rotas
