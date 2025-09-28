@@ -137,6 +137,7 @@ function UserDetailsPageContent() {
     if (userId) {
       loadUserDetails();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   const loadUserDetails = async () => {

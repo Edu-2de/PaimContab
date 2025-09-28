@@ -52,6 +52,11 @@ model Company {
   notes             String?   
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+  
+  // Relacionamentos MEI
+  receitas          Receita[]
+  despesas          Despesa[]
+  dasCalculations   DASCalculation[]
 }
 
 
@@ -91,4 +96,54 @@ model ConsultingSession {
   notes         String?     
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
+}
+
+// Modelos MEI
+model Receita {
+  id            String   @id @default(uuid())
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId     String
+  description   String
+  value         Float
+  date          DateTime
+  category      String
+  clientName    String?
+  invoiceNumber String?
+  paymentMethod String   @default("PIX") // PIX, Dinheiro, Cartão Débito, Cartão Crédito, Transferência, Boleto
+  status        String   @default("Recebido") // Recebido, Pendente, Cancelado
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Despesa {
+  id            String   @id @default(uuid())
+  company       Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId     String
+  description   String
+  value         Float
+  date          DateTime
+  category      String
+  supplier      String?
+  invoiceNumber String?
+  paymentMethod String   @default("PIX") // PIX, Dinheiro, Cartão Débito, Cartão Crédito, Transferência, Boleto
+  status        String   @default("Pago") // Pago, Pendente, Cancelado
+  isDeductible  Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model DASCalculation {
+  id          String   @id @default(uuid())
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   String
+  month       String   // YYYY-MM format
+  revenue     Float
+  dasValue    Float
+  dueDate     DateTime
+  isPaid      Boolean  @default(false)
+  paymentDate DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([companyId, month])
 }
