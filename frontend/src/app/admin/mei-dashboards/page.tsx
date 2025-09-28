@@ -35,23 +35,52 @@ export default function AdminMeiDashboardPage() {
 
   const fetchUsers = async () => {
     try {
+      setError('');
+      console.log('🔍 Buscando usuários...');
+      
       const token = localStorage.getItem('authToken');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users`, {
+      if (!token) {
+        throw new Error('Token não encontrado');
+      }
+
+      console.log('📡 Fazendo requisição para:', `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users`);
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=50`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('📄 Status da resposta:', response.status);
+
       if (response.ok) {
         const data = await response.json();
-        // Filtrar apenas usuários não-admin com planos
-        const filteredUsers = data.filter((user: User) => user.role !== 'admin');
+        console.log('👥 Dados recebidos:', data);
+        
+        // Usar a resposta formatada da API
+        let allUsers = [];
+        if (data.users && Array.isArray(data.users)) {
+          allUsers = data.users;
+        } else if (Array.isArray(data)) {
+          allUsers = data;
+        } else {
+          console.error('Formato de dados inesperado:', data);
+          throw new Error('Formato de resposta inválido');
+        }
+
+        console.log(`📊 Total de usuários recebidos: ${allUsers.length}`);
+        
+        // Filtrar apenas usuários não-admin
+        const filteredUsers = allUsers.filter((user: User) => user.role !== 'admin');
+        console.log(`🔍 Usuários não-admin: ${filteredUsers.length}`);
 
         // Para cada usuário, verificar se tem assinatura ativa e dados da empresa
         const usersWithSubscriptionInfo = await Promise.all(
           filteredUsers.map(async (user: User) => {
             try {
+              console.log(`🔄 Processando usuário: ${user.name} (${user.id})`);
+              
               // Verificar assinatura
               const subscriptionResponse = await fetch(
                 `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/subscription/status/${user.id}`,
@@ -72,13 +101,22 @@ export default function AdminMeiDashboardPage() {
                 }
               );
 
-              const hasActiveSubscription =
-                subscriptionResponse.ok && (await subscriptionResponse.json()).hasActiveSubscription;
+              let hasActiveSubscription = false;
+              if (subscriptionResponse.ok) {
+                const subscriptionData = await subscriptionResponse.json();
+                hasActiveSubscription = subscriptionData.hasActiveSubscription;
+              } else {
+                console.log(`⚠️ Erro ao buscar assinatura para ${user.name}:`, subscriptionResponse.status);
+              }
 
               let company = null;
               if (companyResponse.ok) {
                 company = await companyResponse.json();
+              } else {
+                console.log(`⚠️ Erro ao buscar empresa para ${user.name}:`, companyResponse.status);
               }
+
+              console.log(`✅ ${user.name}: Assinatura ativa: ${hasActiveSubscription}, Empresa: ${company?.name || 'Não encontrada'}`);
 
               return {
                 ...user,
@@ -86,7 +124,7 @@ export default function AdminMeiDashboardPage() {
                 company,
               } as UserWithCompany;
             } catch (error) {
-              console.error(`Erro ao buscar dados do usuário ${user.id}:`, error);
+              console.error(`❌ Erro ao buscar dados do usuário ${user.name}:`, error);
               return {
                 ...user,
                 hasActiveSubscription: false,
@@ -96,13 +134,20 @@ export default function AdminMeiDashboardPage() {
           })
         );
 
+        console.log(`📈 Processados ${usersWithSubscriptionInfo.length} usuários`);
+        console.log('👤 Usuários com assinatura ativa:', usersWithSubscriptionInfo.filter(u => u.hasActiveSubscription).length);
+        console.log('👤 Usuários sem assinatura ativa:', usersWithSubscriptionInfo.filter(u => !u.hasActiveSubscription).length);
+
         setUsers(usersWithSubscriptionInfo);
       } else {
-        throw new Error('Falha ao buscar usuários');
+        console.error('❌ Erro na resposta da API:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('❌ Detalhes do erro:', errorText);
+        throw new Error(`Falha ao buscar usuários: ${response.status} ${response.statusText}`);
       }
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
-      setError('Erro ao carregar lista de usuários');
+      console.error('❌ Erro ao buscar usuários:', error);
+      setError(`Erro ao carregar lista de usuários: ${error.message}`);
     } finally {
       setLoading(false);
     }
