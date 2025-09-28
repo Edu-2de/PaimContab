@@ -137,8 +137,10 @@ export default function AdminMeiDashboardPage() {
 
   return (
     <AdminProtection>
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-7xl mx-auto">
+      <AdminSidebar currentPage="mei-dashboards" />
+      <div className="admin-content-wrapper">
+        <div className="min-h-screen bg-gray-50 p-8">
+          <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Dashboards MEI dos Usuários</h1>
