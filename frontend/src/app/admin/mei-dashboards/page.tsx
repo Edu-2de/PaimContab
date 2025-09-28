@@ -157,7 +157,11 @@ export default function AdminMeiDashboardPage() {
       }
     } catch (error) {
       console.error('❌ Erro ao buscar usuários:', error);
-      setError(`Erro ao carregar lista de usuários: ${error.message}`);
+      setError(
+        `Erro ao carregar lista de usuários: ${
+          error instanceof Error ? error.message : 'Erro desconhecido'
+        }`
+      );
     } finally {
       setLoading(false);
     }
