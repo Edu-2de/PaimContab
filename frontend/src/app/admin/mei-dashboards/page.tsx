@@ -312,6 +312,7 @@ export default function AdminMeiDashboardPage() {
               )}
             </div>
           </div>
+          </div>
         </div>
       </div>
     </AdminProtection>
