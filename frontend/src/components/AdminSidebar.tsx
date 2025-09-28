@@ -46,6 +46,12 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
       key: 'companies',
     },
     {
+      name: 'Dashboard MEI',
+      href: '/admin/mei-dashboards',
+      icon: HiOutlineRectangleStack,
+      key: 'mei-dashboards',
+    },
+    {
       name: 'Assinaturas',
       href: '/admin/subscriptions',
       icon: HiOutlineCreditCard,
