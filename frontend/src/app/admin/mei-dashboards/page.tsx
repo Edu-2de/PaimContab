@@ -37,14 +37,14 @@ export default function AdminMeiDashboardPage() {
     try {
       setError('');
       console.log('🔍 Buscando usuários...');
-      
+
       const token = localStorage.getItem('authToken');
       if (!token) {
         throw new Error('Token não encontrado');
       }
 
       console.log('📡 Fazendo requisição para:', `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users`);
-      
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=50`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -57,7 +57,7 @@ export default function AdminMeiDashboardPage() {
       if (response.ok) {
         const data = await response.json();
         console.log('👥 Dados recebidos:', data);
-        
+
         // Usar a resposta formatada da API
         let allUsers = [];
         if (data.users && Array.isArray(data.users)) {
@@ -70,7 +70,7 @@ export default function AdminMeiDashboardPage() {
         }
 
         console.log(`📊 Total de usuários recebidos: ${allUsers.length}`);
-        
+
         // Filtrar apenas usuários não-admin
         const filteredUsers = allUsers.filter((user: User) => user.role !== 'admin');
         console.log(`🔍 Usuários não-admin: ${filteredUsers.length}`);
@@ -80,7 +80,7 @@ export default function AdminMeiDashboardPage() {
           filteredUsers.map(async (user: User) => {
             try {
               console.log(`🔄 Processando usuário: ${user.name} (${user.id})`);
-              
+
               // Verificar assinatura
               const subscriptionResponse = await fetch(
                 `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/subscription/status/${user.id}`,
@@ -116,7 +116,11 @@ export default function AdminMeiDashboardPage() {
                 console.log(`⚠️ Erro ao buscar empresa para ${user.name}:`, companyResponse.status);
               }
 
-              console.log(`✅ ${user.name}: Assinatura ativa: ${hasActiveSubscription}, Empresa: ${company?.name || 'Não encontrada'}`);
+              console.log(
+                `✅ ${user.name}: Assinatura ativa: ${hasActiveSubscription}, Empresa: ${
+                  company?.name || 'Não encontrada'
+                }`
+              );
 
               return {
                 ...user,
@@ -135,8 +139,14 @@ export default function AdminMeiDashboardPage() {
         );
 
         console.log(`📈 Processados ${usersWithSubscriptionInfo.length} usuários`);
-        console.log('👤 Usuários com assinatura ativa:', usersWithSubscriptionInfo.filter(u => u.hasActiveSubscription).length);
-        console.log('👤 Usuários sem assinatura ativa:', usersWithSubscriptionInfo.filter(u => !u.hasActiveSubscription).length);
+        console.log(
+          '👤 Usuários com assinatura ativa:',
+          usersWithSubscriptionInfo.filter(u => u.hasActiveSubscription).length
+        );
+        console.log(
+          '👤 Usuários sem assinatura ativa:',
+          usersWithSubscriptionInfo.filter(u => !u.hasActiveSubscription).length
+        );
 
         setUsers(usersWithSubscriptionInfo);
       } else {
