@@ -18,7 +18,6 @@ import {
   HiOutlineUserCircle,
   HiOutlineCalendar,
   HiOutlineClipboardDocumentList,
-  HiOutlineChartPie,
   HiOutlineBuildingOffice2,
 } from 'react-icons/hi2';
 
