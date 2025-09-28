@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
-import { 
-  HiChartBarSquare, 
-  HiDocumentText, 
+import {
+  HiChartBarSquare,
+  HiDocumentText,
   HiCalculator,
   HiArrowTrendingUp,
   HiCurrencyDollar,
   HiCalendarDays,
   HiUser,
-  HiArrowRightOnRectangle
+  HiArrowRightOnRectangle,
 } from 'react-icons/hi2';
 import { HiReceiptTax } from 'react-icons/hi';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
@@ -28,15 +28,15 @@ interface Company {
   cnpj?: string;
 }
 
-type Row = { 
-  type: "Receita" | "Despesa"; 
-  desc: string; 
+type Row = {
+  type: 'Receita' | 'Despesa';
+  desc: string;
   value: number;
   date: string;
 };
 
 function formatCurrency(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 function MeiDashboardContent() {
@@ -44,9 +44,9 @@ function MeiDashboardContent() {
   const [company, setCompany] = useState<Company | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'financas' | 'impostos' | 'relatorios'>('overview');
   const [data, setData] = useState<Row[]>([
-    { type: "Receita", desc: "Serviço de consultoria", value: 1500, date: "2024-09-15" },
-    { type: "Despesa", desc: "Material de escritório", value: 400, date: "2024-09-10" },
-    { type: "Receita", desc: "Venda de produto", value: 800, date: "2024-09-20" },
+    { type: 'Receita', desc: 'Serviço de consultoria', value: 1500, date: '2024-09-15' },
+    { type: 'Despesa', desc: 'Material de escritório', value: 400, date: '2024-09-10' },
+    { type: 'Receita', desc: 'Venda de produto', value: 800, date: '2024-09-20' },
   ]);
   const [editIdx, setEditIdx] = useState<number | null>(null);
 
@@ -55,7 +55,7 @@ function MeiDashboardContent() {
     if (userData) {
       const userObj = JSON.parse(userData);
       setUser(userObj);
-      
+
       // Buscar dados da empresa
       fetchCompanyData(userObj.id);
     }
@@ -85,9 +85,9 @@ function MeiDashboardContent() {
     window.location.href = '/';
   };
 
-  const addRow = (type: "Receita" | "Despesa") => {
+  const addRow = (type: 'Receita' | 'Despesa') => {
     const today = new Date().toISOString().split('T')[0];
-    setData(d => [...d, { type, desc: "", value: 0, date: today }]);
+    setData(d => [...d, { type, desc: '', value: 0, date: today }]);
     setEditIdx(data.length);
   };
 
@@ -97,7 +97,7 @@ function MeiDashboardContent() {
         i === idx
           ? {
               ...row,
-              [key]: key === "value" ? (isNaN(Number(v)) ? 0 : Number(v)) : v,
+              [key]: key === 'value' ? (isNaN(Number(v)) ? 0 : Number(v)) : v,
             }
           : row
       )
@@ -109,8 +109,8 @@ function MeiDashboardContent() {
     setEditIdx(null);
   };
 
-  const totalReceita = data.filter(x => x.type === "Receita").reduce((a, b) => a + b.value, 0);
-  const totalDespesa = data.filter(x => x.type === "Despesa").reduce((a, b) => a + b.value, 0);
+  const totalReceita = data.filter(x => x.type === 'Receita').reduce((a, b) => a + b.value, 0);
+  const totalDespesa = data.filter(x => x.type === 'Despesa').reduce((a, b) => a + b.value, 0);
   const lucro = totalReceita - totalDespesa;
   const imposto = Math.round(totalReceita * 0.06 * 100) / 100; // DAS 6%
   const saldoFinal = lucro - imposto;
@@ -129,7 +129,7 @@ function MeiDashboardContent() {
                 {company?.name || user?.name} • {currentMonth}
               </p>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <HiUser className="w-4 h-4" />
@@ -156,7 +156,7 @@ function MeiDashboardContent() {
               { key: 'financas', label: 'Finanças', icon: HiCurrencyDollar },
               { key: 'impostos', label: 'Impostos', icon: HiReceiptTax },
               { key: 'relatorios', label: 'Relatórios', icon: HiDocumentText },
-            ].map((tab) => {
+            ].map(tab => {
               const Icon = tab.icon;
               return (
                 <button
@@ -192,7 +192,7 @@ function MeiDashboardContent() {
                   <HiArrowTrendingUp className="w-8 h-8 text-green-500" />
                 </div>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="flex items-center justify-between">
                   <div>
@@ -202,7 +202,7 @@ function MeiDashboardContent() {
                   <HiCurrencyDollar className="w-8 h-8 text-red-500" />
                 </div>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="flex items-center justify-between">
                   <div>
@@ -212,7 +212,7 @@ function MeiDashboardContent() {
                   <HiReceiptTax className="w-8 h-8 text-orange-500" />
                 </div>
               </div>
-              
+
               <div className="bg-white p-6 rounded-lg shadow-sm border">
                 <div className="flex items-center justify-between">
                   <div>
@@ -256,13 +256,13 @@ function MeiDashboardContent() {
                 <div className="flex gap-2">
                   <button
                     className="inline-flex items-center gap-1 rounded bg-green-600 hover:bg-green-700 text-white px-4 py-2 text-sm font-medium shadow-sm transition"
-                    onClick={() => addRow("Receita")}
+                    onClick={() => addRow('Receita')}
                   >
                     <FiPlus /> Receita
                   </button>
                   <button
                     className="inline-flex items-center gap-1 rounded bg-red-600 hover:bg-red-700 text-white px-4 py-2 text-sm font-medium shadow-sm transition"
-                    onClick={() => addRow("Despesa")}
+                    onClick={() => addRow('Despesa')}
                   >
                     <FiPlus /> Despesa
                   </button>
@@ -274,16 +274,26 @@ function MeiDashboardContent() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descrição</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Data
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tipo
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Descrição
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Valor
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {data.map((row, idx) => (
-                      <tr key={idx} className={editIdx === idx ? "bg-blue-50" : "hover:bg-gray-50"}>
+                      <tr key={idx} className={editIdx === idx ? 'bg-blue-50' : 'hover:bg-gray-50'}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <input
                             type="date"
@@ -291,14 +301,14 @@ function MeiDashboardContent() {
                             value={row.date}
                             onFocus={() => setEditIdx(idx)}
                             onBlur={() => setEditIdx(null)}
-                            onChange={e => handleRowChange(idx, "date", e.target.value)}
+                            onChange={e => handleRowChange(idx, 'date', e.target.value)}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <select
                             className="text-sm border-0 bg-transparent focus:ring-0 p-0"
                             value={row.type}
-                            onChange={e => handleRowChange(idx, "type", e.target.value as Row["type"])}
+                            onChange={e => handleRowChange(idx, 'type', e.target.value as Row['type'])}
                           >
                             <option value="Receita">Receita</option>
                             <option value="Despesa">Despesa</option>
@@ -312,7 +322,7 @@ function MeiDashboardContent() {
                             placeholder="Descrição..."
                             onFocus={() => setEditIdx(idx)}
                             onBlur={() => setEditIdx(null)}
-                            onChange={e => handleRowChange(idx, "desc", e.target.value)}
+                            onChange={e => handleRowChange(idx, 'desc', e.target.value)}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right">
@@ -323,7 +333,7 @@ function MeiDashboardContent() {
                             step="0.01"
                             onFocus={() => setEditIdx(idx)}
                             onBlur={() => setEditIdx(null)}
-                            onChange={e => handleRowChange(idx, "value", e.target.value)}
+                            onChange={e => handleRowChange(idx, 'value', e.target.value)}
                           />
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
@@ -339,17 +349,27 @@ function MeiDashboardContent() {
                   </tbody>
                   <tfoot className="bg-gray-50">
                     <tr>
-                      <td colSpan={3} className="px-6 py-4 text-right font-semibold text-gray-900">Total Receita</td>
-                      <td className="px-6 py-4 text-right font-semibold text-green-600">{formatCurrency(totalReceita)}</td>
+                      <td colSpan={3} className="px-6 py-4 text-right font-semibold text-gray-900">
+                        Total Receita
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold text-green-600">
+                        {formatCurrency(totalReceita)}
+                      </td>
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={3} className="px-6 py-4 text-right font-semibold text-gray-900">Total Despesa</td>
-                      <td className="px-6 py-4 text-right font-semibold text-red-600">{formatCurrency(totalDespesa)}</td>
+                      <td colSpan={3} className="px-6 py-4 text-right font-semibold text-gray-900">
+                        Total Despesa
+                      </td>
+                      <td className="px-6 py-4 text-right font-semibold text-red-600">
+                        {formatCurrency(totalDespesa)}
+                      </td>
                       <td></td>
                     </tr>
                     <tr>
-                      <td colSpan={3} className="px-6 py-4 text-right font-bold text-gray-900">Lucro</td>
+                      <td colSpan={3} className="px-6 py-4 text-right font-bold text-gray-900">
+                        Lucro
+                      </td>
                       <td className="px-6 py-4 text-right font-bold text-blue-600">{formatCurrency(lucro)}</td>
                       <td></td>
                     </tr>
@@ -365,7 +385,7 @@ function MeiDashboardContent() {
                       <select
                         className="text-sm font-medium border-0 bg-transparent focus:ring-0 p-0"
                         value={row.type}
-                        onChange={e => handleRowChange(idx, "type", e.target.value as Row["type"])}
+                        onChange={e => handleRowChange(idx, 'type', e.target.value as Row['type'])}
                       >
                         <option value="Receita">Receita</option>
                         <option value="Despesa">Despesa</option>
@@ -382,26 +402,26 @@ function MeiDashboardContent() {
                       className="w-full text-sm text-gray-900 border-0 bg-transparent focus:ring-0 p-0 mb-2"
                       value={row.desc}
                       placeholder="Descrição..."
-                      onChange={e => handleRowChange(idx, "desc", e.target.value)}
+                      onChange={e => handleRowChange(idx, 'desc', e.target.value)}
                     />
                     <div className="flex justify-between items-center">
                       <input
                         type="date"
                         className="text-sm text-gray-600 border-0 bg-transparent focus:ring-0 p-0"
                         value={row.date}
-                        onChange={e => handleRowChange(idx, "date", e.target.value)}
+                        onChange={e => handleRowChange(idx, 'date', e.target.value)}
                       />
                       <input
                         type="number"
                         className="w-24 text-sm font-medium border-0 bg-transparent focus:ring-0 p-0 text-right"
                         value={row.value}
                         step="0.01"
-                        onChange={e => handleRowChange(idx, "value", e.target.value)}
+                        onChange={e => handleRowChange(idx, 'value', e.target.value)}
                       />
                     </div>
                   </div>
                 ))}
-                
+
                 <div className="bg-white border-t pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span>Total Receita:</span>
@@ -425,7 +445,7 @@ function MeiDashboardContent() {
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Cálculo do DAS</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Resumo do Mês</h4>
@@ -444,7 +464,7 @@ function MeiDashboardContent() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">Informações Importantes</h4>
                   <div className="text-sm text-gray-600 space-y-2">
@@ -463,20 +483,20 @@ function MeiDashboardContent() {
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-lg shadow-sm border">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Relatórios Disponíveis</h3>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <button className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left">
                   <HiDocumentText className="w-6 h-6 text-blue-500 mb-2" />
                   <h4 className="font-medium text-gray-900">Relatório Mensal</h4>
                   <p className="text-sm text-gray-600">Resumo completo do mês</p>
                 </button>
-                
+
                 <button className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left">
                   <HiReceiptTax className="w-6 h-6 text-orange-500 mb-2" />
                   <h4 className="font-medium text-gray-900">Comprovante DAS</h4>
                   <p className="text-sm text-gray-600">Gerar comprovante de pagamento</p>
                 </button>
-                
+
                 <button className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-left">
                   <HiChartBarSquare className="w-6 h-6 text-green-500 mb-2" />
                   <h4 className="font-medium text-gray-900">Gráfico de Vendas</h4>
