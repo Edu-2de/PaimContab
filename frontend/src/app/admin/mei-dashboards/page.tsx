@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import AdminProtection from '../../../components/AdminProtection';
+import AdminSidebar from '../../../components/AdminSidebar';
 import { HiMagnifyingGlass, HiEye, HiUser } from 'react-icons/hi2';
 
 interface User {
