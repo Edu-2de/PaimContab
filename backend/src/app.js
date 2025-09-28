@@ -8,6 +8,9 @@ const adminCompaniesRoutes = require('./routes/adminCompanies');
 const adminSubscriptionsRoutes = require('./routes/adminSubscriptions');
 const adminReportsRoutes = require('./routes/adminReports');
 const adminSettingsRoutes = require('./routes/adminSettings');
+const receitasRoutes = require('./routes/receitas');
+const despesasRoutes = require('./routes/despesas');
+const dasRoutes = require('./routes/das');
 
 const app = express();
 app.use(cors());
@@ -21,6 +24,9 @@ app.use('/api/admin/reports', adminReportsRoutes);
 app.use('/api/admin/settings', adminSettingsRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/company', companyRoutes);
+app.use('/api', receitasRoutes);
+app.use('/api', despesasRoutes);
+app.use('/api', dasRoutes);
 
 app.get('/', (req, res) => {
   res.send('PaimContab backend running!');

@@ -7,7 +7,7 @@ const {
   createReceita,
   updateReceita,
   deleteReceita,
-  getReceitasStats
+  getReceitasStats,
 } = require('../controllers/receitaController');
 
 // Aplicar middleware de autenticação em todas as rotas
