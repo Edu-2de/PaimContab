@@ -164,7 +164,7 @@ function AdminCompaniesContent() {
     <div>
       <AdminSidebar currentPage="companies" />
 
-      <div className="ml-64 min-h-screen bg-gray-50">
+      <div className="admin-content-wrapper min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6">
           <div className="flex items-center justify-between">
