@@ -17,13 +17,6 @@ import {
   HiArrowUpRight,
 } from 'react-icons/hi2';
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
-
 interface Company {
   id: string;
   name: string;
@@ -67,36 +60,74 @@ function formatDate(dateStr: string) {
 
 function MeiDashboardContent() {
   const [company, setCompany] = useState<Company | null>(null);
-  
+
   // Dados mockados para demonstração - em produção viria da API
   const [metrics] = useState<DashboardMetrics>({
-    totalReceita: 45600.00,
-    totalDespesa: 12300.00,
-    lucroLiquido: 33300.00,
-    limiteFaturamento: 81000.00,
-    faturamentoAtual: 45600.00,
+    totalReceita: 45600.0,
+    totalDespesa: 12300.0,
+    lucroLiquido: 33300.0,
+    limiteFaturamento: 81000.0,
+    faturamentoAtual: 45600.0,
     proximoDAS: '2024-10-20',
-    valorDAS: 456.00
+    valorDAS: 456.0,
   });
 
   const [recentTransactions] = useState<RecentTransaction[]>([
-    { id: '1', type: 'Receita', description: 'Serviço de consultoria', value: 2500, date: '2024-09-25', category: 'Serviços' },
-    { id: '2', type: 'Despesa', description: 'Internet e telefone', value: 150, date: '2024-09-24', category: 'Utilities' },
+    {
+      id: '1',
+      type: 'Receita',
+      description: 'Serviço de consultoria',
+      value: 2500,
+      date: '2024-09-25',
+      category: 'Serviços',
+    },
+    {
+      id: '2',
+      type: 'Despesa',
+      description: 'Internet e telefone',
+      value: 150,
+      date: '2024-09-24',
+      category: 'Utilities',
+    },
     { id: '3', type: 'Receita', description: 'Venda de produto', value: 800, date: '2024-09-23', category: 'Vendas' },
-    { id: '4', type: 'Despesa', description: 'Material de escritório', value: 200, date: '2024-09-22', category: 'Suprimentos' },
+    {
+      id: '4',
+      type: 'Despesa',
+      description: 'Material de escritório',
+      value: 200,
+      date: '2024-09-22',
+      category: 'Suprimentos',
+    },
   ]);
 
   const [notifications] = useState<NotificationItem[]>([
-    { id: '1', type: 'warning', title: 'DAS Vencendo', message: 'O DAS de setembro vence em 5 dias', date: '2024-09-25' },
-    { id: '2', type: 'info', title: 'Limite de Faturamento', message: 'Você já atingiu 56% do limite anual', date: '2024-09-24' },
-    { id: '3', type: 'success', title: 'Meta Atingida', message: 'Parabéns! Meta de setembro foi atingida', date: '2024-09-23' },
+    {
+      id: '1',
+      type: 'warning',
+      title: 'DAS Vencendo',
+      message: 'O DAS de setembro vence em 5 dias',
+      date: '2024-09-25',
+    },
+    {
+      id: '2',
+      type: 'info',
+      title: 'Limite de Faturamento',
+      message: 'Você já atingiu 56% do limite anual',
+      date: '2024-09-24',
+    },
+    {
+      id: '3',
+      type: 'success',
+      title: 'Meta Atingida',
+      message: 'Parabéns! Meta de setembro foi atingida',
+      date: '2024-09-23',
+    },
   ]);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       const userObj = JSON.parse(userData);
-      setUser(userObj);
       fetchCompanyData(userObj.id);
     }
   }, []);
@@ -121,12 +152,14 @@ function MeiDashboardContent() {
 
   // Cálculos principais
   const percentualLimite = (metrics.faturamentoAtual / metrics.limiteFaturamento) * 100;
-  const diasParaDAS = Math.ceil((new Date(metrics.proximoDAS).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+  const diasParaDAS = Math.ceil(
+    (new Date(metrics.proximoDAS).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
       <MeiSidebar currentPage="dashboard" />
-      
+
       <div className="mei-content-wrapper">
         {/* Header */}
         <div className="bg-white shadow-sm border-b">
@@ -135,7 +168,8 @@ function MeiDashboardContent() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Dashboard MEI</h1>
                 <p className="text-gray-600 mt-1">
-                  {company?.name || 'Minha Empresa'} • {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                  {company?.name || 'Minha Empresa'} •{' '}
+                  {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                 </p>
               </div>
               <div className="flex items-center gap-4">
@@ -158,13 +192,15 @@ function MeiDashboardContent() {
                   <div className="ml-3">
                     <h3 className="text-sm font-medium text-yellow-800">DAS Vencendo!</h3>
                     <div className="mt-2 text-sm text-yellow-700">
-                      <p>O DAS vence em {diasParaDAS} dias. Valor: {formatCurrency(metrics.valorDAS)}</p>
+                      <p>
+                        O DAS vence em {diasParaDAS} dias. Valor: {formatCurrency(metrics.valorDAS)}
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             )}
-            
+
             {percentualLimite > 80 && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex">
@@ -267,14 +303,12 @@ function MeiDashboardContent() {
                 <p className="text-sm text-gray-600">do limite utilizado</p>
               </div>
             </div>
-            
+
             <div className="relative">
               <div className="w-full bg-gray-200 rounded-full h-4">
-                <div 
+                <div
                   className={`h-4 rounded-full transition-all duration-500 ${
-                    percentualLimite > 90 ? 'bg-red-500' :
-                    percentualLimite > 80 ? 'bg-yellow-500' :
-                    'bg-green-500'
+                    percentualLimite > 90 ? 'bg-red-500' : percentualLimite > 80 ? 'bg-yellow-500' : 'bg-green-500'
                   }`}
                   style={{ width: `${Math.min(percentualLimite, 100)}%` }}
                 ></div>
@@ -293,35 +327,37 @@ function MeiDashboardContent() {
           <div className="bg-white rounded-xl shadow-sm border p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Transações Recentes</h3>
-              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                Ver todas
-              </button>
+              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">Ver todas</button>
             </div>
-            
+
             <div className="space-y-4">
-              {recentTransactions.map((transaction) => (
+              {recentTransactions.map(transaction => (
                 <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                   <div className="flex items-center space-x-3">
-                    <div className={`p-2 rounded-full ${
-                      transaction.type === 'Receita' 
-                        ? 'bg-green-100 text-green-600' 
-                        : 'bg-red-100 text-red-600'
-                    }`}>
-                      {transaction.type === 'Receita' ? 
-                        <HiArrowUpRight className="w-4 h-4" /> : 
+                    <div
+                      className={`p-2 rounded-full ${
+                        transaction.type === 'Receita' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
+                      }`}
+                    >
+                      {transaction.type === 'Receita' ? (
+                        <HiArrowUpRight className="w-4 h-4" />
+                      ) : (
                         <HiArrowDownRight className="w-4 h-4" />
-                      }
+                      )}
                     </div>
                     <div>
                       <p className="font-medium text-gray-900">{transaction.description}</p>
-                      <p className="text-xs text-gray-500">{transaction.category} • {formatDate(transaction.date)}</p>
+                      <p className="text-xs text-gray-500">
+                        {transaction.category} • {formatDate(transaction.date)}
+                      </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`font-semibold ${
-                      transaction.type === 'Receita' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {transaction.type === 'Receita' ? '+' : '-'}{formatCurrency(transaction.value)}
+                    <p
+                      className={`font-semibold ${transaction.type === 'Receita' ? 'text-green-600' : 'text-red-600'}`}
+                    >
+                      {transaction.type === 'Receita' ? '+' : '-'}
+                      {formatCurrency(transaction.value)}
                     </p>
                   </div>
                 </div>
@@ -335,23 +371,26 @@ function MeiDashboardContent() {
               <h3 className="text-lg font-semibold text-gray-900">Notificações</h3>
               <HiBell className="w-5 h-5 text-gray-400" />
             </div>
-            
+
             <div className="space-y-4">
-              {notifications.map((notification) => (
+              {notifications.map(notification => (
                 <div key={notification.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className={`p-1 rounded-full mt-1 ${
-                    notification.type === 'warning' 
-                      ? 'bg-yellow-100 text-yellow-600' 
-                      : notification.type === 'success'
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-blue-100 text-blue-600'
-                  }`}>
-                    {notification.type === 'warning' ? 
-                      <HiExclamationTriangle className="w-3 h-3" /> :
-                      notification.type === 'success' ?
-                      <HiCheckCircle className="w-3 h-3" /> :
+                  <div
+                    className={`p-1 rounded-full mt-1 ${
+                      notification.type === 'warning'
+                        ? 'bg-yellow-100 text-yellow-600'
+                        : notification.type === 'success'
+                        ? 'bg-green-100 text-green-600'
+                        : 'bg-blue-100 text-blue-600'
+                    }`}
+                  >
+                    {notification.type === 'warning' ? (
+                      <HiExclamationTriangle className="w-3 h-3" />
+                    ) : notification.type === 'success' ? (
+                      <HiCheckCircle className="w-3 h-3" />
+                    ) : (
                       <HiBell className="w-3 h-3" />
-                    }
+                    )}
                   </div>
                   <div className="flex-1">
                     <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
@@ -375,21 +414,21 @@ function MeiDashboardContent() {
                 </div>
                 <span className="mt-2 text-sm font-medium text-green-700">Nova Receita</span>
               </button>
-              
+
               <button className="flex flex-col items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors group">
                 <div className="p-3 bg-red-500 rounded-full group-hover:bg-red-600 transition-colors">
                   <HiArrowDownRight className="w-6 h-6 text-white" />
                 </div>
                 <span className="mt-2 text-sm font-medium text-red-700">Nova Despesa</span>
               </button>
-              
+
               <button className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group">
                 <div className="p-3 bg-purple-500 rounded-full group-hover:bg-purple-600 transition-colors">
                   <HiCalculator className="w-6 h-6 text-white" />
                 </div>
                 <span className="mt-2 text-sm font-medium text-purple-700">Calcular DAS</span>
               </button>
-              
+
               <button className="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group">
                 <div className="p-3 bg-blue-500 rounded-full group-hover:bg-blue-600 transition-colors">
                   <HiDocumentText className="w-6 h-6 text-white" />
