@@ -429,7 +429,7 @@ const deleteUser = async (req, res) => {
 const getUserSubscriptionStatus = async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     console.log('🔍 Verificando status de assinatura para usuário:', userId);
 
     // Buscar a assinatura mais recente do usuário
