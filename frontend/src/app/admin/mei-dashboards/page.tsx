@@ -8,6 +8,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  role: string;
 }
 
 interface UserWithCompany {
@@ -45,7 +46,7 @@ export default function AdminMeiDashboardPage() {
         const data = await response.json();
         // Filtrar apenas usuários não-admin com planos
         const filteredUsers = data.filter((user: User) => user.role !== 'admin');
-        
+
         // Para cada usuário, verificar se tem assinatura ativa e dados da empresa
         const usersWithSubscriptionInfo = await Promise.all(
           filteredUsers.map(async (user: User) => {
@@ -59,7 +60,7 @@ export default function AdminMeiDashboardPage() {
                   },
                 }
               );
-              
+
               // Buscar dados da empresa
               const companyResponse = await fetch(
                 `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/company/user/${user.id}`,
@@ -70,9 +71,9 @@ export default function AdminMeiDashboardPage() {
                 }
               );
 
-              const hasActiveSubscription = subscriptionResponse.ok && 
-                (await subscriptionResponse.json()).hasActiveSubscription;
-              
+              const hasActiveSubscription =
+                subscriptionResponse.ok && (await subscriptionResponse.json()).hasActiveSubscription;
+
               let company = null;
               if (companyResponse.ok) {
                 company = await companyResponse.json();
@@ -113,10 +114,11 @@ export default function AdminMeiDashboardPage() {
     window.open(url, '_blank');
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.company?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredUsers = users.filter(
+    user =>
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.company?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const activeUsers = filteredUsers.filter(user => user.hasActiveSubscription);
@@ -139,9 +141,7 @@ export default function AdminMeiDashboardPage() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Dashboards MEI dos Usuários</h1>
-            <p className="text-gray-600 mt-2">
-              Acesse os dashboards MEI de qualquer usuário para suporte e supervisão
-            </p>
+            <p className="text-gray-600 mt-2">Acesse os dashboards MEI de qualquer usuário para suporte e supervisão</p>
           </div>
 
           {/* Search */}
@@ -152,7 +152,7 @@ export default function AdminMeiDashboardPage() {
                 type="text"
                 placeholder="Buscar por nome, email ou empresa..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={e => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
               />
             </div>
@@ -198,21 +198,17 @@ export default function AdminMeiDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {activeUsers.map((user) => (
+                      {activeUsers.map(user => (
                         <tr key={user.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="font-medium text-gray-900">{user.name}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                            {user.email}
-                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {user.company ? (
                               <div>
                                 <div className="font-medium text-gray-900">{user.company.name}</div>
-                                {user.company.cnpj && (
-                                  <div className="text-xs text-gray-500">{user.company.cnpj}</div>
-                                )}
+                                {user.company.cnpj && <div className="text-xs text-gray-500">{user.company.cnpj}</div>}
                               </div>
                             ) : (
                               <span className="text-gray-400">Sem empresa</span>
@@ -275,21 +271,17 @@ export default function AdminMeiDashboardPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {inactiveUsers.map((user) => (
+                      {inactiveUsers.map(user => (
                         <tr key={user.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="font-medium text-gray-900">{user.name}</div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-gray-500">
-                            {user.email}
-                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             {user.company ? (
                               <div>
                                 <div className="font-medium text-gray-900">{user.company.name}</div>
-                                {user.company.cnpj && (
-                                  <div className="text-xs text-gray-500">{user.company.cnpj}</div>
-                                )}
+                                {user.company.cnpj && <div className="text-xs text-gray-500">{user.company.cnpj}</div>}
                               </div>
                             ) : (
                               <span className="text-gray-400">Sem empresa</span>
