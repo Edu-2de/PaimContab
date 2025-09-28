@@ -254,7 +254,7 @@ function AdminDashboardContent() {
     <div className="min-h-screen bg-slate-50">
       <AdminSidebar currentPage="dashboard" />
 
-      <div className="ml-64 min-h-screen">
+      <div className="admin-content-wrapper min-h-screen">
         {/* Header */}
         <div className="bg-white border-b border-slate-200 px-8 py-6 shadow-sm">
           <div className="flex items-center justify-between">

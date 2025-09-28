@@ -1,4 +1,5 @@
-'use client';
+﻿'use client';
+
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -14,13 +15,15 @@ import {
   HiChevronLeft,
   HiChevronRight,
   HiOutlineUserCircle,
+  HiOutlineRectangleStack,
 } from 'react-icons/hi2';
 
 interface AdminSidebarProps {
   currentPage?: string;
+  onToggle?: (collapsed: boolean) => void;
 }
 
-export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebarProps) {
+export default function AdminSidebar({ currentPage = 'dashboard', onToggle }: AdminSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string } | null>(null);
   const pathname = usePathname();
@@ -45,6 +48,12 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
       key: 'companies',
     },
     {
+      name: 'Dashboard MEI',
+      href: '/admin/mei-dashboards',
+      icon: HiOutlineRectangleStack,
+      key: 'mei-dashboards',
+    },
+    {
       name: 'Assinaturas',
       href: '/admin/subscriptions',
       icon: HiOutlineCreditCard,
@@ -65,6 +74,32 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
   ];
 
   useEffect(() => {
+    const sidebarWidth = isCollapsed ? '4rem' : '16rem';
+    document.documentElement.style.setProperty('--admin-sidebar-width', sidebarWidth);
+
+    let styleElement = document.getElementById('admin-sidebar-styles');
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = 'admin-sidebar-styles';
+      styleElement.textContent = `
+        .admin-content-wrapper {
+          margin-left: var(--admin-sidebar-width, 16rem);
+          transition: margin-left 0.3s ease-in-out;
+          min-height: 100vh;
+        }
+        @media (max-width: 768px) {
+          .admin-content-wrapper {
+            margin-left: 0;
+          }
+        }
+      `;
+      document.head.appendChild(styleElement);
+    }
+
+    onToggle?.(isCollapsed);
+  }, [isCollapsed, onToggle]);
+
+  useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       try {
@@ -75,6 +110,10 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
       }
     }
   }, []);
+
+  const handleToggle = () => {
+    setIsCollapsed(!isCollapsed);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('authToken');
@@ -94,10 +133,10 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
   const isActive = (itemKey: string) => {
     if (currentPage === itemKey) return true;
 
-    // Verifica se está na rota específica
     if (itemKey === 'dashboard' && pathname === '/admin/dashboard') return true;
     if (itemKey === 'users' && pathname?.startsWith('/admin/users')) return true;
     if (itemKey === 'companies' && pathname?.startsWith('/admin/companies')) return true;
+    if (itemKey === 'mei-dashboards' && pathname?.startsWith('/admin/mei-dashboards')) return true;
     if (itemKey === 'subscriptions' && pathname?.startsWith('/admin/subscriptions')) return true;
     if (itemKey === 'reports' && pathname?.startsWith('/admin/reports')) return true;
     if (itemKey === 'settings' && pathname?.startsWith('/admin/settings')) return true;
@@ -108,11 +147,10 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
   return (
     <div
       className={`
-      fixed left-0 top-0 bg-white border-r border-gray-200 h-screen transition-all duration-300 ease-in-out flex flex-col z-50
-      ${isCollapsed ? 'w-16' : 'w-64'}
-    `}
+        fixed left-0 top-0 bg-white border-r border-gray-200 h-screen transition-all duration-300 ease-in-out flex flex-col z-50
+        ${isCollapsed ? 'w-16' : 'w-64'}
+      `}
     >
-      {/* Logo/Header */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
@@ -122,7 +160,7 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
             </div>
           )}
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={handleToggle}
             className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all duration-200"
             title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
           >
@@ -131,7 +169,6 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-1">
           {navigationItems.map(item => {
@@ -162,7 +199,6 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
           })}
         </div>
 
-        {/* Quick Actions */}
         <div className="mt-8 pt-6 border-t border-gray-100">
           <div className="space-y-1">
             <Link
@@ -192,7 +228,6 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
         </div>
       </nav>
 
-      {/* User Info */}
       <div className="p-4 border-t border-gray-100">
         {!isCollapsed ? (
           <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">

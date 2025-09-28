@@ -310,6 +310,13 @@ export default function Header() {
                     id="user-profile-dropdown"
                     className="absolute right-0 top-full mt-2 z-50 bg-white border border-gray-100 rounded-xl shadow-xl animate-fadein py-2 min-w-[160px]"
                   >
+                    <Link
+                      href="/mei/dashboard"
+                      className="block px-5 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition font-medium rounded"
+                      onClick={() => setProfileOpen(false)}
+                    >
+                      Dashboard MEI
+                    </Link>
                     <button
                       onClick={() => handleLogout(false)}
                       className="w-full text-left px-5 py-2 text-red-500 hover:bg-gray-50 hover:text-red-600 transition font-medium rounded"
@@ -500,6 +507,16 @@ export default function Header() {
                     id="user-profile-dropdown-mobile"
                     className="absolute right-0 left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-fadein py-2"
                   >
+                    <Link
+                      href="/mei/dashboard"
+                      className="block px-5 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition font-medium rounded"
+                      onClick={() => {
+                        setMobileProfileOpen(false);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      Dashboard MEI
+                    </Link>
                     <button
                       onClick={() => handleLogout(true)}
                       className="w-full text-left px-5 py-2 text-red-500 hover:bg-gray-50 hover:text-red-600 transition font-medium rounded"

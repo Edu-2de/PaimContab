@@ -425,6 +425,42 @@ const deleteUser = async (req, res) => {
   }
 };
 
+// Controller function to get user subscription status (for admin use)
+const getUserSubscriptionStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    console.log('🔍 Verificando status de assinatura para usuário:', userId);
+
+    // Buscar a assinatura mais recente do usuário
+    const subscription = await prisma.subscription.findFirst({
+      where: { userId: userId },
+      include: { plan: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!subscription) {
+      console.log('❌ Nenhuma assinatura encontrada para o usuário');
+      return res.json({
+        hasActiveSubscription: false,
+        subscription: null,
+      });
+    }
+
+    console.log('✅ Status da assinatura:', subscription.isActive ? 'Ativa' : 'Inativa');
+    res.json({
+      hasActiveSubscription: subscription.isActive,
+      subscription: subscription,
+    });
+  } catch (error) {
+    console.error('💥 Erro ao verificar status de assinatura:', error);
+    res.status(500).json({
+      message: 'Erro ao verificar status de assinatura',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getDashboard,
   getAllUsers,
@@ -433,4 +469,5 @@ module.exports = {
   updateUser,
   updateUserCompany,
   deleteUser,
+  getUserSubscriptionStatus,
 };
