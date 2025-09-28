@@ -157,25 +157,33 @@ function MeiDashboardContent() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       <MeiSidebar currentPage="dashboard" />
 
       <div className="mei-content-wrapper">
         {/* Header */}
-        <div className="bg-white shadow-sm border-b">
-          <div className="px-6 py-4">
+        <div className="bg-white shadow-sm border-b border-slate-200">
+          <div className="px-8 py-6">
             <div className="flex justify-between items-center">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Dashboard MEI</h1>
-                <p className="text-gray-600 mt-1">
-                  {company?.name || 'Minha Empresa'} •{' '}
-                  {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
+                <p className="text-slate-600 mt-1 text-sm">
+                  {company?.name || 'Minha Empresa'} • {' '}
+                  {new Date().toLocaleDateString('pt-BR', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })}
                 </p>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-sm text-gray-600">Último acesso</p>
-                  <p className="text-sm font-medium text-gray-900">{new Date().toLocaleString('pt-BR')}</p>
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Status</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                    <p className="text-sm font-medium text-slate-700">Em dia</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -183,107 +191,111 @@ function MeiDashboardContent() {
         </div>
 
         {/* Alertas importantes */}
-        <div className="px-6 py-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {diasParaDAS <= 7 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div className="flex">
-                  <HiExclamationTriangle className="h-5 w-5 text-yellow-400 mt-0.5" />
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-yellow-800">DAS Vencendo!</h3>
-                    <div className="mt-2 text-sm text-yellow-700">
-                      <p>
-                        O DAS vence em {diasParaDAS} dias. Valor: {formatCurrency(metrics.valorDAS)}
+        {(diasParaDAS <= 7 || percentualLimite > 80) && (
+          <div className="px-8 py-4">
+            <div className="flex gap-4">
+              {diasParaDAS <= 7 && (
+                <div className="flex-1 bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex">
+                    <HiExclamationTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-amber-800">DAS Próximo do Vencimento</h3>
+                      <p className="mt-1 text-sm text-amber-700">
+                        Vence em {diasParaDAS} dias • {formatCurrency(metrics.valorDAS)}
                       </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {percentualLimite > 80 && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex">
-                  <HiExclamationTriangle className="h-5 w-5 text-red-400 mt-0.5" />
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Atenção ao Limite</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      <p>Você já atingiu {percentualLimite.toFixed(1)}% do limite anual</p>
+              {percentualLimite > 80 && (
+                <div className="flex-1 bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex">
+                    <HiExclamationTriangle className="h-5 w-5 text-red-500 mt-0.5" />
+                    <div className="ml-3">
+                      <h3 className="text-sm font-medium text-red-800">Atenção ao Limite MEI</h3>
+                      <p className="mt-1 text-sm text-red-700">
+                        {percentualLimite.toFixed(1)}% do limite anual atingido
+                      </p>
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Métricas principais */}
-        <div className="px-6 py-2">
+        <div className="px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Receita Total */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Receita Total</p>
-                  <p className="text-3xl font-bold text-green-600">{formatCurrency(metrics.totalReceita)}</p>
-                  <p className="text-xs text-green-500 flex items-center mt-1">
-                    <HiArrowTrendingUp className="w-3 h-3 mr-1" />
-                    +12% vs mês anterior
-                  </p>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Receita</p>
+                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.totalReceita)}</p>
+                  <div className="flex items-center mt-3">
+                    <HiArrowTrendingUp className="w-4 h-4 text-emerald-500 mr-1" />
+                    <span className="text-sm text-emerald-600 font-medium">+12%</span>
+                    <span className="text-xs text-slate-500 ml-1">vs mês anterior</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-green-100 rounded-full">
-                  <HiCurrencyDollar className="w-6 h-6 text-green-600" />
+                <div className="p-3 bg-emerald-50 rounded-lg">
+                  <HiCurrencyDollar className="w-6 h-6 text-emerald-600" />
                 </div>
               </div>
             </div>
 
             {/* Despesas */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Despesas</p>
-                  <p className="text-3xl font-bold text-red-600">{formatCurrency(metrics.totalDespesa)}</p>
-                  <p className="text-xs text-red-500 flex items-center mt-1">
-                    <HiArrowDownRight className="w-3 h-3 mr-1" />
-                    -5% vs mês anterior
-                  </p>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Despesas</p>
+                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.totalDespesa)}</p>
+                  <div className="flex items-center mt-3">
+                    <HiArrowDownRight className="w-4 h-4 text-red-500 mr-1" />
+                    <span className="text-sm text-red-600 font-medium">-5%</span>
+                    <span className="text-xs text-slate-500 ml-1">vs mês anterior</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-red-100 rounded-full">
+                <div className="p-3 bg-red-50 rounded-lg">
                   <HiArrowDownRight className="w-6 h-6 text-red-600" />
                 </div>
               </div>
             </div>
 
             {/* Lucro Líquido */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Lucro Líquido</p>
-                  <p className="text-3xl font-bold text-blue-600">{formatCurrency(metrics.lucroLiquido)}</p>
-                  <p className="text-xs text-blue-500 flex items-center mt-1">
-                    <HiArrowTrendingUp className="w-3 h-3 mr-1" />
-                    +18% vs mês anterior
-                  </p>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Lucro</p>
+                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.lucroLiquido)}</p>
+                  <div className="flex items-center mt-3">
+                    <HiArrowTrendingUp className="w-4 h-4 text-blue-500 mr-1" />
+                    <span className="text-sm text-blue-600 font-medium">+18%</span>
+                    <span className="text-xs text-slate-500 ml-1">vs mês anterior</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-blue-100 rounded-full">
+                <div className="p-3 bg-blue-50 rounded-lg">
                   <HiChartPie className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </div>
 
             {/* Próximo DAS */}
-            <div className="bg-white rounded-xl shadow-sm border p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Próximo DAS</p>
-                  <p className="text-2xl font-bold text-purple-600">{formatCurrency(metrics.valorDAS)}</p>
-                  <p className="text-xs text-purple-500 flex items-center mt-1">
-                    <HiClock className="w-3 h-3 mr-1" />
-                    Vence em {diasParaDAS} dias
-                  </p>
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Próximo DAS</p>
+                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.valorDAS)}</p>
+                  <div className="flex items-center mt-3">
+                    <HiClock className="w-4 h-4 text-amber-500 mr-1" />
+                    <span className="text-sm text-amber-600 font-medium">{diasParaDAS} dias</span>
+                    <span className="text-xs text-slate-500 ml-1">para vencer</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-purple-100 rounded-full">
-                  <HiCalculator className="w-6 h-6 text-purple-600" />
+                <div className="p-3 bg-amber-50 rounded-lg">
+                  <HiCalculator className="w-6 h-6 text-amber-600" />
                 </div>
               </div>
             </div>
@@ -291,149 +303,192 @@ function MeiDashboardContent() {
         </div>
 
         {/* Gráfico de Limite de Faturamento */}
-        <div className="px-6 py-4">
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+        <div className="px-8 py-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">Limite de Faturamento Anual</h3>
-                <p className="text-sm text-gray-600">Acompanhe seu faturamento vs limite MEI</p>
+                <h3 className="text-lg font-semibold text-slate-900">Limite Anual MEI</h3>
+                <p className="text-sm text-slate-600 mt-1">Acompanhe seu faturamento em relação ao limite</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-gray-900">{percentualLimite.toFixed(1)}%</p>
-                <p className="text-sm text-gray-600">do limite utilizado</p>
+                <p className="text-2xl font-semibold text-slate-900">{percentualLimite.toFixed(1)}%</p>
+                <p className="text-sm text-slate-600">utilizado</p>
               </div>
             </div>
-
-            <div className="relative">
-              <div className="w-full bg-gray-200 rounded-full h-4">
-                <div
-                  className={`h-4 rounded-full transition-all duration-500 ${
-                    percentualLimite > 90 ? 'bg-red-500' : percentualLimite > 80 ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}
-                  style={{ width: `${Math.min(percentualLimite, 100)}%` }}
-                ></div>
+            
+            <div className="space-y-4">
+              <div className="relative">
+                <div className="w-full bg-slate-200 rounded-full h-3">
+                  <div 
+                    className={`h-3 rounded-full transition-all duration-1000 ${
+                      percentualLimite > 90 ? 'bg-red-500' :
+                      percentualLimite > 80 ? 'bg-amber-500' :
+                      'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(percentualLimite, 100)}%` }}
+                  ></div>
+                </div>
               </div>
-              <div className="flex justify-between mt-2 text-sm text-gray-600">
-                <span>{formatCurrency(metrics.faturamentoAtual)}</span>
-                <span>{formatCurrency(metrics.limiteFaturamento)}</span>
+              
+              <div className="flex justify-between items-center text-sm">
+                <div className="text-slate-600">
+                  <span className="font-medium text-slate-900">{formatCurrency(metrics.faturamentoAtual)}</span>
+                  <span className="ml-1">faturado</span>
+                </div>
+                <div className="text-slate-600">
+                  <span>limite </span>
+                  <span className="font-medium text-slate-900">{formatCurrency(metrics.limiteFaturamento)}</span>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
+                <div className="text-center">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Restante</p>
+                  <p className="text-lg font-semibold text-slate-900 mt-1">
+                    {formatCurrency(metrics.limiteFaturamento - metrics.faturamentoAtual)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Meta Mensal</p>
+                  <p className="text-lg font-semibold text-slate-900 mt-1">
+                    {formatCurrency(metrics.limiteFaturamento / 12)}
+                  </p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xs text-slate-500 uppercase tracking-wide">Margem Segura</p>
+                  <p className="text-lg font-semibold text-slate-900 mt-1">
+                    {formatCurrency(metrics.limiteFaturamento * 0.8)}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Transações Recentes e Notificações */}
-        <div className="px-6 py-4 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Transações Recentes */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Transações Recentes</h3>
-              <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">Ver todas</button>
-            </div>
-
-            <div className="space-y-4">
-              {recentTransactions.map(transaction => (
-                <div key={transaction.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className={`p-2 rounded-full ${
-                        transaction.type === 'Receita' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
-                      }`}
-                    >
-                      {transaction.type === 'Receita' ? (
-                        <HiArrowUpRight className="w-4 h-4" />
-                      ) : (
-                        <HiArrowDownRight className="w-4 h-4" />
-                      )}
+        {/* Transações e Atividade */}
+        <div className="px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Transações Recentes */}
+            <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-900">Movimentações Recentes</h3>
+                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  Ver todas
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {recentTransactions.map((transaction) => (
+                  <div key={transaction.id} className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
+                    <div className="flex items-center space-x-3">
+                      <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
+                        transaction.type === 'Receita' 
+                          ? 'bg-emerald-50 text-emerald-600' 
+                          : 'bg-red-50 text-red-600'
+                      }`}>
+                        {transaction.type === 'Receita' ? 
+                          <HiArrowUpRight className="w-5 h-5" /> : 
+                          <HiArrowDownRight className="w-5 h-5" />
+                        }
+                      </div>
+                      <div>
+                        <p className="font-medium text-slate-900">{transaction.description}</p>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-xs text-slate-500">{transaction.category}</span>
+                          <span className="text-xs text-slate-400">•</span>
+                          <span className="text-xs text-slate-500">{formatDate(transaction.date)}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-medium text-gray-900">{transaction.description}</p>
-                      <p className="text-xs text-gray-500">
-                        {transaction.category} • {formatDate(transaction.date)}
+                    <div className="text-right">
+                      <p className={`font-semibold ${
+                        transaction.type === 'Receita' ? 'text-emerald-600' : 'text-red-600'
+                      }`}>
+                        {transaction.type === 'Receita' ? '+' : '-'}{formatCurrency(transaction.value)}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p
-                      className={`font-semibold ${transaction.type === 'Receita' ? 'text-green-600' : 'text-red-600'}`}
-                    >
-                      {transaction.type === 'Receita' ? '+' : '-'}
-                      {formatCurrency(transaction.value)}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Notificações */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Notificações</h3>
-              <HiBell className="w-5 h-5 text-gray-400" />
+                ))}
+              </div>
             </div>
 
-            <div className="space-y-4">
-              {notifications.map(notification => (
-                <div key={notification.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div
-                    className={`p-1 rounded-full mt-1 ${
-                      notification.type === 'warning'
-                        ? 'bg-yellow-100 text-yellow-600'
-                        : notification.type === 'success'
-                        ? 'bg-green-100 text-green-600'
-                        : 'bg-blue-100 text-blue-600'
-                    }`}
-                  >
-                    {notification.type === 'warning' ? (
-                      <HiExclamationTriangle className="w-3 h-3" />
-                    ) : notification.type === 'success' ? (
-                      <HiCheckCircle className="w-3 h-3" />
-                    ) : (
-                      <HiBell className="w-3 h-3" />
-                    )}
+            {/* Atividades e Notificações */}
+            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-slate-900">Atividades</h3>
+                <HiBell className="w-5 h-5 text-slate-400" />
+              </div>
+              
+              <div className="space-y-4">
+                {notifications.map((notification) => (
+                  <div key={notification.id} className="relative">
+                    <div className="flex items-start space-x-3">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        notification.type === 'warning' 
+                          ? 'bg-amber-50 text-amber-600' 
+                          : notification.type === 'success'
+                          ? 'bg-emerald-50 text-emerald-600'
+                          : 'bg-blue-50 text-blue-600'
+                      }`}>
+                        {notification.type === 'warning' ? 
+                          <HiExclamationTriangle className="w-4 h-4" /> :
+                          notification.type === 'success' ?
+                          <HiCheckCircle className="w-4 h-4" /> :
+                          <HiBell className="w-4 h-4" />
+                        }
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-slate-900">{notification.title}</p>
+                        <p className="text-xs text-slate-600 mt-1 line-clamp-2">{notification.message}</p>
+                        <p className="text-xs text-slate-500 mt-2">{formatDate(notification.date)}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 text-sm">{notification.title}</p>
-                    <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
-                    <p className="text-xs text-gray-500 mt-1">{formatDate(notification.date)}</p>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Actions rápidas */}
-        <div className="px-6 py-4">
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Ações Rápidas</h3>
+        <div className="px-8 py-6">
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-6">Ações Rápidas</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button className="flex flex-col items-center p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors group">
-                <div className="p-3 bg-green-500 rounded-full group-hover:bg-green-600 transition-colors">
-                  <HiCurrencyDollar className="w-6 h-6 text-white" />
+              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
+                <div className="p-3 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
+                  <HiCurrencyDollar className="w-6 h-6 text-emerald-600" />
                 </div>
-                <span className="mt-2 text-sm font-medium text-green-700">Nova Receita</span>
+                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-emerald-700">
+                  Adicionar Receita
+                </span>
               </button>
-
-              <button className="flex flex-col items-center p-4 bg-red-50 hover:bg-red-100 rounded-lg transition-colors group">
-                <div className="p-3 bg-red-500 rounded-full group-hover:bg-red-600 transition-colors">
-                  <HiArrowDownRight className="w-6 h-6 text-white" />
+              
+              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 transition-all duration-200">
+                <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
+                  <HiArrowDownRight className="w-6 h-6 text-red-600" />
                 </div>
-                <span className="mt-2 text-sm font-medium text-red-700">Nova Despesa</span>
+                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-red-700">
+                  Registrar Despesa
+                </span>
               </button>
-
-              <button className="flex flex-col items-center p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group">
-                <div className="p-3 bg-purple-500 rounded-full group-hover:bg-purple-600 transition-colors">
-                  <HiCalculator className="w-6 h-6 text-white" />
+              
+              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-amber-300 hover:bg-amber-50 transition-all duration-200">
+                <div className="p-3 bg-amber-100 rounded-lg group-hover:bg-amber-200 transition-colors">
+                  <HiCalculator className="w-6 h-6 text-amber-600" />
                 </div>
-                <span className="mt-2 text-sm font-medium text-purple-700">Calcular DAS</span>
+                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-amber-700">
+                  Calcular DAS
+                </span>
               </button>
-
-              <button className="flex flex-col items-center p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group">
-                <div className="p-3 bg-blue-500 rounded-full group-hover:bg-blue-600 transition-colors">
-                  <HiDocumentText className="w-6 h-6 text-white" />
+              
+              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
+                <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                  <HiDocumentText className="w-6 h-6 text-blue-600" />
                 </div>
-                <span className="mt-2 text-sm font-medium text-blue-700">Gerar Relatório</span>
+                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-blue-700">
+                  Gerar Relatório
+                </span>
               </button>
             </div>
           </div>
