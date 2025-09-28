@@ -36,10 +36,10 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
 
     handleResize();
     window.addEventListener('resize', handleResize);
-    
+
     // Adicionar classe CSS global para o body
     document.body.style.setProperty('--sidebar-width', isCollapsed ? '4rem' : '16rem');
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
@@ -173,7 +173,9 @@ export default function AdminSidebar({ currentPage = 'dashboard' }: AdminSidebar
                   href={item.href}
                   className={`
                     group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                    ${active ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}
+                    ${
+                      active ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'
+                    }
                     ${isCollapsed ? 'justify-center' : ''}
                   `}
                   title={isCollapsed ? item.name : undefined}
