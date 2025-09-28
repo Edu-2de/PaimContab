@@ -6,20 +6,20 @@ const getDespesas = async (req, res) => {
   try {
     const { companyId } = req.params;
     const { month, category, status, isDeductible, page = 1, limit = 50 } = req.query;
-    
+
     const skip = (page - 1) * limit;
-    
+
     const where = {
       companyId,
       ...(month && {
         date: {
           gte: new Date(`${month}-01`),
-          lt: new Date(new Date(`${month}-01`).getFullYear(), new Date(`${month}-01`).getMonth() + 1, 1)
-        }
+          lt: new Date(new Date(`${month}-01`).getFullYear(), new Date(`${month}-01`).getMonth() + 1, 1),
+        },
       }),
       ...(category && { category }),
       ...(status && { status }),
-      ...(isDeductible !== undefined && { isDeductible: isDeductible === 'true' })
+      ...(isDeductible !== undefined && { isDeductible: isDeductible === 'true' }),
     };
 
     const [despesas, total] = await Promise.all([
@@ -27,15 +27,15 @@ const getDespesas = async (req, res) => {
         where,
         orderBy: { date: 'desc' },
         skip: parseInt(skip),
-        take: parseInt(limit)
+        take: parseInt(limit),
       }),
-      prisma.despesa.count({ where })
+      prisma.despesa.count({ where }),
     ]);
 
     // Calcular totais
     const totalValue = await prisma.despesa.aggregate({
       where,
-      _sum: { value: true }
+      _sum: { value: true },
     });
 
     res.json({
@@ -44,11 +44,11 @@ const getDespesas = async (req, res) => {
         total,
         page: parseInt(page),
         pages: Math.ceil(total / limit),
-        limit: parseInt(limit)
+        limit: parseInt(limit),
       },
       summary: {
-        totalValue: totalValue._sum.value || 0
-      }
+        totalValue: totalValue._sum.value || 0,
+      },
     });
   } catch (error) {
     console.error('Erro ao buscar despesas:', error);
@@ -60,14 +60,14 @@ const getDespesas = async (req, res) => {
 const getDespesaById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const despesa = await prisma.despesa.findUnique({
       where: { id },
       include: {
         company: {
-          select: { companyName: true }
-        }
-      }
+          select: { companyName: true },
+        },
+      },
     });
 
     if (!despesa) {
@@ -85,22 +85,13 @@ const getDespesaById = async (req, res) => {
 const createDespesa = async (req, res) => {
   try {
     const { companyId } = req.params;
-    const {
-      description,
-      value,
-      date,
-      category,
-      supplier,
-      invoiceNumber,
-      paymentMethod,
-      status,
-      isDeductible
-    } = req.body;
+    const { description, value, date, category, supplier, invoiceNumber, paymentMethod, status, isDeductible } =
+      req.body;
 
     // Validações
     if (!description || !value || !date || !category) {
-      return res.status(400).json({ 
-        error: 'Campos obrigatórios: description, value, date, category' 
+      return res.status(400).json({
+        error: 'Campos obrigatórios: description, value, date, category',
       });
     }
 
@@ -120,7 +111,7 @@ const createDespesa = async (req, res) => {
 
     // Verificar se a empresa existe
     const company = await prisma.company.findUnique({
-      where: { id: companyId }
+      where: { id: companyId },
     });
 
     if (!company) {
@@ -138,8 +129,8 @@ const createDespesa = async (req, res) => {
         invoiceNumber,
         paymentMethod: paymentMethod || 'PIX',
         status: status || 'Pago',
-        isDeductible: isDeductible !== undefined ? isDeductible : true
-      }
+        isDeductible: isDeductible !== undefined ? isDeductible : true,
+      },
     });
 
     res.status(201).json(despesa);
@@ -153,21 +144,12 @@ const createDespesa = async (req, res) => {
 const updateDespesa = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      description,
-      value,
-      date,
-      category,
-      supplier,
-      invoiceNumber,
-      paymentMethod,
-      status,
-      isDeductible
-    } = req.body;
+    const { description, value, date, category, supplier, invoiceNumber, paymentMethod, status, isDeductible } =
+      req.body;
 
     // Verificar se a despesa existe
     const existingDespesa = await prisma.despesa.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingDespesa) {
@@ -200,8 +182,8 @@ const updateDespesa = async (req, res) => {
         ...(invoiceNumber !== undefined && { invoiceNumber }),
         ...(paymentMethod && { paymentMethod }),
         ...(status && { status }),
-        ...(isDeductible !== undefined && { isDeductible })
-      }
+        ...(isDeductible !== undefined && { isDeductible }),
+      },
     });
 
     res.json(despesa);
@@ -218,7 +200,7 @@ const deleteDespesa = async (req, res) => {
 
     // Verificar se a despesa existe
     const existingDespesa = await prisma.despesa.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingDespesa) {
@@ -226,7 +208,7 @@ const deleteDespesa = async (req, res) => {
     }
 
     await prisma.despesa.delete({
-      where: { id }
+      where: { id },
     });
 
     res.json({ message: 'Despesa excluída com sucesso' });
@@ -249,33 +231,33 @@ const getDespesasStats = async (req, res) => {
       companyId,
       date: {
         gte: startDate,
-        lte: endDate
-      }
+        lte: endDate,
+      },
     };
 
     // Totais por status
     const totalGeral = await prisma.despesa.aggregate({
       where,
       _sum: { value: true },
-      _count: true
+      _count: true,
     });
 
     const pagas = await prisma.despesa.aggregate({
       where: { ...where, status: 'Pago' },
       _sum: { value: true },
-      _count: true
+      _count: true,
     });
 
     const pendentes = await prisma.despesa.aggregate({
       where: { ...where, status: 'Pendente' },
       _sum: { value: true },
-      _count: true
+      _count: true,
     });
 
     const dedutiveis = await prisma.despesa.aggregate({
       where: { ...where, isDeductible: true },
       _sum: { value: true },
-      _count: true
+      _count: true,
     });
 
     // Despesas por mês
@@ -297,38 +279,38 @@ const getDespesasStats = async (req, res) => {
       where,
       _sum: { value: true },
       _count: true,
-      orderBy: { _sum: { value: 'desc' } }
+      orderBy: { _sum: { value: 'desc' } },
     });
 
     res.json({
       totais: {
         geral: {
           valor: totalGeral._sum.value || 0,
-          quantidade: totalGeral._count
+          quantidade: totalGeral._count,
         },
         pagas: {
           valor: pagas._sum.value || 0,
-          quantidade: pagas._count
+          quantidade: pagas._count,
         },
         pendentes: {
           valor: pendentes._sum.value || 0,
-          quantidade: pendentes._count
+          quantidade: pendentes._count,
         },
         dedutiveis: {
           valor: dedutiveis._sum.value || 0,
-          quantidade: dedutiveis._count
-        }
+          quantidade: dedutiveis._count,
+        },
       },
       porMes: despesasPorMes.map(item => ({
         mes: parseInt(item.month),
         total: parseFloat(item.total),
-        quantidade: parseInt(item.count)
+        quantidade: parseInt(item.count),
       })),
       porCategoria: despesasPorCategoria.map(item => ({
         categoria: item.category,
         total: item._sum.value || 0,
-        quantidade: item._count
-      }))
+        quantidade: item._count,
+      })),
     });
   } catch (error) {
     console.error('Erro ao buscar estatísticas de despesas:', error);
@@ -342,5 +324,5 @@ module.exports = {
   createDespesa,
   updateDespesa,
   deleteDespesa,
-  getDespesasStats
+  getDespesasStats,
 };

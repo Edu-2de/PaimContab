@@ -2,22 +2,22 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Função para calcular o DAS baseado na receita bruta
-const calculateDAS = (revenue) => {
+const calculateDAS = revenue => {
   // Para MEI: Anexo XI do Simples Nacional
   // Alíquota única de 6% sobre a receita bruta até R$ 6.750 por mês (R$ 81.000 por ano)
   const DAS_RATE = 0.06;
-  const MIN_DAS_VALUE = 66.60; // Valor mínimo do DAS MEI 2024
-  
+  const MIN_DAS_VALUE = 66.6; // Valor mínimo do DAS MEI 2024
+
   const calculatedDAS = revenue * DAS_RATE;
   return Math.max(calculatedDAS, MIN_DAS_VALUE);
 };
 
 // Função para calcular a data de vencimento do DAS
-const getDueDate = (competencyMonth) => {
+const getDueDate = competencyMonth => {
   const [year, month] = competencyMonth.split('-');
   const nextMonth = parseInt(month) === 12 ? 1 : parseInt(month) + 1;
   const nextYear = parseInt(month) === 12 ? parseInt(year) + 1 : parseInt(year);
-  
+
   // DAS vence sempre no dia 20 do mês seguinte
   return new Date(nextYear, nextMonth - 1, 20);
 };
@@ -27,17 +27,17 @@ const getDASCalculations = async (req, res) => {
   try {
     const { companyId } = req.params;
     const { year, isPaid, page = 1, limit = 50 } = req.query;
-    
+
     const skip = (page - 1) * limit;
-    
+
     let where = { companyId };
-    
+
     if (year) {
       where.month = {
-        contains: year
+        contains: year,
       };
     }
-    
+
     if (isPaid !== undefined) {
       where.isPaid = isPaid === 'true';
     }
@@ -47,9 +47,9 @@ const getDASCalculations = async (req, res) => {
         where,
         orderBy: { month: 'desc' },
         skip: parseInt(skip),
-        take: parseInt(limit)
+        take: parseInt(limit),
       }),
-      prisma.dASCalculation.count({ where })
+      prisma.dASCalculation.count({ where }),
     ]);
 
     res.json({
@@ -58,8 +58,8 @@ const getDASCalculations = async (req, res) => {
         total,
         page: parseInt(page),
         pages: Math.ceil(total / limit),
-        limit: parseInt(limit)
-      }
+        limit: parseInt(limit),
+      },
     });
   } catch (error) {
     console.error('Erro ao buscar cálculos DAS:', error);
@@ -71,14 +71,14 @@ const getDASCalculations = async (req, res) => {
 const getDASById = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const dasCalculation = await prisma.dASCalculation.findUnique({
       where: { id },
       include: {
         company: {
-          select: { companyName: true }
-        }
-      }
+          select: { companyName: true },
+        },
+      },
     });
 
     if (!dasCalculation) {
@@ -104,7 +104,7 @@ const calculateDASForMonth = async (req, res) => {
 
     // Verificar se a empresa existe
     const company = await prisma.company.findUnique({
-      where: { id: companyId }
+      where: { id: companyId },
     });
 
     if (!company) {
@@ -126,11 +126,11 @@ const calculateDASForMonth = async (req, res) => {
           companyId,
           date: {
             gte: startDate,
-            lte: endDate
+            lte: endDate,
           },
-          status: 'Recebido' // Apenas receitas recebidas
+          status: 'Recebido', // Apenas receitas recebidas
         },
-        _sum: { value: true }
+        _sum: { value: true },
       });
 
       revenue = receitasAggregate._sum.value || 0;
@@ -144,9 +144,9 @@ const calculateDASForMonth = async (req, res) => {
       where: {
         companyId_month: {
           companyId,
-          month
-        }
-      }
+          month,
+        },
+      },
     });
 
     let dasCalculation;
@@ -158,8 +158,8 @@ const calculateDASForMonth = async (req, res) => {
         data: {
           revenue,
           dasValue,
-          dueDate
-        }
+          dueDate,
+        },
       });
     } else {
       // Criar novo cálculo
@@ -169,8 +169,8 @@ const calculateDASForMonth = async (req, res) => {
           month,
           revenue,
           dasValue,
-          dueDate
-        }
+          dueDate,
+        },
       });
     }
 
@@ -188,7 +188,7 @@ const markDASAsPaid = async (req, res) => {
     const { paymentDate } = req.body;
 
     const existingDAS = await prisma.dASCalculation.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingDAS) {
@@ -203,8 +203,8 @@ const markDASAsPaid = async (req, res) => {
       where: { id },
       data: {
         isPaid: true,
-        paymentDate: paymentDate ? new Date(paymentDate) : new Date()
-      }
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+      },
     });
 
     res.json(dasCalculation);
@@ -220,7 +220,7 @@ const markDASAsPending = async (req, res) => {
     const { id } = req.params;
 
     const existingDAS = await prisma.dASCalculation.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!existingDAS) {
@@ -231,8 +231,8 @@ const markDASAsPending = async (req, res) => {
       where: { id },
       data: {
         isPaid: false,
-        paymentDate: null
-      }
+        paymentDate: null,
+      },
     });
 
     res.json(dasCalculation);
@@ -251,27 +251,27 @@ const getDASStats = async (req, res) => {
     const where = {
       companyId,
       month: {
-        contains: year.toString()
-      }
+        contains: year.toString(),
+      },
     };
 
     // Totais gerais
     const totalGeral = await prisma.dASCalculation.aggregate({
       where,
       _sum: { dasValue: true, revenue: true },
-      _count: true
+      _count: true,
     });
 
     const totalPago = await prisma.dASCalculation.aggregate({
       where: { ...where, isPaid: true },
       _sum: { dasValue: true },
-      _count: true
+      _count: true,
     });
 
     const totalPendente = await prisma.dASCalculation.aggregate({
       where: { ...where, isPaid: false },
       _sum: { dasValue: true },
-      _count: true
+      _count: true,
     });
 
     // DAS por mês
@@ -283,24 +283,20 @@ const getDASStats = async (req, res) => {
         dasValue: true,
         revenue: true,
         isPaid: true,
-        dueDate: true
-      }
+        dueDate: true,
+      },
     });
 
     // Verificar DAS vencidos
     const today = new Date();
-    const vencidos = dasCalculations.filter(das => 
-      !das.isPaid && new Date(das.dueDate) < today
-    );
+    const vencidos = dasCalculations.filter(das => !das.isPaid && new Date(das.dueDate) < today);
 
     // Próximos a vencer (próximos 30 dias)
     const thirtyDaysFromNow = new Date();
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    
-    const proximosVencer = dasCalculations.filter(das => 
-      !das.isPaid && 
-      new Date(das.dueDate) >= today && 
-      new Date(das.dueDate) <= thirtyDaysFromNow
+
+    const proximosVencer = dasCalculations.filter(
+      das => !das.isPaid && new Date(das.dueDate) >= today && new Date(das.dueDate) <= thirtyDaysFromNow
     );
 
     res.json({
@@ -308,34 +304,34 @@ const getDASStats = async (req, res) => {
         geral: {
           valorDAS: totalGeral._sum.dasValue || 0,
           receita: totalGeral._sum.revenue || 0,
-          quantidade: totalGeral._count
+          quantidade: totalGeral._count,
         },
         pago: {
           valorDAS: totalPago._sum.dasValue || 0,
-          quantidade: totalPago._count
+          quantidade: totalPago._count,
         },
         pendente: {
           valorDAS: totalPendente._sum.dasValue || 0,
-          quantidade: totalPendente._count
-        }
+          quantidade: totalPendente._count,
+        },
       },
       alertas: {
         vencidos: {
           quantidade: vencidos.length,
-          valor: vencidos.reduce((sum, das) => sum + das.dasValue, 0)
+          valor: vencidos.reduce((sum, das) => sum + das.dasValue, 0),
         },
         proximosVencer: {
           quantidade: proximosVencer.length,
-          valor: proximosVencer.reduce((sum, das) => sum + das.dasValue, 0)
-        }
+          valor: proximosVencer.reduce((sum, das) => sum + das.dasValue, 0),
+        },
       },
       porMes: dasCalculations.map(das => ({
         mes: das.month,
         receita: das.revenue,
         valorDAS: das.dasValue,
         pago: das.isPaid,
-        dataVencimento: das.dueDate
-      }))
+        dataVencimento: das.dueDate,
+      })),
     });
   } catch (error) {
     console.error('Erro ao buscar estatísticas DAS:', error);
@@ -351,7 +347,7 @@ const autoCalculateDAS = async (req, res) => {
 
     // Verificar se a empresa existe
     const company = await prisma.company.findUnique({
-      where: { id: companyId }
+      where: { id: companyId },
     });
 
     if (!company) {
@@ -384,9 +380,9 @@ const autoCalculateDAS = async (req, res) => {
         where: {
           companyId_month: {
             companyId,
-            month
-          }
-        }
+            month,
+          },
+        },
       });
 
       let dasCalculation;
@@ -399,8 +395,8 @@ const autoCalculateDAS = async (req, res) => {
             data: {
               revenue,
               dasValue,
-              dueDate
-            }
+              dueDate,
+            },
           });
         } else {
           dasCalculation = existingDAS;
@@ -413,8 +409,8 @@ const autoCalculateDAS = async (req, res) => {
             month,
             revenue,
             dasValue,
-            dueDate
-          }
+            dueDate,
+          },
         });
       }
 
@@ -423,7 +419,7 @@ const autoCalculateDAS = async (req, res) => {
 
     res.json({
       message: `${results.length} cálculos de DAS processados`,
-      calculations: results
+      calculations: results,
     });
   } catch (error) {
     console.error('Erro ao calcular DAS automaticamente:', error);
@@ -438,5 +434,5 @@ module.exports = {
   markDASAsPaid,
   markDASAsPending,
   getDASStats,
-  autoCalculateDAS
+  autoCalculateDAS,
 };
