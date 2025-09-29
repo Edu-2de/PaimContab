@@ -440,8 +440,8 @@ function ReceitasContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                 <input
                   type="text"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  value={formData.descricao}
+                  onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                   placeholder="Digite a descrição da receita..."
                   required
@@ -454,8 +454,8 @@ function ReceitasContent() {
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.value}
-                    onChange={e => setFormData({ ...formData, value: e.target.value })}
+                    value={formData.valor}
+                    onChange={e => setFormData({ ...formData, valor: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     placeholder="0,00"
                     required
@@ -463,11 +463,11 @@ function ReceitasContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Recebimento</label>
                   <input
                     type="date"
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
+                    value={formData.dataRecebimento}
+                    onChange={e => setFormData({ ...formData, dataRecebimento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   />
@@ -477,8 +477,8 @@ function ReceitasContent() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                 <select
-                  value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value })}
+                  value={formData.categoria}
+                  onChange={e => setFormData({ ...formData, categoria: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                   required
                 >
@@ -491,23 +491,36 @@ function ReceitasContent() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
-                <input
-                  type="text"
-                  value={formData.clientName}
-                  onChange={e => setFormData({ ...formData, clientName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                  placeholder="Nome do cliente (opcional)"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+                  <input
+                    type="text"
+                    value={formData.cliente}
+                    onChange={e => setFormData({ ...formData, cliente: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="Nome do cliente (opcional)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota</label>
+                  <input
+                    type="text"
+                    value={formData.numeroNota}
+                    onChange={e => setFormData({ ...formData, numeroNota: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="NF-001 (opcional)"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Pagamento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
                   <select
-                    value={formData.paymentMethod}
-                    onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}
+                    value={formData.metodoPagamento}
+                    onChange={e => setFormData({ ...formData, metodoPagamento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
@@ -536,6 +549,17 @@ function ReceitasContent() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea
+                  value={formData.observacoes}
+                  onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  placeholder="Observações adicionais (opcional)"
+                  rows={3}
+                />
+              </div>
+
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
@@ -546,9 +570,10 @@ function ReceitasContent() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                  disabled={saving}
+                  className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {editingReceita ? 'Atualizar' : 'Salvar'}
+                  {saving ? 'Salvando...' : editingReceita ? 'Atualizar' : 'Salvar'}
                 </button>
               </div>
             </form>

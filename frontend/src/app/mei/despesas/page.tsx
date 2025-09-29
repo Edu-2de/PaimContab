@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
 import {
@@ -13,27 +13,30 @@ import {
 
 interface Despesa {
   id: string;
-  description: string;
-  value: number;
-  date: string;
-  category: string;
-  supplier?: string;
-  invoiceNumber?: string;
-  paymentMethod: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
+  descricao: string;
+  valor: number;
+  dataPagamento: string;
+  categoria: string;
+  fornecedor?: string;
+  numeroNotaFiscal?: string;
+  metodoPagamento: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
   status: 'Pago' | 'Pendente' | 'Cancelado';
-  isDeductible: boolean;
+  dedutivel: boolean;
+  observacoes?: string;
+  createdAt: string;
 }
 
 interface DespesaFormData {
-  description: string;
-  value: string;
-  date: string;
-  category: string;
-  supplier: string;
-  invoiceNumber: string;
-  paymentMethod: string;
+  descricao: string;
+  valor: string;
+  dataPagamento: string;
+  categoria: string;
+  fornecedor: string;
+  numeroNotaFiscal: string;
+  metodoPagamento: string;
   status: string;
-  isDeductible: boolean;
+  dedutivel: boolean;
+  observacoes: string;
 }
 
 const categories = [
