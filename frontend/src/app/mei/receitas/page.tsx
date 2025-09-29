@@ -50,110 +50,135 @@ function formatDate(dateStr: string) {
 }
 
 function ReceitasContent() {
-  const [receitas, setReceitas] = useState<Receita[]>([
-    {
-      id: '1',
-      description: 'Serviço de consultoria em TI',
-      value: 2500,
-      date: '2024-09-25',
-      category: 'Prestação de Serviços',
-      clientName: 'Empresa ABC Ltda',
-      invoiceNumber: 'NF-001',
-      paymentMethod: 'PIX',
-      status: 'Recebido',
-    },
-    {
-      id: '2',
-      description: 'Venda de produto digital',
-      value: 800,
-      date: '2024-09-23',
-      category: 'Vendas de Produtos',
-      clientName: 'João Silva',
-      paymentMethod: 'Cartão Crédito',
-      status: 'Recebido',
-    },
-    {
-      id: '3',
-      description: 'Curso online de programação',
-      value: 1200,
-      date: '2024-09-20',
-      category: 'Licenciamento',
-      clientName: 'Maria Santos',
-      paymentMethod: 'Transferência',
-      status: 'Pendente',
-    },
-  ]);
-
+  const [receitas, setReceitas] = useState<Receita[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [formData, setFormData] = useState<ReceitaFormData>({
-    description: '',
-    value: '',
-    date: new Date().toISOString().slice(0, 10),
-    category: '',
-    clientName: '',
-    invoiceNumber: '',
-    paymentMethod: '',
+    descricao: '',
+    valor: '',
+    dataRecebimento: new Date().toISOString().slice(0, 10),
+    categoria: '',
+    cliente: '',
+    numeroNota: '',
+    metodoPagamento: 'PIX',
     status: 'Recebido',
+    observacoes: '',
   });
+
+  // Buscar receitas do backend
+  const fetchReceitas = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setReceitas(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar receitas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReceitas();
+  }, [fetchReceitas]);
 
   // Filtragem de receitas
   const filteredReceitas = receitas.filter(receita => {
     const matchesSearch =
-      receita.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const receitaMonth = receita.date.slice(0, 7);
+      receita.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      receita.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      receita.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+    const receitaMonth = receita.dataRecebimento.slice(0, 7);
     const matchesMonth = selectedMonth === '' || receitaMonth === selectedMonth;
 
     return matchesSearch && matchesMonth;
   });
 
   // Cálculos de métricas
-  const totalReceitas = filteredReceitas.reduce((sum, receita) => sum + receita.value, 0);
+  const totalReceitas = filteredReceitas.reduce((sum, receita) => sum + receita.valor, 0);
   const receitasRecebidas = filteredReceitas
     .filter(r => r.status === 'Recebido')
-    .reduce((sum, receita) => sum + receita.value, 0);
+    .reduce((sum, receita) => sum + receita.valor, 0);
   const receitasPendentes = filteredReceitas
     .filter(r => r.status === 'Pendente')
-    .reduce((sum, receita) => sum + receita.value, 0);
+    .reduce((sum, receita) => sum + receita.valor, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('authToken');
 
-    const newReceita: Receita = {
-      id: editingReceita ? editingReceita.id : Date.now().toString(),
-      description: formData.description,
-      value: parseFloat(formData.value),
-      date: formData.date,
-      category: formData.category,
-      clientName: formData.clientName,
-      invoiceNumber: formData.invoiceNumber,
-      paymentMethod: formData.paymentMethod as Receita['paymentMethod'],
-      status: formData.status as Receita['status'],
-    };
+      const receitaData = {
+        descricao: formData.descricao,
+        valor: parseFloat(formData.valor),
+        dataRecebimento: formData.dataRecebimento,
+        categoria: formData.categoria,
+        cliente: formData.cliente,
+        numeroNota: formData.numeroNota,
+        metodoPagamento: formData.metodoPagamento,
+        status: formData.status,
+        observacoes: formData.observacoes,
+      };
 
-    if (editingReceita) {
-      setReceitas(prev => prev.map(r => (r.id === editingReceita.id ? newReceita : r)));
-    } else {
-      setReceitas(prev => [newReceita, ...prev]);
+      let response;
+      if (editingReceita) {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${editingReceita.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(receitaData),
+        });
+      } else {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(receitaData),
+        });
+      }
+
+      if (response.ok) {
+        await fetchReceitas(); // Recarregar dados
+        resetForm();
+      } else {
+        console.error('Erro ao salvar receita');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar receita:', error);
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
     setFormData({
-      description: '',
-      value: '',
-      date: new Date().toISOString().slice(0, 10),
-      category: '',
-      clientName: '',
-      invoiceNumber: '',
-      paymentMethod: '',
+      descricao: '',
+      valor: '',
+      dataRecebimento: new Date().toISOString().slice(0, 10),
+      categoria: '',
+      cliente: '',
+      numeroNota: '',
+      metodoPagamento: 'PIX',
       status: 'Recebido',
+      observacoes: '',
     });
     setEditingReceita(null);
     setShowModal(false);
@@ -161,22 +186,38 @@ function ReceitasContent() {
 
   const handleEdit = (receita: Receita) => {
     setFormData({
-      description: receita.description,
-      value: receita.value.toString(),
-      date: receita.date,
-      category: receita.category,
-      clientName: receita.clientName || '',
-      invoiceNumber: receita.invoiceNumber || '',
-      paymentMethod: receita.paymentMethod,
+      descricao: receita.descricao,
+      valor: receita.valor.toString(),
+      dataRecebimento: receita.dataRecebimento,
+      categoria: receita.categoria,
+      cliente: receita.cliente || '',
+      numeroNota: receita.numeroNota || '',
+      metodoPagamento: receita.metodoPagamento,
       status: receita.status,
+      observacoes: receita.observacoes || '',
     });
     setEditingReceita(receita);
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta receita?')) {
-      setReceitas(prev => prev.filter(r => r.id !== id));
+      try {
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          await fetchReceitas(); // Recarregar dados
+        } else {
+          console.error('Erro ao excluir receita');
+        }
+      } catch (error) {
+        console.error('Erro ao excluir receita:', error);
+      }
     }
   };
 
@@ -299,20 +340,20 @@ function ReceitasContent() {
                       <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
                         <td className="py-4 px-6">
                           <div>
-                            <div className="text-sm font-medium text-gray-900 mb-1">{receita.description}</div>
+                            <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
                             <div className="text-xs text-gray-500">
-                              {receita.clientName && `${receita.clientName} • `}
-                              {receita.category}
+                              {receita.cliente && `${receita.cliente} • `}
+                              {receita.categoria}
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="text-sm text-gray-900">{formatDate(receita.date)}</div>
-                          <div className="text-xs text-gray-500">{receita.paymentMethod}</div>
+                          <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
+                          <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="text-sm font-mono font-medium text-gray-900">
-                            {formatCurrency(receita.value)}
+                            {formatCurrency(receita.valor)}
                           </div>
                         </td>
                         <td className="py-4 px-6">
