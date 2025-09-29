@@ -1,57 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
-import {
-  HiPlus,
-  HiPencilSquare,
-  HiTrash,
-  HiMagnifyingGlass,
-  HiCalendar,
-  HiArrowDownRight,
-  HiArrowTrendingDown,
-  HiArrowDownTray,
-  HiReceiptPercent,
-} from 'react-icons/hi2';
+import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
 
 interface Despesa {
   id: string;
-  description: string;
-  value: number;
-  date: string;
-  category: string;
-  supplier?: string;
-  invoiceNumber?: string;
-  paymentMethod: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
+  descricao: string;
+  valor: number;
+  dataPagamento: string;
+  categoria: string;
+  fornecedor?: string;
+  numeroNotaFiscal?: string;
+  metodoPagamento: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
   status: 'Pago' | 'Pendente' | 'Cancelado';
-  isDeductible: boolean;
+  dedutivel: boolean;
+  observacoes?: string;
+  createdAt: string;
 }
 
 interface DespesaFormData {
-  description: string;
-  value: string;
-  date: string;
-  category: string;
-  supplier: string;
-  invoiceNumber: string;
-  paymentMethod: string;
+  descricao: string;
+  valor: string;
+  dataPagamento: string;
+  categoria: string;
+  fornecedor: string;
+  numeroNotaFiscal: string;
+  metodoPagamento: string;
   status: string;
-  isDeductible: boolean;
+  dedutivel: boolean;
+  observacoes: string;
 }
 
 const categories = [
   'Material de Escritório',
   'Equipamentos',
   'Software e Licenças',
-  'Internet e Telefone',
-  'Marketing e Publicidade',
+  'Internet/Telefone',
+  'Marketing/Publicidade',
   'Combustível',
   'Manutenção',
-  'Taxas e Impostos',
+  'Taxas/Impostos',
   'Consultoria',
   'Treinamentos',
   'Aluguel',
+  'Energia Elétrica',
+  'Matéria-prima',
   'Outros',
 ];
 
@@ -64,119 +59,141 @@ function formatDate(dateStr: string) {
 }
 
 function DespesasContent() {
-  const [despesas, setDespesas] = useState<Despesa[]>([
-    {
-      id: '1',
-      description: 'Internet e telefone mensal',
-      value: 150,
-      date: '2024-09-24',
-      category: 'Internet e Telefone',
-      supplier: 'Telecom ABC',
-      invoiceNumber: 'TEL-2024-09',
-      paymentMethod: 'Cartão Débito',
-      status: 'Pago',
-      isDeductible: true,
-    },
-    {
-      id: '2',
-      description: 'Material de escritório',
-      value: 200,
-      date: '2024-09-22',
-      category: 'Material de Escritório',
-      supplier: 'Papelaria XYZ',
-      paymentMethod: 'PIX',
-      status: 'Pago',
-      isDeductible: true,
-    },
-    {
-      id: '3',
-      description: 'Software de contabilidade',
-      value: 89,
-      date: '2024-09-20',
-      category: 'Software e Licenças',
-      supplier: 'Software Inc',
-      paymentMethod: 'Cartão Crédito',
-      status: 'Pago',
-      isDeductible: true,
-    },
-  ]);
-
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [formData, setFormData] = useState<DespesaFormData>({
-    description: '',
-    value: '',
-    date: new Date().toISOString().slice(0, 10),
-    category: '',
-    supplier: '',
-    invoiceNumber: '',
-    paymentMethod: '',
+    descricao: '',
+    valor: '',
+    dataPagamento: new Date().toISOString().slice(0, 10),
+    categoria: '',
+    fornecedor: '',
+    numeroNotaFiscal: '',
+    metodoPagamento: 'PIX',
     status: 'Pago',
-    isDeductible: true,
+    dedutivel: true,
+    observacoes: '',
   });
+
+  // Buscar despesas do backend
+  const fetchDespesas = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDespesas(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar despesas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDespesas();
+  }, [fetchDespesas]);
 
   // Filtragem de despesas
   const filteredDespesas = despesas.filter(despesa => {
     const matchesSearch =
-      despesa.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const despesaMonth = despesa.date.slice(0, 7);
+      despesa.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      despesa.fornecedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      despesa.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+    const despesaMonth = despesa.dataPagamento.slice(0, 7);
     const matchesMonth = selectedMonth === '' || despesaMonth === selectedMonth;
 
     return matchesSearch && matchesMonth;
   });
 
   // Cálculos de métricas
-  const totalDespesas = filteredDespesas.reduce((sum, despesa) => sum + despesa.value, 0);
+  const totalDespesas = filteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
   const despesasPagas = filteredDespesas
     .filter(d => d.status === 'Pago')
-    .reduce((sum, despesa) => sum + despesa.value, 0);
+    .reduce((sum, despesa) => sum + despesa.valor, 0);
   const despesasPendentes = filteredDespesas
     .filter(d => d.status === 'Pendente')
-    .reduce((sum, despesa) => sum + despesa.value, 0);
-  const despesasDedutiveis = filteredDespesas
-    .filter(d => d.isDeductible)
-    .reduce((sum, despesa) => sum + despesa.value, 0);
+    .reduce((sum, despesa) => sum + despesa.valor, 0);
+  const despesasDedutiveis = filteredDespesas.filter(d => d.dedutivel).reduce((sum, despesa) => sum + despesa.valor, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newDespesa: Despesa = {
-      id: editingDespesa ? editingDespesa.id : Date.now().toString(),
-      description: formData.description,
-      value: parseFloat(formData.value),
-      date: formData.date,
-      category: formData.category,
-      supplier: formData.supplier,
-      invoiceNumber: formData.invoiceNumber,
-      paymentMethod: formData.paymentMethod as Despesa['paymentMethod'],
-      status: formData.status as Despesa['status'],
-      isDeductible: formData.isDeductible,
-    };
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('authToken');
 
-    if (editingDespesa) {
-      setDespesas(prev => prev.map(d => (d.id === editingDespesa.id ? newDespesa : d)));
-    } else {
-      setDespesas(prev => [newDespesa, ...prev]);
+      const despesaData = {
+        descricao: formData.descricao,
+        valor: parseFloat(formData.valor),
+        dataPagamento: formData.dataPagamento,
+        categoria: formData.categoria,
+        fornecedor: formData.fornecedor,
+        numeroNotaFiscal: formData.numeroNotaFiscal,
+        metodoPagamento: formData.metodoPagamento,
+        status: formData.status,
+        dedutivel: formData.dedutivel,
+        observacoes: formData.observacoes,
+      };
+
+      let response;
+      if (editingDespesa) {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${editingDespesa.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(despesaData),
+        });
+      } else {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(despesaData),
+        });
+      }
+
+      if (response.ok) {
+        await fetchDespesas(); // Recarregar dados
+        resetForm();
+      } else {
+        const errorText = await response.text();
+        console.error('Erro ao salvar despesa:', response.status, errorText);
+        alert(`Erro ao salvar despesa: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar despesa:', error);
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
     setFormData({
-      description: '',
-      value: '',
-      date: new Date().toISOString().slice(0, 10),
-      category: '',
-      supplier: '',
-      invoiceNumber: '',
-      paymentMethod: '',
+      descricao: '',
+      valor: '',
+      dataPagamento: new Date().toISOString().slice(0, 10),
+      categoria: '',
+      fornecedor: '',
+      numeroNotaFiscal: '',
+      metodoPagamento: 'PIX',
       status: 'Pago',
-      isDeductible: true,
+      dedutivel: true,
+      observacoes: '',
     });
     setEditingDespesa(null);
     setShowModal(false);
@@ -184,97 +201,128 @@ function DespesasContent() {
 
   const handleEdit = (despesa: Despesa) => {
     setFormData({
-      description: despesa.description,
-      value: despesa.value.toString(),
-      date: despesa.date,
-      category: despesa.category,
-      supplier: despesa.supplier || '',
-      invoiceNumber: despesa.invoiceNumber || '',
-      paymentMethod: despesa.paymentMethod,
+      descricao: despesa.descricao,
+      valor: despesa.valor.toString(),
+      dataPagamento: despesa.dataPagamento,
+      categoria: despesa.categoria,
+      fornecedor: despesa.fornecedor || '',
+      numeroNotaFiscal: despesa.numeroNotaFiscal || '',
+      metodoPagamento: despesa.metodoPagamento,
       status: despesa.status,
-      isDeductible: despesa.isDeductible,
+      dedutivel: despesa.dedutivel,
+      observacoes: despesa.observacoes || '',
     });
     setEditingDespesa(despesa);
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta despesa?')) {
-      setDespesas(prev => prev.filter(d => d.id !== id));
+      try {
+        const token = localStorage.getItem('authToken');
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          await fetchDespesas(); // Recarregar dados
+        } else {
+          console.error('Erro ao excluir despesa');
+        }
+      } catch (error) {
+        console.error('Erro ao excluir despesa:', error);
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50">
       <MeiSidebar currentPage="despesas" />
 
       <div className="mei-content-wrapper">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-slate-200">
-          <div className="px-8 py-6">
-            <div className="flex justify-between items-center">
+        {/* Header Minimalista */}
+        <div className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="max-w-8xl mx-auto">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900">Despesas</h1>
-                <p className="text-slate-600 mt-1 text-sm">Controle e gerencie todas as suas despesas</p>
+                <h1 className="text-2xl font-light text-gray-900">Despesas</h1>
+                <p className="text-sm text-gray-500 mt-1">Controle financeiro de saídas</p>
               </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-              >
-                <HiPlus className="w-5 h-5" />
-                Nova Despesa
-              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={fetchDespesas}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
+                  title="Atualizar"
+                >
+                  <HiArrowPath className="w-4 h-4" />
+                </button>
+                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
+                  <HiArrowDownTray className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  <HiPlus className="w-4 h-4" />
+                  Nova Despesa
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Métricas */}
         <div className="px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-red-50 rounded-lg mr-4">
-                  <HiArrowDownRight className="w-6 h-6 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Total Despesas</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(totalDespesas)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-green-50 rounded-lg mr-4">
-                  <HiArrowTrendingDown className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Pagas</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(despesasPagas)}</p>
+          <div className="max-w-8xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total de Despesas</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(totalDespesas)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-amber-50 rounded-lg mr-4">
-                  <HiCalendar className="w-6 h-6 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Pendentes</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(despesasPendentes)}</p>
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Despesas Pagas</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasPagas)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-blue-50 rounded-lg mr-4">
-                  <HiReceiptPercent className="w-6 h-6 text-blue-600" />
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Despesas Pendentes</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasPendentes)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Dedutíveis</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(despesasDedutiveis)}</p>
+              </div>
+
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Dedutíveis</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasDedutiveis)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -282,193 +330,215 @@ function DespesasContent() {
         </div>
 
         {/* Filtros */}
-        <div className="px-8 py-4">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar por descrição, fornecedor ou categoria..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
+        <div className="px-8 pb-6">
+          <div className="max-w-8xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Buscar despesas..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="sm:w-48">
+                  <select
+                    value={selectedMonth}
+                    onChange={e => setSelectedMonth(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  >
+                    <option value="">Todos os meses</option>
+                    <option value="2024-12">Dezembro 2024</option>
+                    <option value="2024-11">Novembro 2024</option>
+                    <option value="2024-10">Outubro 2024</option>
+                    <option value="2024-09">Setembro 2024</option>
+                  </select>
                 </div>
               </div>
-              <div className="w-full md:w-48">
-                <select
-                  value={selectedMonth}
-                  onChange={e => setSelectedMonth(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="">Todos os meses</option>
-                  <option value="2024-09">Setembro 2024</option>
-                  <option value="2024-08">Agosto 2024</option>
-                  <option value="2024-07">Julho 2024</option>
-                </select>
-              </div>
-              <button className="inline-flex items-center gap-2 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">
-                <HiArrowDownTray className="w-5 h-5" />
-                Exportar
-              </button>
             </div>
           </div>
         </div>
 
-        {/* Lista de Despesas */}
-        <div className="px-8 py-4 pb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900">Despesas ({filteredDespesas.length})</h3>
-            </div>
-
-            {filteredDespesas.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-slate-500">Nenhuma despesa encontrada.</p>
-              </div>
-            ) : (
+        {/* Tabela de Despesas */}
+        <div className="px-8 pb-8">
+          <div className="max-w-8xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Descrição
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                        Data / Método
+                      </th>
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Valor
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Data
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Dedutível
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="text-center py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                         Ações
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
+                  <tbody className="bg-white">
                     {filteredDespesas.map(despesa => (
-                      <tr key={despesa.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                        <td className="py-4 px-6">
                           <div>
-                            <div className="text-sm font-medium text-slate-900">{despesa.description}</div>
-                            <div className="text-sm text-slate-500">
-                              {despesa.supplier} • {despesa.category}
+                            <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
+                            <div className="text-xs text-gray-500">
+                              {despesa.fornecedor && `${despesa.fornecedor} • `}
+                              {despesa.categoria}
+                              {despesa.dedutivel && ' • Dedutível'}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-slate-900">{formatCurrency(despesa.value)}</div>
-                          <div className="text-xs text-slate-500">{despesa.paymentMethod}</div>
+                        <td className="py-4 px-6">
+                          <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
+                          <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          {formatDate(despesa.date)}
+                        <td className="py-4 px-6 text-right">
+                          <div className="text-sm font-mono font-medium text-gray-900">
+                            {formatCurrency(despesa.valor)}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              despesa.status === 'Pago'
-                                ? 'bg-green-100 text-green-800'
-                                : despesa.status === 'Pendente'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {despesa.status}
-                          </span>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                despesa.status === 'Pago'
+                                  ? 'bg-emerald-500'
+                                  : despesa.status === 'Pendente'
+                                  ? 'bg-amber-500'
+                                  : 'bg-red-500'
+                              }`}
+                            ></div>
+                            <span className="text-sm text-gray-700">{despesa.status}</span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              despesa.isDeductible ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
-                            }`}
-                          >
-                            {despesa.isDeductible ? 'Sim' : 'Não'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button onClick={() => handleEdit(despesa)} className="text-blue-600 hover:text-blue-900">
-                              <HiPencilSquare className="w-5 h-5" />
+                        <td className="py-4 px-6 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleEdit(despesa)}
+                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                              title="Editar"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
                             </button>
                             <button
                               onClick={() => handleDelete(despesa.id)}
-                              className="text-red-600 hover:text-red-900"
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                              title="Excluir"
                             >
-                              <HiTrash className="w-5 h-5" />
+                              <HiXMark className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
                       </tr>
                     ))}
+
+                    {/* Estado vazio */}
+                    {filteredDespesas.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-16 text-center">
+                          <p className="text-gray-500 mb-4">
+                            {loading ? 'Carregando despesas...' : 'Nenhuma despesa encontrada'}
+                          </p>
+                          {!loading && (
+                            <button
+                              onClick={() => setShowModal(true)}
+                              className="text-sm text-gray-900 hover:text-gray-700"
+                            >
+                              Adicionar primeira despesa
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal Simplificado */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingDespesa ? 'Editar Despesa' : 'Nova Despesa'}
-              </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingDespesa ? 'Editar Despesa' : 'Nova Despesa'}
+                </h3>
+                <button onClick={resetForm} className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
+                  <HiXMark className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Descrição *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                 <input
                   type="text"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  value={formData.descricao}
+                  onChange={e => setFormData({ ...formData, descricao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  placeholder="Digite a descrição da despesa..."
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Valor *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Valor</label>
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.value}
-                    onChange={e => setFormData({ ...formData, value: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    value={formData.valor}
+                    onChange={e => setFormData({ ...formData, valor: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="0,00"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Data *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Pagamento</label>
                   <input
                     type="date"
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    value={formData.dataPagamento}
+                    onChange={e => setFormData({ ...formData, dataPagamento: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Categoria *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                 <select
-                  value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  value={formData.categoria}
+                  onChange={e => setFormData({ ...formData, categoria: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                   required
                 >
                   <option value="">Selecione uma categoria</option>
@@ -480,26 +550,40 @@ function DespesasContent() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Fornecedor</label>
-                <input
-                  type="text"
-                  value={formData.supplier}
-                  onChange={e => setFormData({ ...formData, supplier: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fornecedor</label>
+                  <input
+                    type="text"
+                    value={formData.fornecedor}
+                    onChange={e => setFormData({ ...formData, fornecedor: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="Nome do fornecedor (opcional)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota Fiscal</label>
+                  <input
+                    type="text"
+                    value={formData.numeroNotaFiscal}
+                    onChange={e => setFormData({ ...formData, numeroNotaFiscal: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="NF-001 (opcional)"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Forma Pagamento *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
                   <select
-                    value={formData.paymentMethod}
-                    onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    value={formData.metodoPagamento}
+                    onChange={e => setFormData({ ...formData, metodoPagamento: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
-                    <option value="">Selecione</option>
+                    <option value="">Forma de pagamento</option>
                     <option value="Dinheiro">Dinheiro</option>
                     <option value="PIX">PIX</option>
                     <option value="Cartão Débito">Cartão Débito</option>
@@ -510,11 +594,11 @@ function DespesasContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Status *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
                     <option value="Pago">Pago</option>
@@ -528,24 +612,39 @@ function DespesasContent() {
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={formData.isDeductible}
-                    onChange={e => setFormData({ ...formData, isDeductible: e.target.checked })}
-                    className="rounded border-slate-300 text-red-600 focus:ring-red-500"
+                    checked={formData.dedutivel}
+                    onChange={e => setFormData({ ...formData, dedutivel: e.target.checked })}
+                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-200"
                   />
-                  <span className="text-sm font-medium text-slate-700">Esta despesa é dedutível do imposto</span>
+                  <span className="text-sm text-gray-700">Despesa dedutível</span>
                 </label>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea
+                  value={formData.observacoes}
+                  onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  placeholder="Observações adicionais (opcional)"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+                  className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                  {editingDespesa ? 'Atualizar' : 'Salvar'}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Salvando...' : editingDespesa ? 'Atualizar' : 'Salvar'}
                 </button>
               </div>
             </form>

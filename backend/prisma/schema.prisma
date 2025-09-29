@@ -57,6 +57,7 @@ model Company {
   receitas          Receita[]
   despesas          Despesa[]
   dasCalculations   DASCalculation[]
+  calendarEvents    CalendarEvent[]
 }
 
 
@@ -146,4 +147,22 @@ model DASCalculation {
   updatedAt   DateTime @updatedAt
   
   @@unique([companyId, month])
+}
+
+model CalendarEvent {
+  id          String   @id @default(uuid())
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  companyId   String
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  type        String   @default("appointment") // appointment, meeting, deadline, reminder, das_due
+  priority    String   @default("medium") // low, medium, high
+  status      String   @default("scheduled") // scheduled, completed, cancelled
+  location    String?
+  isAllDay    Boolean  @default(false)
+  recurrence  String?  // none, daily, weekly, monthly, yearly
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

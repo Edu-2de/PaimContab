@@ -1,40 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
-import {
-  HiPlus,
-  HiPencilSquare,
-  HiTrash,
-  HiMagnifyingGlass,
-  HiCalendar,
-  HiCurrencyDollar,
-  HiArrowTrendingUp,
-  HiArrowDownTray,
-} from 'react-icons/hi2';
+import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
 
 interface Receita {
   id: string;
-  description: string;
-  value: number;
-  date: string;
-  category: string;
-  clientName?: string;
-  invoiceNumber?: string;
-  paymentMethod: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
+  descricao: string;
+  valor: number;
+  dataRecebimento: string;
+  categoria: string;
+  cliente?: string;
+  numeroNota?: string;
+  metodoPagamento: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
   status: 'Recebido' | 'Pendente' | 'Cancelado';
+  observacoes?: string;
+  createdAt: string;
 }
 
 interface ReceitaFormData {
-  description: string;
-  value: string;
-  date: string;
-  category: string;
-  clientName: string;
-  invoiceNumber: string;
-  paymentMethod: string;
+  descricao: string;
+  valor: string;
+  dataRecebimento: string;
+  categoria: string;
+  cliente: string;
+  numeroNota: string;
+  metodoPagamento: string;
   status: string;
+  observacoes: string;
 }
 
 const categories = [
@@ -56,110 +50,137 @@ function formatDate(dateStr: string) {
 }
 
 function ReceitasContent() {
-  const [receitas, setReceitas] = useState<Receita[]>([
-    {
-      id: '1',
-      description: 'Serviço de consultoria em TI',
-      value: 2500,
-      date: '2024-09-25',
-      category: 'Prestação de Serviços',
-      clientName: 'Empresa ABC Ltda',
-      invoiceNumber: 'NF-001',
-      paymentMethod: 'PIX',
-      status: 'Recebido',
-    },
-    {
-      id: '2',
-      description: 'Venda de produto digital',
-      value: 800,
-      date: '2024-09-23',
-      category: 'Vendas de Produtos',
-      clientName: 'João Silva',
-      paymentMethod: 'Cartão Crédito',
-      status: 'Recebido',
-    },
-    {
-      id: '3',
-      description: 'Curso online de programação',
-      value: 1200,
-      date: '2024-09-20',
-      category: 'Licenciamento',
-      clientName: 'Maria Santos',
-      paymentMethod: 'Transferência',
-      status: 'Pendente',
-    },
-  ]);
-
+  const [receitas, setReceitas] = useState<Receita[]>([]);
+  const [, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [formData, setFormData] = useState<ReceitaFormData>({
-    description: '',
-    value: '',
-    date: new Date().toISOString().slice(0, 10),
-    category: '',
-    clientName: '',
-    invoiceNumber: '',
-    paymentMethod: '',
+    descricao: '',
+    valor: '',
+    dataRecebimento: new Date().toISOString().slice(0, 10),
+    categoria: '',
+    cliente: '',
+    numeroNota: '',
+    metodoPagamento: 'PIX',
     status: 'Recebido',
+    observacoes: '',
   });
+
+  // Buscar receitas do backend
+  const fetchReceitas = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setReceitas(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar receitas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchReceitas();
+  }, [fetchReceitas]);
 
   // Filtragem de receitas
   const filteredReceitas = receitas.filter(receita => {
     const matchesSearch =
-      receita.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const receitaMonth = receita.date.slice(0, 7);
+      receita.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      receita.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      receita.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+    const receitaMonth = receita.dataRecebimento.slice(0, 7);
     const matchesMonth = selectedMonth === '' || receitaMonth === selectedMonth;
 
     return matchesSearch && matchesMonth;
   });
 
   // Cálculos de métricas
-  const totalReceitas = filteredReceitas.reduce((sum, receita) => sum + receita.value, 0);
+  const totalReceitas = filteredReceitas.reduce((sum, receita) => sum + receita.valor, 0);
   const receitasRecebidas = filteredReceitas
     .filter(r => r.status === 'Recebido')
-    .reduce((sum, receita) => sum + receita.value, 0);
+    .reduce((sum, receita) => sum + receita.valor, 0);
   const receitasPendentes = filteredReceitas
     .filter(r => r.status === 'Pendente')
-    .reduce((sum, receita) => sum + receita.value, 0);
+    .reduce((sum, receita) => sum + receita.valor, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const newReceita: Receita = {
-      id: editingReceita ? editingReceita.id : Date.now().toString(),
-      description: formData.description,
-      value: parseFloat(formData.value),
-      date: formData.date,
-      category: formData.category,
-      clientName: formData.clientName,
-      invoiceNumber: formData.invoiceNumber,
-      paymentMethod: formData.paymentMethod as Receita['paymentMethod'],
-      status: formData.status as Receita['status'],
-    };
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('authToken');
 
-    if (editingReceita) {
-      setReceitas(prev => prev.map(r => (r.id === editingReceita.id ? newReceita : r)));
-    } else {
-      setReceitas(prev => [newReceita, ...prev]);
+      const receitaData = {
+        descricao: formData.descricao,
+        valor: parseFloat(formData.valor),
+        dataRecebimento: formData.dataRecebimento,
+        categoria: formData.categoria,
+        cliente: formData.cliente,
+        numeroNota: formData.numeroNota,
+        metodoPagamento: formData.metodoPagamento,
+        status: formData.status,
+        observacoes: formData.observacoes,
+      };
+
+      let response;
+      if (editingReceita) {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${editingReceita.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(receitaData),
+        });
+      } else {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(receitaData),
+        });
+      }
+
+      if (response.ok) {
+        await fetchReceitas(); // Recarregar dados
+        resetForm();
+      } else {
+        const errorText = await response.text();
+        console.error('Erro ao salvar receita:', response.status, errorText);
+        alert(`Erro ao salvar receita: ${response.status} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar receita:', error);
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
     setFormData({
-      description: '',
-      value: '',
-      date: new Date().toISOString().slice(0, 10),
-      category: '',
-      clientName: '',
-      invoiceNumber: '',
-      paymentMethod: '',
+      descricao: '',
+      valor: '',
+      dataRecebimento: new Date().toISOString().slice(0, 10),
+      categoria: '',
+      cliente: '',
+      numeroNota: '',
+      metodoPagamento: 'PIX',
       status: 'Recebido',
+      observacoes: '',
     });
     setEditingReceita(null);
     setShowModal(false);
@@ -167,266 +188,300 @@ function ReceitasContent() {
 
   const handleEdit = (receita: Receita) => {
     setFormData({
-      description: receita.description,
-      value: receita.value.toString(),
-      date: receita.date,
-      category: receita.category,
-      clientName: receita.clientName || '',
-      invoiceNumber: receita.invoiceNumber || '',
-      paymentMethod: receita.paymentMethod,
+      descricao: receita.descricao,
+      valor: receita.valor.toString(),
+      dataRecebimento: receita.dataRecebimento,
+      categoria: receita.categoria,
+      cliente: receita.cliente || '',
+      numeroNota: receita.numeroNota || '',
+      metodoPagamento: receita.metodoPagamento,
       status: receita.status,
+      observacoes: receita.observacoes || '',
     });
     setEditingReceita(receita);
     setShowModal(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta receita?')) {
-      setReceitas(prev => prev.filter(r => r.id !== id));
+      try {
+        const token = localStorage.getItem('authToken');
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          await fetchReceitas(); // Recarregar dados
+        } else {
+          console.error('Erro ao excluir receita');
+        }
+      } catch (error) {
+        console.error('Erro ao excluir receita:', error);
+      }
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gray-50">
       <MeiSidebar currentPage="receitas" />
 
       <div className="mei-content-wrapper">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-slate-200">
-          <div className="px-8 py-6">
-            <div className="flex justify-between items-center">
+        {/* Header Minimalista */}
+        <div className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="max-w-8xl mx-auto">
+            <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900">Receitas</h1>
-                <p className="text-slate-600 mt-1 text-sm">Controle e gerencie todas as suas receitas</p>
+                <h1 className="text-2xl font-light text-gray-900">Receitas</h1>
+                <p className="text-sm text-gray-500 mt-1">Controle financeiro de entradas</p>
               </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium"
-              >
-                <HiPlus className="w-5 h-5" />
-                Nova Receita
-              </button>
-            </div>
-          </div>
-        </div>
 
-        {/* Métricas */}
-        <div className="px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-emerald-50 rounded-lg mr-4">
-                  <HiCurrencyDollar className="w-6 h-6 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Total Receitas</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(totalReceitas)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-green-50 rounded-lg mr-4">
-                  <HiArrowTrendingUp className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Recebidas</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(receitasRecebidas)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center">
-                <div className="p-3 bg-amber-50 rounded-lg mr-4">
-                  <HiCalendar className="w-6 h-6 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Pendentes</p>
-                  <p className="text-2xl font-semibold text-slate-900">{formatCurrency(receitasPendentes)}</p>
-                </div>
+              <div className="flex items-center gap-2">
+                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
+                  <HiArrowPath className="w-4 h-4" />
+                </button>
+                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
+                  <HiArrowDownTray className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                >
+                  <HiPlus className="w-4 h-4" />
+                  Nova Receita
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Filtros */}
-        <div className="px-8 py-4">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    placeholder="Buscar por descrição, cliente ou categoria..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 w-full border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-              <div className="w-full md:w-48">
+        {/* Controles de Filtro */}
+        <div className="bg-white border-b border-gray-100 px-8 py-4">
+          <div className="max-w-8xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
                 <select
                   value={selectedMonth}
                   onChange={e => setSelectedMonth(e.target.value)}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
                 >
-                  <option value="">Todos os meses</option>
+                  <option value="">Todos os períodos</option>
                   <option value="2024-09">Setembro 2024</option>
                   <option value="2024-08">Agosto 2024</option>
                   <option value="2024-07">Julho 2024</option>
                 </select>
+
+                <div className="relative">
+                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar receitas..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 w-72"
+                  />
+                </div>
               </div>
-              <button className="inline-flex items-center gap-2 px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50">
-                <HiArrowDownTray className="w-5 h-5" />
-                Exportar
-              </button>
+
+              <div className="text-sm text-gray-500">{filteredReceitas.length} receitas encontradas</div>
             </div>
           </div>
         </div>
 
-        {/* Lista de Receitas */}
-        <div className="px-8 py-4 pb-8">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900">Receitas ({filteredReceitas.length})</h3>
-            </div>
-
-            {filteredReceitas.length === 0 ? (
-              <div className="p-8 text-center">
-                <p className="text-slate-500">Nenhuma receita encontrada.</p>
+        {/* Resumo Simplificado */}
+        <div className="bg-white border-b border-gray-100 px-8 py-6">
+          <div className="max-w-8xl mx-auto">
+            <div className="grid grid-cols-3 gap-12">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">TOTAL</p>
+                  <p className="text-2xl font-light text-gray-900">{formatCurrency(totalReceitas)}</p>
+                </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
-                  <thead className="bg-slate-50">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RECEBIDAS</p>
+                <p className="text-2xl font-light text-gray-900">{formatCurrency(receitasRecebidas)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PENDENTES</p>
+                <p className="text-2xl font-light text-gray-900">{formatCurrency(receitasPendentes)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabela Principal */}
+        <div className="flex-1 px-8 py-6">
+          <div className="max-w-none mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '500px' }}>
+                <table className="w-full min-w-[1000px]">
+                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-80">
                         Descrição
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                        Valor
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Data
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                        Valor
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      <th className="text-center py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                         Ações
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-slate-200">
+                  <tbody className="bg-white">
                     {filteredReceitas.map(receita => (
-                      <tr key={receita.id} className="hover:bg-slate-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                      <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                        <td className="py-4 px-6">
                           <div>
-                            <div className="text-sm font-medium text-slate-900">{receita.description}</div>
-                            <div className="text-sm text-slate-500">
-                              {receita.clientName} • {receita.category}
+                            <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
+                            <div className="text-xs text-gray-500">
+                              {receita.cliente && `${receita.cliente} • `}
+                              {receita.categoria}
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-semibold text-slate-900">{formatCurrency(receita.value)}</div>
-                          <div className="text-xs text-slate-500">{receita.paymentMethod}</div>
+                        <td className="py-4 px-6">
+                          <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
+                          <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                          {formatDate(receita.date)}
+                        <td className="py-4 px-6 text-right">
+                          <div className="text-sm font-mono font-medium text-gray-900">
+                            {formatCurrency(receita.valor)}
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                              receita.status === 'Recebido'
-                                ? 'bg-green-100 text-green-800'
-                                : receita.status === 'Pendente'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {receita.status}
-                          </span>
+                        <td className="py-4 px-6">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                receita.status === 'Recebido'
+                                  ? 'bg-emerald-500'
+                                  : receita.status === 'Pendente'
+                                  ? 'bg-amber-500'
+                                  : 'bg-red-500'
+                              }`}
+                            ></div>
+                            <span className="text-sm text-gray-700">{receita.status}</span>
+                          </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex space-x-2">
-                            <button onClick={() => handleEdit(receita)} className="text-blue-600 hover:text-blue-900">
-                              <HiPencilSquare className="w-5 h-5" />
+                        <td className="py-4 px-6 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleEdit(receita)}
+                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                              title="Editar"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
+                              </svg>
                             </button>
                             <button
                               onClick={() => handleDelete(receita.id)}
-                              className="text-red-600 hover:text-red-900"
+                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                              title="Excluir"
                             >
-                              <HiTrash className="w-5 h-5" />
+                              <HiXMark className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
                       </tr>
                     ))}
+
+                    {/* Estado vazio */}
+                    {filteredReceitas.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-16 text-center">
+                          <p className="text-gray-500 mb-4">Nenhuma receita encontrada</p>
+                          <button
+                            onClick={() => setShowModal(true)}
+                            className="text-sm text-gray-900 hover:text-gray-700"
+                          >
+                            Adicionar primeira receita
+                          </button>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal Simplificado */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <h3 className="text-lg font-semibold text-slate-900">
-                {editingReceita ? 'Editar Receita' : 'Nova Receita'}
-              </h3>
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-xl">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">
+                  {editingReceita ? 'Editar Receita' : 'Nova Receita'}
+                </h3>
+                <button onClick={resetForm} className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
+                  <HiXMark className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            <form onSubmit={handleSubmit} className="p-6 space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Descrição *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                 <input
                   type="text"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  value={formData.descricao}
+                  onChange={e => setFormData({ ...formData, descricao: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  placeholder="Digite a descrição da receita..."
                   required
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Valor *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Valor</label>
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.value}
-                    onChange={e => setFormData({ ...formData, value: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    value={formData.valor}
+                    onChange={e => setFormData({ ...formData, valor: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="0,00"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Data *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Recebimento</label>
                   <input
                     type="date"
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    value={formData.dataRecebimento}
+                    onChange={e => setFormData({ ...formData, dataRecebimento: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Categoria *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                 <select
-                  value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  value={formData.categoria}
+                  onChange={e => setFormData({ ...formData, categoria: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                   required
                 >
                   <option value="">Selecione uma categoria</option>
@@ -438,26 +493,40 @@ function ReceitasContent() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Cliente</label>
-                <input
-                  type="text"
-                  value={formData.clientName}
-                  onChange={e => setFormData({ ...formData, clientName: e.target.value })}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+                  <input
+                    type="text"
+                    value={formData.cliente}
+                    onChange={e => setFormData({ ...formData, cliente: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="Nome do cliente (opcional)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota</label>
+                  <input
+                    type="text"
+                    value={formData.numeroNota}
+                    onChange={e => setFormData({ ...formData, numeroNota: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="NF-001 (opcional)"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Forma Pagamento *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
                   <select
-                    value={formData.paymentMethod}
-                    onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    value={formData.metodoPagamento}
+                    onChange={e => setFormData({ ...formData, metodoPagamento: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
-                    <option value="">Selecione</option>
+                    <option value="">Forma de pagamento</option>
                     <option value="Dinheiro">Dinheiro</option>
                     <option value="PIX">PIX</option>
                     <option value="Cartão Débito">Cartão Débito</option>
@@ -468,11 +537,11 @@ function ReceitasContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Status *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                   <select
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
                     <option value="Recebido">Recebido</option>
@@ -482,16 +551,31 @@ function ReceitasContent() {
                 </div>
               </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea
+                  value={formData.observacoes}
+                  onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  placeholder="Observações adicionais (opcional)"
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50"
+                  className="px-4 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   Cancelar
                 </button>
-                <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
-                  {editingReceita ? 'Atualizar' : 'Salvar'}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  {saving ? 'Salvando...' : editingReceita ? 'Atualizar' : 'Salvar'}
                 </button>
               </div>
             </form>

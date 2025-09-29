@@ -4,21 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  HiOutlineHome,
   HiOutlineChartBarSquare,
   HiOutlineCurrencyDollar,
   HiOutlineReceiptRefund,
-  HiOutlineCalculator,
-  HiOutlineDocumentText,
-  HiOutlineBell,
   HiOutlineCog6Tooth,
   HiOutlineArrowRightOnRectangle,
   HiChevronLeft,
   HiChevronRight,
   HiOutlineUserCircle,
   HiOutlineCalendar,
-  HiOutlineClipboardDocumentList,
   HiOutlineBuildingOffice2,
+  HiOutlineTableCells,
 } from 'react-icons/hi2';
 
 interface MeiSidebarProps {
@@ -40,6 +36,7 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const pathname = usePathname();
 
   const navigationItems = [
@@ -48,76 +45,35 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
       href: '/mei/dashboard',
       icon: HiOutlineChartBarSquare,
       key: 'dashboard',
-      description: 'Visão geral',
     },
     {
       name: 'Receitas',
       href: '/mei/receitas',
       icon: HiOutlineCurrencyDollar,
       key: 'receitas',
-      description: 'Controle de receitas',
     },
     {
       name: 'Despesas',
       href: '/mei/despesas',
       icon: HiOutlineReceiptRefund,
       key: 'despesas',
-      description: 'Controle de gastos',
     },
     {
-      name: 'DAS e Impostos',
-      href: '/mei/das',
-      icon: HiOutlineCalculator,
-      key: 'das',
-      description: 'Impostos e obrigações',
-    },
-    {
-      name: 'Relatórios',
-      href: '/mei/relatorios',
-      icon: HiOutlineClipboardDocumentList,
-      key: 'relatorios',
-      description: 'DRE e análises',
+      name: 'Planilha',
+      href: '/mei/planilha',
+      icon: HiOutlineTableCells,
+      key: 'planilha',
     },
     {
       name: 'Calendário',
       href: '/mei/calendario',
       icon: HiOutlineCalendar,
       key: 'calendario',
-      description: 'Prazos e eventos',
-    },
-    {
-      name: 'Clientes',
-      href: '/mei/clientes',
-      icon: HiOutlineUserCircle,
-      key: 'clientes',
-      description: 'Base de clientes',
-    },
-    {
-      name: 'Notas Fiscais',
-      href: '/mei/notas',
-      icon: HiOutlineDocumentText,
-      key: 'notas',
-      description: 'Emissão de NFs',
-    },
-  ];
-
-  const quickActions = [
-    {
-      name: 'Notificações',
-      href: '/mei/notificacoes',
-      icon: HiOutlineBell,
-      key: 'notificacoes',
-    },
-    {
-      name: 'Configurações',
-      href: '/mei/configuracoes',
-      icon: HiOutlineCog6Tooth,
-      key: 'configuracoes',
     },
   ];
 
   useEffect(() => {
-    const sidebarWidth = isCollapsed ? '4rem' : '18rem';
+    const sidebarWidth = isCollapsed ? '4rem' : '15rem';
     document.documentElement.style.setProperty('--mei-sidebar-width', sidebarWidth);
 
     let styleElement = document.getElementById('mei-sidebar-styles');
@@ -126,8 +82,8 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
       styleElement.id = 'mei-sidebar-styles';
       styleElement.textContent = `
         .mei-content-wrapper {
-          margin-left: var(--mei-sidebar-width, 18rem);
-          transition: margin-left 0.3s ease-in-out;
+          margin-left: var(--mei-sidebar-width, 15rem);
+          transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           min-height: 100vh;
         }
         @media (max-width: 768px) {
@@ -153,7 +109,6 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
       }
     }
 
-    // Simular dados da empresa - idealmente viria da API
     setCompany({
       name: 'Minha Empresa MEI',
       cnpj: '12.345.678/0001-90',
@@ -179,45 +134,59 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
       .toUpperCase();
   };
 
+  // Função corrigida para detecção da página ativa
   const isActive = (itemKey: string) => {
-    if (currentPage === itemKey) return true;
-    if (pathname?.includes(`/mei/${itemKey}`)) return true;
-    if (itemKey === 'dashboard' && pathname === '/mei/dashboard') return true;
-    return false;
+    // Prioriza o currentPage se for fornecido
+    if (currentPage && currentPage === itemKey) return true;
+
+    // Caso contrário, usa o pathname para detecção exata
+    if (!pathname) return false;
+
+    // Para dashboard, verifica se é exatamente /mei/dashboard
+    if (itemKey === 'dashboard') {
+      return pathname === '/mei/dashboard';
+    }
+
+    // Para outras páginas, verifica se o pathname começa com /mei/{itemKey}
+    // mas não é apenas uma substring (evita conflitos como "das" sendo encontrado em "dashboard")
+    const expectedPath = `/mei/${itemKey}`;
+    return pathname === expectedPath || pathname.startsWith(expectedPath + '/');
   };
 
   return (
     <div
       className={`
-        fixed left-0 top-0 bg-gradient-to-b from-blue-900 to-blue-800 text-white h-screen transition-all duration-300 ease-in-out flex flex-col z-50 shadow-xl
-        ${isCollapsed ? 'w-16' : 'w-72'}
+        fixed left-0 top-0 bg-gray-800 h-screen transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) flex flex-col z-50
+        ${isCollapsed ? 'w-16' : 'w-60'}
       `}
     >
       {/* Header */}
-      <div className="p-6 border-b border-blue-700/50">
+      <div className="px-5 py-6 border-b border-gray-700">
         <div className="flex items-center justify-between">
           {!isCollapsed && (
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <HiOutlineBuildingOffice2 className="w-6 h-6 text-blue-200" />
-                <h1 className="text-xl font-bold">MEI Dashboard</h1>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                  <HiOutlineBuildingOffice2 className="w-5 h-5 text-gray-800" />
+                </div>
+                <h1 className="text-lg font-semibold text-white">MEI Manager</h1>
               </div>
-              <p className="text-blue-200 text-sm">{company?.name || 'Minha Empresa'}</p>
-              {company?.cnpj && <p className="text-blue-300 text-xs mt-1">CNPJ: {company.cnpj}</p>}
+              <p className="text-sm text-gray-300 font-medium">{company?.name || 'Minha Empresa'}</p>
+              {company?.cnpj && <p className="text-xs text-gray-400 mt-1">CNPJ: {company.cnpj}</p>}
             </div>
           )}
           <button
             onClick={handleToggle}
-            className="p-2 rounded-lg text-blue-200 hover:text-white hover:bg-blue-700/50 transition-all duration-200"
+            className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-all duration-200"
             title={isCollapsed ? 'Expandir menu' : 'Recolher menu'}
           >
-            {isCollapsed ? <HiChevronRight className="w-5 h-5" /> : <HiChevronLeft className="w-5 h-5" />}
+            {isCollapsed ? <HiChevronRight className="w-4 h-4" /> : <HiChevronLeft className="w-4 h-4" />}
           </button>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 overflow-y-auto">
         <div className="space-y-1">
           {navigationItems.map(item => {
             const Icon = item.icon;
@@ -227,108 +196,103 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
               <Link
                 key={item.key}
                 href={item.href}
+                onMouseEnter={() => setHoveredItem(item.key)}
+                onMouseLeave={() => setHoveredItem(null)}
                 className={`
-                  group flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 relative
-                  ${
-                    active
-                      ? 'bg-white/20 text-white shadow-md backdrop-blur-sm'
-                      : 'text-blue-100 hover:text-white hover:bg-white/10'
-                  }
+                  group flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 relative
                   ${isCollapsed ? 'justify-center' : ''}
+                  ${active ? 'bg-white text-gray-800' : 'text-gray-300 hover:text-white hover:bg-gray-700'}
+                  ${hoveredItem === item.key && !active ? 'bg-gray-700' : ''}
                 `}
                 title={isCollapsed ? item.name : undefined}
               >
                 <Icon
                   className={`
-                    w-5 h-5 flex-shrink-0 transition-colors duration-200
-                    ${active ? 'text-white' : 'text-blue-200 group-hover:text-white'}
+                    w-5 h-5 flex-shrink-0 transition-all duration-200
+                    ${active ? 'text-gray-800' : 'text-gray-300'}
+                    ${hoveredItem === item.key && !active ? 'text-white scale-110' : ''}
+                    ${active ? 'scale-110' : ''}
                   `}
                 />
                 {!isCollapsed && (
-                  <div className="flex-1 min-w-0">
-                    <div className="truncate font-medium">{item.name}</div>
-                    <div className="text-xs text-blue-200 truncate">{item.description}</div>
-                  </div>
+                  <span className={`text-sm font-medium truncate ${active ? 'text-gray-800' : 'text-gray-300'}`}>
+                    {item.name}
+                  </span>
                 )}
-                {active && !isCollapsed && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                {active && !isCollapsed && <div className="absolute right-3 w-2 h-2 bg-gray-800 rounded-full"></div>}
               </Link>
             );
           })}
         </div>
-
-        {/* Quick Actions */}
-        <div className="mt-8 pt-6 border-t border-blue-700/50">
-          <div className="space-y-1">
-            {quickActions.map(item => {
-              const Icon = item.icon;
-              const active = isActive(item.key);
-
-              return (
-                <Link
-                  key={item.key}
-                  href={item.href}
-                  className={`
-                    group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                    ${active ? 'bg-white/20 text-white' : 'text-blue-100 hover:text-white hover:bg-white/10'}
-                    ${isCollapsed ? 'justify-center' : ''}
-                  `}
-                  title={isCollapsed ? item.name : undefined}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  {!isCollapsed && <span className="truncate">{item.name}</span>}
-                </Link>
-              );
-            })}
-
-            <Link
-              href="/"
-              className={`
-                group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-blue-100 hover:text-white hover:bg-white/10 transition-all duration-200
-                ${isCollapsed ? 'justify-center' : ''}
-              `}
-              title={isCollapsed ? 'Voltar ao site' : undefined}
-            >
-              <HiOutlineHome className="w-5 h-5 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Voltar ao site</span>}
-            </Link>
-
-            <button
-              onClick={handleLogout}
-              className={`
-                group w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-200 hover:text-red-100 hover:bg-red-500/20 transition-all duration-200
-                ${isCollapsed ? 'justify-center' : ''}
-              `}
-              title={isCollapsed ? 'Sair' : undefined}
-            >
-              <HiOutlineArrowRightOnRectangle className="w-5 h-5 flex-shrink-0" />
-              {!isCollapsed && <span className="truncate">Sair</span>}
-            </button>
-          </div>
-        </div>
       </nav>
 
+      {/* Settings and Logout */}
+      <div className="px-3 py-4 border-t border-gray-700">
+        <div className="space-y-1">
+          <Link
+            href="/mei/configuracoes"
+            onMouseEnter={() => setHoveredItem('configuracoes')}
+            onMouseLeave={() => setHoveredItem(null)}
+            className={`
+              group flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-gray-700 transition-all duration-200
+              ${isCollapsed ? 'justify-center' : ''}
+              ${hoveredItem === 'configuracoes' ? 'bg-gray-700' : ''}
+            `}
+            title={isCollapsed ? 'Configurações' : undefined}
+          >
+            <HiOutlineCog6Tooth
+              className={`
+                w-5 h-5 flex-shrink-0 text-gray-300 transition-all duration-200
+                ${hoveredItem === 'configuracoes' ? 'text-white scale-110' : ''}
+              `}
+            />
+            {!isCollapsed && <span className="text-sm font-medium truncate">Configurações</span>}
+          </Link>
+
+          <button
+            onClick={handleLogout}
+            onMouseEnter={() => setHoveredItem('logout')}
+            onMouseLeave={() => setHoveredItem(null)}
+            className={`
+              group w-full flex items-center gap-3 px-3 py-3 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-all duration-200
+              ${isCollapsed ? 'justify-center' : ''}
+              ${hoveredItem === 'logout' ? 'bg-red-900/20' : ''}
+            `}
+            title={isCollapsed ? 'Sair' : undefined}
+          >
+            <HiOutlineArrowRightOnRectangle
+              className={`
+                w-5 h-5 flex-shrink-0 transition-all duration-200
+                ${hoveredItem === 'logout' ? 'scale-110' : ''}
+              `}
+            />
+            {!isCollapsed && <span className="text-sm font-medium truncate">Sair</span>}
+          </button>
+        </div>
+      </div>
+
       {/* User Info */}
-      <div className="p-4 border-t border-blue-700/50">
+      <div className="px-3 pb-4">
         {!isCollapsed ? (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-white/10 backdrop-blur-sm">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-700 border border-gray-600">
             <div className="flex-shrink-0">
               {user?.name ? (
-                <div className="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center">
-                  <span className="text-sm font-semibold">{getInitials(user.name)}</span>
+                <div className="w-9 h-9 bg-white text-gray-800 rounded-full flex items-center justify-center">
+                  <span className="text-xs font-semibold">{getInitials(user.name)}</span>
                 </div>
               ) : (
-                <HiOutlineUserCircle className="w-10 h-10 text-blue-200" />
+                <HiOutlineUserCircle className="w-9 h-9 text-gray-400" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">{user?.name || 'Usuário MEI'}</p>
-              <p className="text-xs text-blue-200 truncate">{user?.email || 'mei@empresa.com'}</p>
+              <p className="text-sm font-semibold text-white truncate">{user?.name || 'Usuário MEI'}</p>
+              <p className="text-xs text-gray-400 truncate">{user?.email || 'mei@empresa.com'}</p>
             </div>
           </div>
         ) : (
           <div className="flex justify-center">
-            <div className="w-10 h-10 bg-white/20 text-white rounded-full flex items-center justify-center">
-              <span className="text-sm font-semibold">{user?.name ? getInitials(user.name) : 'M'}</span>
+            <div className="w-9 h-9 bg-white text-gray-800 rounded-full flex items-center justify-center">
+              <span className="text-xs font-semibold">{user?.name ? getInitials(user.name) : 'M'}</span>
             </div>
           </div>
         )}
