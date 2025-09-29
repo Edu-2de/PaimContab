@@ -20,14 +20,17 @@ interface SpreadsheetRow {
   tipo: 'receita' | 'despesa' | '';
   valor: number;
   lucro: number;
-  // Novos campos para receitas
+  // Campos para receitas
   cliente?: string;
+  numeroNota?: string;
+  // Campos para despesas
+  fornecedor?: string;
+  numeroNotaFiscal?: string;
+  dedutivel?: boolean;
+  // Campos comuns
   metodoPagamento?: string;
   status?: string;
-  numeroNota?: string;
-  // Novos campos para despesas
-  fornecedor?: string;
-  dedutivel?: boolean;
+  observacoes?: string;
   isEditing?: boolean;
   isNew?: boolean;
 }
@@ -65,18 +68,25 @@ const CATEGORIAS_RECEITA = [
   'Comissões',
   'Consultoria',
   'Freelancer',
+  'Royalties',
+  'Licenciamento',
   'Outros',
 ];
 
 const CATEGORIAS_DESPESA = [
-  'Matéria-prima',
+  'Material de Escritório',
+  'Equipamentos',
+  'Software e Licenças',
+  'Internet/Telefone',
+  'Marketing/Publicidade',
   'Combustível',
   'Manutenção',
-  'Internet/Telefone',
-  'Marketing',
-  'Impostos',
+  'Taxas/Impostos',
+  'Consultoria',
+  'Treinamentos',
   'Aluguel',
   'Energia Elétrica',
+  'Matéria-prima',
   'Outros',
 ];
 
@@ -219,9 +229,10 @@ function MeiSpreadsheetContent() {
         valor: receita.valor || 0,
         lucro: receita.valor || 0,
         cliente: '',
+        numeroNota: '',
         metodoPagamento: 'PIX',
         status: 'Recebido',
-        numeroNota: '',
+        observacoes: '',
       }));
 
       // Converter despesas para formato da planilha
@@ -235,9 +246,11 @@ function MeiSpreadsheetContent() {
         valor: despesa.valor || 0,
         lucro: -(despesa.valor || 0),
         fornecedor: '',
+        numeroNotaFiscal: '',
+        dedutivel: true,
         metodoPagamento: 'PIX',
         status: 'Pago',
-        dedutivel: true,
+        observacoes: '',
       }));
 
       // Combinar e ordenar por data
@@ -269,10 +282,12 @@ function MeiSpreadsheetContent() {
     lucro: 0,
     cliente: '',
     fornecedor: '',
+    numeroNota: '',
+    numeroNotaFiscal: '',
     metodoPagamento: 'PIX',
     status: '',
-    numeroNota: '',
     dedutivel: true,
+    observacoes: '',
     isEditing: true,
     isNew: true,
   });
@@ -377,11 +392,14 @@ function MeiSpreadsheetContent() {
       'Título',
       'Descrição',
       'Categoria',
-      'Cliente/Fornecedor',
+      'Cliente',
+      'Fornecedor',
+      'Nº Nota',
       'Método Pagamento',
       'Status',
       'Valor',
       'Dedutível',
+      'Observações',
     ];
     const csvData = rows.map(row => [
       formatDate(row.data),
@@ -389,11 +407,14 @@ function MeiSpreadsheetContent() {
       row.titulo,
       row.descricao,
       row.categoria,
-      row.tipo === 'receita' ? row.cliente : row.fornecedor,
+      row.cliente || '',
+      row.fornecedor || '',
+      row.tipo === 'receita' ? (row.numeroNota || '') : (row.numeroNotaFiscal || ''),
       row.metodoPagamento,
       row.status,
       row.valor.toFixed(2),
       row.tipo === 'despesa' ? (row.dedutivel ? 'Sim' : 'Não') : 'N/A',
+      row.observacoes || '',
     ]);
 
     const csv = [headers, ...csvData].map(row => row.join(',')).join('\n');
@@ -414,10 +435,17 @@ function MeiSpreadsheetContent() {
     row.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     row.fornecedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     formatDate(row.data).includes(searchTerm) ||
-    row.tipo.toLowerCase().includes(searchTerm.toLowerCase())
+    row.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    row.observacoes?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const hasUnsavedRows = rows.some(row => row.isNew);
+
+  // Calcular estatísticas adicionais
+  const totalMovimentacoes = filteredRows.length;
+  const receitasCount = filteredRows.filter(row => row.tipo === 'receita').length;
+  const despesasCount = filteredRows.filter(row => row.tipo === 'despesa').length;
+  const margemLucro = monthlyTotals.totalReceita > 0 ? (monthlyTotals.lucroFinal / monthlyTotals.totalReceita) * 100 : 0;
 
   if (loading) {
     return (
@@ -437,55 +465,105 @@ function MeiSpreadsheetContent() {
       <MeiSidebar currentPage="planilha" />
 
       <div className="mei-content-wrapper">
-        {/* Header com Botão de Salvar */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6">
+        {/* Header Compacto com Métricas e Controles */}
+        <div className="bg-white border-b border-gray-200 px-6 py-3">
           <div className="max-w-8xl mx-auto">
-            <div className="flex items-center justify-between">
+            {/* Linha 1: Título e Ações */}
+            <div className="flex items-center justify-between mb-3">
               <div>
-                <h1 className="text-2xl font-light text-gray-900">Planilha MEI</h1>
-                <p className="text-sm text-gray-500 mt-1">Controle financeiro simplificado</p>
+                <h1 className="text-xl font-light text-gray-900">Planilha MEI</h1>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {hasUnsavedRows && (
                   <button
                     onClick={saveAllChanges}
                     disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <div className={`w-2 h-2 rounded-full ${saving ? 'bg-emerald-300 animate-pulse' : 'bg-emerald-200'}`}></div>
-                    {saving ? 'Salvando...' : `Salvar ${rows.filter(row => row.isNew).length} alterações`}
+                    <div className={`w-1.5 h-1.5 rounded-full ${saving ? 'bg-emerald-300 animate-pulse' : 'bg-emerald-200'}`}></div>
+                    {saving ? 'Salvando...' : `Salvar ${rows.filter(row => row.isNew).length}`}
                   </button>
                 )}
                 
                 <button
                   onClick={fetchSpreadsheetData}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-md"
                   title="Atualizar"
                 >
-                  <HiArrowPath className="w-4 h-4" />
+                  <HiArrowPath className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={exportToCSV}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
+                  className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-md"
                   title="Exportar"
                 >
-                  <HiArrowDownTray className="w-4 h-4" />
+                  <HiArrowDownTray className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Controles de Filtro */}
-        <div className="bg-white border-b border-gray-100 px-8 py-4">
-          <div className="max-w-8xl mx-auto">
+            {/* Linha 2: Métricas Rápidas */}
+            <div className="grid grid-cols-8 gap-4 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <div>
+                  <p className="text-xs text-gray-400">RECEITAS</p>
+                  <p className="text-sm font-medium text-gray-900">{formatCurrency(monthlyTotals.totalReceita)}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                <div>
+                  <p className="text-xs text-gray-400">DESPESAS</p>
+                  <p className="text-sm font-medium text-gray-900">{formatCurrency(monthlyTotals.totalDespesa)}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">LUCRO BRUTO</p>
+                <p className="text-sm font-medium text-gray-900">{formatCurrency(monthlyTotals.lucroSemDas)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">DAS (6%)</p>
+                <p className="text-sm font-medium text-gray-900">{formatCurrency(monthlyTotals.dasTotal)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">LUCRO LÍQUIDO</p>
+                <p className={`text-sm font-semibold ${monthlyTotals.lucroFinal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {formatCurrency(monthlyTotals.lucroFinal)}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">MARGEM (%)</p>
+                <p className={`text-sm font-medium ${margemLucro >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {margemLucro.toFixed(1)}%
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">LIMITE MEI</p>
+                <div className="flex items-center gap-1">
+                  <div className="w-8 bg-gray-200 rounded-full h-1">
+                    <div 
+                      className="h-1 bg-gray-900 rounded-full"
+                      style={{ width: `${Math.min(monthlyTotals.limiteMeiUtilizado, 100)}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs font-medium text-gray-900">{monthlyTotals.limiteMeiUtilizado.toFixed(0)}%</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-400">MOVIMENTAÇÕES</p>
+                <p className="text-sm font-medium text-gray-900">{totalMovimentacoes} ({receitasCount}R + {despesasCount}D)</p>
+              </div>
+            </div>
+
+            {/* Linha 3: Controles de Filtro */}
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
                 <select
                   value={selectedMonth}
                   onChange={e => setSelectedMonth(e.target.value)}
-                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer hover:text-gray-900 transition-colors"
+                  className="text-xs border border-gray-200 bg-white focus:outline-none text-gray-700 font-medium cursor-pointer hover:text-gray-900 transition-colors rounded px-2 py-1"
                 >
                   {Array.from({ length: 12 }, (_, i) => {
                     const date = new Date();
@@ -501,116 +579,75 @@ function MeiSpreadsheetContent() {
                 </select>
 
                 <div className="relative">
-                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <HiMagnifyingGlass className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Buscar movimentação..."
+                    placeholder="Buscar..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 w-72 transition-all"
+                    className="pl-7 pr-3 py-1 text-xs bg-gray-50 border border-gray-200 rounded focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-300 w-48 transition-all"
                   />
                 </div>
               </div>
 
               <button
                 onClick={addNewRow}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm hover:shadow-md"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors"
               >
-                <HiPlus className="w-4 h-4" />
+                <HiPlus className="w-3 h-3" />
                 Nova Linha
               </button>
             </div>
           </div>
         </div>
 
-        {/* Resumo com Indicadores Visuais */}
-        <div className="bg-white border-b border-gray-100 px-8 py-6">
-          <div className="max-w-8xl mx-auto">
-            <div className="grid grid-cols-5 gap-8">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">RECEITAS</p>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.totalReceita)}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">DESPESAS</p>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.totalDespesa)}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">SUBTOTAL</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.lucroSemDas)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">DAS (6%)</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.dasTotal)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RESULTADO</p>
-                <p className={`text-2xl font-medium ${monthlyTotals.lucroFinal >= 0 ? 'text-gray-900' : 'text-gray-600'}`}>
-                  {formatCurrency(monthlyTotals.lucroFinal)}
-                </p>
-                <div className="mt-2 w-full bg-gray-100 rounded-full h-1.5">
-                  <div 
-                    className="h-1.5 bg-gray-900 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.min(monthlyTotals.limiteMeiUtilizado, 100)}%` }}
-                  ></div>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">{monthlyTotals.limiteMeiUtilizado.toFixed(1)}% do limite MEI</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabela Expandida com Informações Detalhadas */}
-        <div className="flex-1 px-8 py-6">
+        {/* Tabela Compacta */}
+        <div className="flex-1 px-6 py-3" style={{ paddingBottom: '80px' }}>
           <div className="max-w-none mx-auto">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '500px' }}>
-                <table className={`w-full ${sidebarCollapsed ? 'min-w-[1800px]' : 'min-w-[1400px]'}`}>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 280px)', minHeight: '500px' }}>
+                <table className="w-full text-xs">
                   <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                     <tr>
-                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Data</th>
-                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Tipo</th>
-                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Título</th>
-                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Descrição</th>
-                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Categoria</th>
-                      {sidebarCollapsed && (
-                        <>
-                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Cliente/Fornecedor</th>
-                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Pagamento</th>
-                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
-                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Ded.</th>
-                        </>
-                      )}
-                      <th className="text-right py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Valor</th>
-                      <th className="text-center py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Ações</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Data</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Tipo</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Título</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Descrição</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Categoria</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Cliente</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Fornecedor</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Nº Nota</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Pagamento</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Status</th>
+                      <th className="text-right py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Valor</th>
+                      <th className="text-center py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-12">Ded.</th>
+                      <th className="text-left py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-28">Observações</th>
+                      <th className="text-center py-2 px-2 text-xs font-medium text-gray-500 uppercase tracking-wider w-12">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white">
                     {filteredRows.map((row) => (
                       <tr key={row.id} className={`border-b border-gray-100 hover:bg-gray-25 transition-all duration-200 ${row.isNew ? 'bg-blue-25 border-blue-100' : ''}`}>
-                        <td className="py-3 px-4">
+                        {/* Data */}
+                        <td className="py-1 px-2">
                           <input
                             type="date"
                             value={row.data}
                             onChange={e => updateRow(row.id, 'data', e.target.value)}
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all"
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 w-full"
                           />
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            {row.tipo === 'receita' && <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm"></div>}
-                            {row.tipo === 'despesa' && <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm"></div>}
-                            {!row.tipo && <div className="w-2 h-2 rounded-full bg-gray-300"></div>}
+
+                        {/* Tipo */}
+                        <td className="py-1 px-2">
+                          <div className="flex items-center gap-1">
+                            {row.tipo === 'receita' && <div className="w-1 h-1 rounded-full bg-emerald-500"></div>}
+                            {row.tipo === 'despesa' && <div className="w-1 h-1 rounded-full bg-red-500"></div>}
+                            {!row.tipo && <div className="w-1 h-1 rounded-full bg-gray-300"></div>}
                             <select
                               value={row.tipo}
                               onChange={e => updateRow(row.id, 'tipo', e.target.value)}
-                              className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-1 py-1 text-gray-900 flex-1 transition-all cursor-pointer"
+                              className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 flex-1 cursor-pointer"
                             >
                               <option value="">Tipo</option>
                               <option value="receita">Receita</option>
@@ -618,29 +655,35 @@ function MeiSpreadsheetContent() {
                             </select>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+
+                        {/* Título */}
+                        <td className="py-1 px-2">
                           <input
                             type="text"
                             value={row.titulo}
                             onChange={e => updateRow(row.id, 'titulo', e.target.value)}
-                            placeholder="Título principal..."
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 w-full font-medium transition-all"
+                            placeholder="Título..."
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 placeholder-gray-400 w-full font-medium"
                           />
                         </td>
-                        <td className="py-3 px-4">
+
+                        {/* Descrição */}
+                        <td className="py-1 px-2">
                           <input
                             type="text"
                             value={row.descricao}
                             onChange={e => updateRow(row.id, 'descricao', e.target.value)}
                             placeholder="Detalhes..."
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 w-full transition-all"
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 placeholder-gray-400 w-full"
                           />
                         </td>
-                        <td className="py-3 px-4">
+
+                        {/* Categoria */}
+                        <td className="py-1 px-2">
                           <select
                             value={row.categoria}
                             onChange={e => updateRow(row.id, 'categoria', e.target.value)}
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all cursor-pointer"
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 w-full cursor-pointer"
                           >
                             <option value="">Categoria</option>
                             {row.tipo === 'receita' && CATEGORIAS_RECEITA.map(cat => (
@@ -651,69 +694,89 @@ function MeiSpreadsheetContent() {
                             ))}
                           </select>
                         </td>
-                        
-                        {/* Campos extras quando sidebar recolhida */}
-                        {sidebarCollapsed && (
-                          <>
-                            <td className="py-3 px-4">
-                              <input
-                                type="text"
-                                value={row.tipo === 'receita' ? (row.cliente || '') : (row.fornecedor || '')}
-                                onChange={e => updateRow(row.id, row.tipo === 'receita' ? 'cliente' : 'fornecedor', e.target.value)}
-                                placeholder={row.tipo === 'receita' ? 'Cliente...' : 'Fornecedor...'}
-                                className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 w-full transition-all"
-                              />
-                            </td>
-                            <td className="py-3 px-4">
-                              <select
-                                value={row.metodoPagamento || ''}
-                                onChange={e => updateRow(row.id, 'metodoPagamento', e.target.value)}
-                                className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all cursor-pointer"
-                              >
-                                <option value="">Método</option>
-                                {METODOS_PAGAMENTO.map(metodo => (
-                                  <option key={metodo} value={metodo}>{metodo}</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="py-3 px-4">
-                              <select
-                                value={row.status || ''}
-                                onChange={e => updateRow(row.id, 'status', e.target.value)}
-                                className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all cursor-pointer"
-                              >
-                                <option value="">Status</option>
-                                {row.tipo === 'receita' && (
-                                  <>
-                                    <option value="Recebido">Recebido</option>
-                                    <option value="Pendente">Pendente</option>
-                                    <option value="Cancelado">Cancelado</option>
-                                  </>
-                                )}
-                                {row.tipo === 'despesa' && (
-                                  <>
-                                    <option value="Pago">Pago</option>
-                                    <option value="Pendente">Pendente</option>
-                                    <option value="Cancelado">Cancelado</option>
-                                  </>
-                                )}
-                              </select>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              {row.tipo === 'despesa' && (
-                                <input
-                                  type="checkbox"
-                                  checked={row.dedutivel || false}
-                                  onChange={e => updateRow(row.id, 'dedutivel', e.target.checked)}
-                                  className="rounded border-gray-300 text-gray-900 focus:ring-gray-200 w-4 h-4"
-                                  title="Dedutível"
-                                />
-                              )}
-                            </td>
-                          </>
-                        )}
-                        
-                        <td className="py-3 px-4">
+
+                        {/* Cliente */}
+                        <td className="py-1 px-2">
+                          {row.tipo === 'receita' ? (
+                            <input
+                              type="text"
+                              value={row.cliente || ''}
+                              onChange={e => updateRow(row.id, 'cliente', e.target.value)}
+                              placeholder="Cliente..."
+                              className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 placeholder-gray-400 w-full"
+                            />
+                          ) : (
+                            <div className="text-xs text-gray-300 px-1 py-0.5">—</div>
+                          )}
+                        </td>
+
+                        {/* Fornecedor */}
+                        <td className="py-1 px-2">
+                          {row.tipo === 'despesa' ? (
+                            <input
+                              type="text"
+                              value={row.fornecedor || ''}
+                              onChange={e => updateRow(row.id, 'fornecedor', e.target.value)}
+                              placeholder="Fornecedor..."
+                              className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 placeholder-gray-400 w-full"
+                            />
+                          ) : (
+                            <div className="text-xs text-gray-300 px-1 py-0.5">—</div>
+                          )}
+                        </td>
+
+                        {/* Número da Nota */}
+                        <td className="py-1 px-2">
+                          <input
+                            type="text"
+                            value={row.tipo === 'receita' ? (row.numeroNota || '') : (row.numeroNotaFiscal || '')}
+                            onChange={e => updateRow(row.id, row.tipo === 'receita' ? 'numeroNota' : 'numeroNotaFiscal', e.target.value)}
+                            placeholder="Nota..."
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 placeholder-gray-400 w-full"
+                          />
+                        </td>
+
+                        {/* Método de Pagamento */}
+                        <td className="py-1 px-2">
+                          <select
+                            value={row.metodoPagamento || ''}
+                            onChange={e => updateRow(row.id, 'metodoPagamento', e.target.value)}
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 w-full cursor-pointer"
+                          >
+                            <option value="">Método</option>
+                            {METODOS_PAGAMENTO.map(metodo => (
+                              <option key={metodo} value={metodo}>{metodo}</option>
+                            ))}
+                          </select>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-1 px-2">
+                          <select
+                            value={row.status || ''}
+                            onChange={e => updateRow(row.id, 'status', e.target.value)}
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 w-full cursor-pointer"
+                          >
+                            <option value="">Status</option>
+                            {row.tipo === 'receita' && (
+                              <>
+                                <option value="Recebido">Recebido</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Cancelado">Cancelado</option>
+                              </>
+                            )}
+                            {row.tipo === 'despesa' && (
+                              <>
+                                <option value="Pago">Pago</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Cancelado">Cancelado</option>
+                              </>
+                            )}
+                          </select>
+                        </td>
+
+                        {/* Valor */}
+                        <td className="py-1 px-2">
                           <input
                             type="number"
                             value={row.valor || ''}
@@ -721,92 +784,101 @@ function MeiSpreadsheetContent() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 text-right font-mono w-full transition-all"
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 placeholder-gray-400 text-right font-mono w-full"
                           />
                         </td>
-                        <td className="py-3 px-4 text-center">
+
+                        {/* Dedutível */}
+                        <td className="py-1 px-2 text-center">
+                          {row.tipo === 'despesa' ? (
+                            <input
+                              type="checkbox"
+                              checked={row.dedutivel || false}
+                              onChange={e => updateRow(row.id, 'dedutivel', e.target.checked)}
+                              className="rounded border-gray-300 text-gray-900 focus:ring-gray-200 w-3 h-3"
+                              title="Dedutível"
+                            />
+                          ) : (
+                            <div className="text-xs text-gray-300">—</div>
+                          )}
+                        </td>
+
+                        {/* Observações */}
+                        <td className="py-1 px-2">
+                          <input
+                            type="text"
+                            value={row.observacoes || ''}
+                            onChange={e => updateRow(row.id, 'observacoes', e.target.value)}
+                            placeholder="Obs..."
+                            className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 rounded px-1 py-0.5 text-gray-900 placeholder-gray-400 w-full"
+                          />
+                        </td>
+
+                        {/* Ações */}
+                        <td className="py-1 px-2 text-center">
                           <button
                             onClick={() => deleteRow(row.id)}
-                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-all duration-200"
+                            className="p-0.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-all duration-200"
                             title="Excluir linha"
                           >
-                            <HiXMark className="w-4 h-4" />
+                            <HiXMark className="w-3 h-3" />
                           </button>
                         </td>
                       </tr>
                     ))}
 
-                    {/* Espaçamento entre dados e totais */}
-                    <tr>
-                      <td colSpan={sidebarCollapsed ? 11 : 7} className="py-6"></td>
-                    </tr>
-
-                    {/* Linha DAS */}
-                    <tr className="bg-amber-50 border-t-2 border-amber-200">
-                      <td className="py-4 px-4 text-sm font-medium text-amber-700">—</td>
-                      <td className="py-4 px-4 flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
-                        <span className="text-sm font-medium text-amber-700">DAS</span>
-                      </td>
-                      <td className="py-4 px-4 text-sm font-medium text-amber-700">Imposto MEI</td>
-                      <td className="py-4 px-4 text-sm font-medium text-amber-700">6% sobre receitas</td>
-                      <td className="py-4 px-4 text-sm font-medium text-amber-700">Impostos Federais</td>
-                      {sidebarCollapsed && (
-                        <>
-                          <td className="py-4 px-4"></td>
-                          <td className="py-4 px-4"></td>
-                          <td className="py-4 px-4"></td>
-                          <td className="py-4 px-4"></td>
-                        </>
-                      )}
-                      <td className="py-4 px-4 text-sm font-mono font-medium text-amber-800 text-right">
-                        -{formatCurrency(monthlyTotals.dasTotal)}
-                      </td>
-                      <td className="py-4 px-4"></td>
-                    </tr>
-
-                    {/* Linha Total */}
-                    <tr className="bg-gray-900 text-white border-t-4 border-gray-500">
-                      <td className="py-6 px-4 text-base font-bold tracking-wide">TOTAL</td>
-                      <td className="py-6 px-4 flex items-center gap-2">
-                        <div className="w-3 h-3 rounded-full bg-white"></div>
-                        <span className="text-sm font-medium">FINAL</span>
-                      </td>
-                      <td className="py-6 px-4 text-sm font-medium">Resultado Final</td>
-                      <td className="py-6 px-4 text-sm font-medium">Líquido após DAS</td>
-                      <td className="py-6 px-4"></td>
-                      {sidebarCollapsed && (
-                        <>
-                          <td className="py-6 px-4"></td>
-                          <td className="py-6 px-4"></td>
-                          <td className="py-6 px-4"></td>
-                          <td className="py-6 px-4"></td>
-                        </>
-                      )}
-                      <td className="py-6 px-4 text-right font-mono font-bold text-lg">
-                        {formatCurrency(monthlyTotals.lucroFinal)}
-                      </td>
-                      <td className="py-6 px-4"></td>
-                    </tr>
+                    {/* Estado vazio */}
+                    {filteredRows.length === 0 && (
+                      <tr>
+                        <td colSpan={14} className="text-center py-12">
+                          <p className="text-gray-500 mb-3">Nenhuma movimentação encontrada</p>
+                          <p className="text-gray-400 mb-4 text-sm">
+                            {searchTerm ? 'Tente buscar por outro termo' : 'Comece adicionando sua primeira movimentação'}
+                          </p>
+                          <button
+                            onClick={addNewRow}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors text-sm"
+                          >
+                            <HiPlus className="w-4 h-4" />
+                            Adicionar movimentação
+                          </button>
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                {/* Estado vazio */}
-                {filteredRows.length === 0 && (
-                  <div className="text-center py-16">
-                    <p className="text-gray-500 mb-4 text-lg">Nenhuma movimentação encontrada</p>
-                    <p className="text-gray-400 mb-6 text-sm">
-                      {searchTerm ? 'Tente buscar por outro termo ou limpe o filtro' : 'Comece adicionando sua primeira movimentação financeira'}
-                    </p>
-                    <button
-                      onClick={addNewRow}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
-                    >
-                      <HiPlus className="w-4 h-4" />
-                      Adicionar primeira movimentação
-                    </button>
-                  </div>
-                )}
+        {/* Footer Fixo com DAS e Total */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-10">
+          <div className="mx-auto px-6 py-2">
+            <div className="flex items-center justify-between text-xs">
+              {/* DAS */}
+              <div className="flex items-center gap-3 text-gray-600">
+                <div className="flex items-center gap-1">
+                  <div className="w-1 h-1 rounded-full bg-amber-500"></div>
+                  <span className="font-medium">DAS</span>
+                </div>
+                <span>Imposto MEI (6% sobre receitas)</span>
+                <span className="font-mono text-amber-700">-{formatCurrency(monthlyTotals.dasTotal)}</span>
+              </div>
+
+              {/* Separador */}
+              <div className="w-px h-4 bg-gray-300"></div>
+
+              {/* Total */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-900"></div>
+                  <span className="font-semibold text-gray-900">RESULTADO FINAL</span>
+                </div>
+                <span className="text-gray-600">Líquido após DAS</span>
+                <span className={`font-mono font-bold ${monthlyTotals.lucroFinal >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {formatCurrency(monthlyTotals.lucroFinal)}
+                </span>
               </div>
             </div>
           </div>
