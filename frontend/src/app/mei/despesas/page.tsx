@@ -171,7 +171,9 @@ function DespesasContent() {
         await fetchDespesas(); // Recarregar dados
         resetForm();
       } else {
-        console.error('Erro ao salvar despesa');
+        const errorText = await response.text();
+        console.error('Erro ao salvar despesa:', response.status, errorText);
+        alert(`Erro ao salvar despesa: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Erro ao salvar despesa:', error);

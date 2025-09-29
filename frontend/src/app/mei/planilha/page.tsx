@@ -345,8 +345,9 @@ function MeiSpreadsheetContent() {
       const newRows = rows.filter(row => row.isNew && row.tipo && row.titulo && row.valor > 0);
 
       for (const row of newRows) {
+        let response;
         if (row.tipo === 'receita') {
-          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
+          response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -360,7 +361,7 @@ function MeiSpreadsheetContent() {
             }),
           });
         } else if (row.tipo === 'despesa') {
-          await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+          response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -373,6 +374,11 @@ function MeiSpreadsheetContent() {
               categoria: row.categoria,
             }),
           });
+        }
+
+        if (response && !response.ok) {
+          const errorText = await response.text();
+          console.error(`Erro ao salvar ${row.tipo}:`, response.status, errorText);
         }
       }
 
@@ -438,8 +444,6 @@ function MeiSpreadsheetContent() {
   // Calcular estatísticas adicionais
   const validRows = rows.filter(row => row.tipo && row.titulo && row.valor > 0);
   const totalMovimentacoes = validRows.length;
-  const receitasCount = validRows.filter(row => row.tipo === 'receita').length;
-  const despesasCount = validRows.filter(row => row.tipo === 'despesa').length;
   const margemLucro = monthlyTotals.totalReceita > 0 ? (monthlyTotals.lucroFinal / monthlyTotals.totalReceita) * 100 : 0;
 
   if (loading) {

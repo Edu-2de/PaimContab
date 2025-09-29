@@ -51,7 +51,7 @@ function formatDate(dateStr: string) {
 
 function ReceitasContent() {
   const [receitas, setReceitas] = useState<Receita[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
@@ -159,7 +159,9 @@ function ReceitasContent() {
         await fetchReceitas(); // Recarregar dados
         resetForm();
       } else {
-        console.error('Erro ao salvar receita');
+        const errorText = await response.text();
+        console.error('Erro ao salvar receita:', response.status, errorText);
+        alert(`Erro ao salvar receita: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Erro ao salvar receita:', error);
