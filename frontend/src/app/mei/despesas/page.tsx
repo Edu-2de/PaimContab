@@ -37,14 +37,16 @@ const categories = [
   'Material de Escritório',
   'Equipamentos',
   'Software e Licenças',
-  'Internet e Telefone',
-  'Marketing e Publicidade',
+  'Internet/Telefone',
+  'Marketing/Publicidade',
   'Combustível',
   'Manutenção',
-  'Taxas e Impostos',
+  'Taxas/Impostos',
   'Consultoria',
   'Treinamentos',
   'Aluguel',
+  'Energia Elétrica',
+  'Matéria-prima',
   'Outros',
 ];
 
@@ -82,11 +84,11 @@ function DespesasContent() {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setDespesas(data);
@@ -122,13 +124,11 @@ function DespesasContent() {
   const despesasPendentes = filteredDespesas
     .filter(d => d.status === 'Pendente')
     .reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasDedutiveis = filteredDespesas
-    .filter(d => d.dedutivel)
-    .reduce((sum, despesa) => sum + despesa.valor, 0);
+  const despesasDedutiveis = filteredDespesas.filter(d => d.dedutivel).reduce((sum, despesa) => sum + despesa.valor, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSaving(true);
       const token = localStorage.getItem('authToken');
@@ -218,7 +218,7 @@ function DespesasContent() {
     if (confirm('Tem certeza que deseja excluir esta despesa?')) {
       try {
         const token = localStorage.getItem('authToken');
-        
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
@@ -232,16 +232,6 @@ function DespesasContent() {
       } catch (error) {
         console.error('Erro ao excluir despesa:', error);
       }
-    }
-  };
-    });
-    setEditingDespesa(despesa);
-    setShowModal(true);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta despesa?')) {
-      setDespesas(prev => prev.filter(d => d.id !== id));
     }
   };
 
@@ -260,7 +250,11 @@ function DespesasContent() {
               </div>
 
               <div className="flex items-center gap-2">
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
+                <button
+                  onClick={fetchDespesas}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
+                  title="Atualizar"
+                >
                   <HiArrowPath className="w-4 h-4" />
                 </button>
                 <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
@@ -278,81 +272,111 @@ function DespesasContent() {
           </div>
         </div>
 
-        {/* Controles de Filtro */}
-        <div className="bg-white border-b border-gray-100 px-8 py-4">
+        {/* Métricas */}
+        <div className="px-8 py-6">
           <div className="max-w-8xl mx-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <select
-                  value={selectedMonth}
-                  onChange={e => setSelectedMonth(e.target.value)}
-                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
-                >
-                  <option value="">Todos os períodos</option>
-                  <option value="2024-09">Setembro 2024</option>
-                  <option value="2024-08">Agosto 2024</option>
-                  <option value="2024-07">Julho 2024</option>
-                </select>
-
-                <div className="relative">
-                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Buscar despesas..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 w-72"
-                  />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Total de Despesas</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(totalDespesas)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                  </div>
                 </div>
               </div>
 
-              <div className="text-sm text-gray-500">{filteredDespesas.length} despesas encontradas</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Resumo Simplificado */}
-        <div className="bg-white border-b border-gray-100 px-8 py-6">
-          <div className="max-w-8xl mx-auto">
-            <div className="grid grid-cols-4 gap-12">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">TOTAL</p>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(totalDespesas)}</p>
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Despesas Pagas</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasPagas)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  </div>
                 </div>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PAGAS</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(despesasPagas)}</p>
+
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Despesas Pendentes</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasPendentes)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PENDENTES</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(despesasPendentes)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">DEDUTÍVEIS</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(despesasDedutiveis)}</p>
+
+              <div className="bg-white p-6 rounded-xl border border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-500">Dedutíveis</p>
+                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasDedutiveis)}</p>
+                  </div>
+                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabela Principal */}
-        <div className="flex-1 px-8 py-6">
-          <div className="max-w-none mx-auto">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '500px' }}>
-                <table className="w-full min-w-[1000px]">
-                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
-                    <tr>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-80">
+        {/* Filtros */}
+        <div className="px-8 pb-6">
+          <div className="max-w-8xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Buscar despesas..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="sm:w-48">
+                  <select
+                    value={selectedMonth}
+                    onChange={e => setSelectedMonth(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  >
+                    <option value="">Todos os meses</option>
+                    <option value="2024-12">Dezembro 2024</option>
+                    <option value="2024-11">Novembro 2024</option>
+                    <option value="2024-10">Outubro 2024</option>
+                    <option value="2024-09">Setembro 2024</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabela de Despesas */}
+        <div className="px-8 pb-8">
+          <div className="max-w-8xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Descrição
                       </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Data
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                        Data / Método
                       </th>
-                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Valor
                       </th>
                       <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
@@ -368,25 +392,21 @@ function DespesasContent() {
                       <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
                         <td className="py-4 px-6">
                           <div>
-                            <div className="text-sm font-medium text-gray-900 mb-1">{despesa.description}</div>
-                            <div className="text-xs text-gray-500 flex items-center gap-2">
-                              {despesa.supplier && `${despesa.supplier} • `}
-                              {despesa.category}
-                              {despesa.isDeductible && (
-                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-blue-50 text-blue-700">
-                                  Dedutível
-                                </span>
-                              )}
+                            <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
+                            <div className="text-xs text-gray-500">
+                              {despesa.fornecedor && `${despesa.fornecedor} • `}
+                              {despesa.categoria}
+                              {despesa.dedutivel && ' • Dedutível'}
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-6">
-                          <div className="text-sm text-gray-900">{formatDate(despesa.date)}</div>
-                          <div className="text-xs text-gray-500">{despesa.paymentMethod}</div>
+                          <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
+                          <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="text-sm font-mono font-medium text-gray-900">
-                            {formatCurrency(despesa.value)}
+                            {formatCurrency(despesa.valor)}
                           </div>
                         </td>
                         <td className="py-4 px-6">
@@ -435,13 +455,17 @@ function DespesasContent() {
                     {filteredDespesas.length === 0 && (
                       <tr>
                         <td colSpan={5} className="py-16 text-center">
-                          <p className="text-gray-500 mb-4">Nenhuma despesa encontrada</p>
-                          <button
-                            onClick={() => setShowModal(true)}
-                            className="text-sm text-gray-900 hover:text-gray-700"
-                          >
-                            Adicionar primeira despesa
-                          </button>
+                          <p className="text-gray-500 mb-4">
+                            {loading ? 'Carregando despesas...' : 'Nenhuma despesa encontrada'}
+                          </p>
+                          {!loading && (
+                            <button
+                              onClick={() => setShowModal(true)}
+                              className="text-sm text-gray-900 hover:text-gray-700"
+                            >
+                              Adicionar primeira despesa
+                            </button>
+                          )}
                         </td>
                       </tr>
                     )}
@@ -473,8 +497,8 @@ function DespesasContent() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Descrição</label>
                 <input
                   type="text"
-                  value={formData.description}
-                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  value={formData.descricao}
+                  onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                   placeholder="Digite a descrição da despesa..."
                   required
@@ -487,8 +511,8 @@ function DespesasContent() {
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.value}
-                    onChange={e => setFormData({ ...formData, value: e.target.value })}
+                    value={formData.valor}
+                    onChange={e => setFormData({ ...formData, valor: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     placeholder="0,00"
                     required
@@ -496,11 +520,11 @@ function DespesasContent() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Pagamento</label>
                   <input
                     type="date"
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
+                    value={formData.dataPagamento}
+                    onChange={e => setFormData({ ...formData, dataPagamento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   />
@@ -510,8 +534,8 @@ function DespesasContent() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
                 <select
-                  value={formData.category}
-                  onChange={e => setFormData({ ...formData, category: e.target.value })}
+                  value={formData.categoria}
+                  onChange={e => setFormData({ ...formData, categoria: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                   required
                 >
@@ -524,23 +548,36 @@ function DespesasContent() {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Fornecedor</label>
-                <input
-                  type="text"
-                  value={formData.supplier}
-                  onChange={e => setFormData({ ...formData, supplier: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                  placeholder="Nome do fornecedor (opcional)"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fornecedor</label>
+                  <input
+                    type="text"
+                    value={formData.fornecedor}
+                    onChange={e => setFormData({ ...formData, fornecedor: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="Nome do fornecedor (opcional)"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota Fiscal</label>
+                  <input
+                    type="text"
+                    value={formData.numeroNotaFiscal}
+                    onChange={e => setFormData({ ...formData, numeroNotaFiscal: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    placeholder="NF-001 (opcional)"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Pagamento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Método de Pagamento</label>
                   <select
-                    value={formData.paymentMethod}
-                    onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })}
+                    value={formData.metodoPagamento}
+                    onChange={e => setFormData({ ...formData, metodoPagamento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
@@ -569,17 +606,27 @@ function DespesasContent() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="deductible"
-                  checked={formData.isDeductible}
-                  onChange={e => setFormData({ ...formData, isDeductible: e.target.checked })}
-                  className="rounded border-gray-300 text-gray-900 focus:ring-gray-200"
-                />
-                <label htmlFor="deductible" className="text-sm text-gray-700">
-                  Despesa dedutível para imposto de renda
+              <div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.dedutivel}
+                    onChange={e => setFormData({ ...formData, dedutivel: e.target.checked })}
+                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-200"
+                  />
+                  <span className="text-sm text-gray-700">Despesa dedutível</span>
                 </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                <textarea
+                  value={formData.observacoes}
+                  onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  placeholder="Observações adicionais (opcional)"
+                  rows={3}
+                />
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
@@ -592,9 +639,10 @@ function DespesasContent() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                  disabled={saving}
+                  className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {editingDespesa ? 'Atualizar' : 'Salvar'}
+                  {saving ? 'Salvando...' : editingDespesa ? 'Atualizar' : 'Salvar'}
                 </button>
               </div>
             </form>
