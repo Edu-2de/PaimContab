@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
 import {
@@ -13,25 +13,28 @@ import {
 
 interface Receita {
   id: string;
-  description: string;
-  value: number;
-  date: string;
-  category: string;
-  clientName?: string;
-  invoiceNumber?: string;
-  paymentMethod: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
+  descricao: string;
+  valor: number;
+  dataRecebimento: string;
+  categoria: string;
+  cliente?: string;
+  numeroNota?: string;
+  metodoPagamento: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
   status: 'Recebido' | 'Pendente' | 'Cancelado';
+  observacoes?: string;
+  createdAt: string;
 }
 
 interface ReceitaFormData {
-  description: string;
-  value: string;
-  date: string;
-  category: string;
-  clientName: string;
-  invoiceNumber: string;
-  paymentMethod: string;
+  descricao: string;
+  valor: string;
+  dataRecebimento: string;
+  categoria: string;
+  cliente: string;
+  numeroNota: string;
+  metodoPagamento: string;
   status: string;
+  observacoes: string;
 }
 
 const categories = [
