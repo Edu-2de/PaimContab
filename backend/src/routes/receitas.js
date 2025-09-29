@@ -22,7 +22,7 @@ router.get('/receitas', async (req, res) => {
     const userId = req.user.id;
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { company: true }
+      include: { company: true },
     });
 
     if (!user || !user.company) {
@@ -31,7 +31,7 @@ router.get('/receitas', async (req, res) => {
 
     const receitas = await prisma.receita.findMany({
       where: { companyId: user.company.id },
-      orderBy: { dataRecebimento: 'desc' }
+      orderBy: { dataRecebimento: 'desc' },
     });
 
     res.json(receitas);
@@ -46,7 +46,7 @@ router.post('/receitas', async (req, res) => {
     const userId = req.user.id;
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { company: true }
+      include: { company: true },
     });
 
     if (!user || !user.company) {
@@ -56,8 +56,8 @@ router.post('/receitas', async (req, res) => {
     const receita = await prisma.receita.create({
       data: {
         ...req.body,
-        companyId: user.company.id
-      }
+        companyId: user.company.id,
+      },
     });
 
     res.status(201).json(receita);

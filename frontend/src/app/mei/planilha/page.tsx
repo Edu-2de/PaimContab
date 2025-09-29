@@ -3,13 +3,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
-import { 
-  HiXMark, 
-  HiArrowDownTray, 
+import {
+  HiXMark,
+  HiArrowDownTray,
   HiArrowPath,
   HiMagnifyingGlass,
   HiChartBarSquare,
-  HiCheckCircle
+  HiCheckCircle,
 } from 'react-icons/hi2';
 
 interface SpreadsheetRow {
@@ -91,14 +91,7 @@ const CATEGORIAS_DESPESA = [
   'Outros',
 ];
 
-const METODOS_PAGAMENTO = [
-  'Dinheiro',
-  'PIX',
-  'Cartão Débito',
-  'Cartão Crédito',
-  'Transferência',
-  'Boleto',
-];
+const METODOS_PAGAMENTO = ['Dinheiro', 'PIX', 'Cartão Débito', 'Cartão Crédito', 'Transferência', 'Boleto'];
 
 function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', {
@@ -130,14 +123,10 @@ function MeiSpreadsheetContent() {
 
   // Calcular totais
   const calculateTotals = (currentRows: SpreadsheetRow[]) => {
-    const totalReceita = currentRows
-      .filter(row => row.tipo === 'receita')
-      .reduce((sum, row) => sum + row.valor, 0);
-    
-    const totalDespesa = currentRows
-      .filter(row => row.tipo === 'despesa')
-      .reduce((sum, row) => sum + row.valor, 0);
-    
+    const totalReceita = currentRows.filter(row => row.tipo === 'receita').reduce((sum, row) => sum + row.valor, 0);
+
+    const totalDespesa = currentRows.filter(row => row.tipo === 'despesa').reduce((sum, row) => sum + row.valor, 0);
+
     const lucroSemDas = totalReceita - totalDespesa;
     const dasTotal = Math.max(totalReceita * 0.06, 66.6);
     const lucroFinal = lucroSemDas - dasTotal;
@@ -177,9 +166,7 @@ function MeiSpreadsheetContent() {
 
   // Adicionar linhas vazias automaticamente (mínimo 3, ideal 10)
   const ensureEmptyRows = (currentRows: SpreadsheetRow[], minEmpty = 3, idealEmpty = 10) => {
-    const emptyRows = currentRows.filter(row => 
-      !row.titulo && !row.tipo && row.valor === 0
-    );
+    const emptyRows = currentRows.filter(row => !row.titulo && !row.tipo && row.valor === 0);
 
     // Se tem menos que o mínimo, adicionar até o ideal
     if (emptyRows.length < minEmpty) {
@@ -316,7 +303,7 @@ function MeiSpreadsheetContent() {
       // Calcular totais apenas com dados válidos
       const validRows = rowsWithEmpty.filter(row => row.tipo && row.titulo && row.valor > 0);
       setMonthlyTotals(calculateTotals(validRows));
-      
+
       return rowsWithEmpty;
     });
   };
@@ -324,14 +311,14 @@ function MeiSpreadsheetContent() {
   const deleteRow = (id: string) => {
     setRows(prevRows => {
       const updatedRows = prevRows.filter(row => row.id !== id);
-      
+
       // Garantir linhas vazias após deleção
       const rowsWithEmpty = ensureEmptyRows(updatedRows, 3, 5);
-      
+
       // Calcular totais apenas com dados válidos
       const validRows = rowsWithEmpty.filter(row => row.tipo && row.titulo && row.valor > 0);
       setMonthlyTotals(calculateTotals(validRows));
-      
+
       return rowsWithEmpty;
     });
   };
@@ -392,18 +379,34 @@ function MeiSpreadsheetContent() {
 
   const exportToCSV = () => {
     const validRows = rows.filter(row => row.tipo && row.titulo);
-    
+
     const headers = [
-      'Data', 'Tipo', 'Título', 'Descrição', 'Categoria', 'Cliente', 'Fornecedor',
-      'Nº Nota', 'Método Pagamento', 'Status', 'Valor', 'Dedutível', 'Observações',
+      'Data',
+      'Tipo',
+      'Título',
+      'Descrição',
+      'Categoria',
+      'Cliente',
+      'Fornecedor',
+      'Nº Nota',
+      'Método Pagamento',
+      'Status',
+      'Valor',
+      'Dedutível',
+      'Observações',
     ];
     const csvData = validRows.map(row => [
       formatDate(row.data),
       row.tipo === 'receita' ? 'Receita' : 'Despesa',
-      row.titulo, row.descricao, row.categoria,
-      row.cliente || '', row.fornecedor || '',
-      row.tipo === 'receita' ? (row.numeroNota || '') : (row.numeroNotaFiscal || ''),
-      row.metodoPagamento, row.status, row.valor.toFixed(2),
+      row.titulo,
+      row.descricao,
+      row.categoria,
+      row.cliente || '',
+      row.fornecedor || '',
+      row.tipo === 'receita' ? row.numeroNota || '' : row.numeroNotaFiscal || '',
+      row.metodoPagamento,
+      row.status,
+      row.valor.toFixed(2),
       row.tipo === 'despesa' ? (row.dedutivel ? 'Sim' : 'Não') : 'N/A',
       row.observacoes || '',
     ]);
@@ -422,10 +425,10 @@ function MeiSpreadsheetContent() {
   const filteredRows = rows.filter(row => {
     // Se a busca estiver vazia, mostrar todas as linhas
     if (!searchTerm) return true;
-    
+
     // Se for uma linha vazia, não mostrar na busca
     if (!row.titulo && !row.tipo && row.valor === 0) return false;
-    
+
     // Aplicar filtro de busca
     return (
       row.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -444,7 +447,8 @@ function MeiSpreadsheetContent() {
   // Calcular estatísticas adicionais
   const validRows = rows.filter(row => row.tipo && row.titulo && row.valor > 0);
   const totalMovimentacoes = validRows.length;
-  const margemLucro = monthlyTotals.totalReceita > 0 ? (monthlyTotals.lucroFinal / monthlyTotals.totalReceita) * 100 : 0;
+  const margemLucro =
+    monthlyTotals.totalReceita > 0 ? (monthlyTotals.lucroFinal / monthlyTotals.totalReceita) * 100 : 0;
 
   if (loading) {
     return (
@@ -485,13 +489,19 @@ function MeiSpreadsheetContent() {
                     onClick={saveAllChanges}
                     disabled={saving}
                     className="flex items-center gap-2 px-3 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 shadow-sm"
-                    title={saving ? 'Salvando alterações...' : `Salvar ${rows.filter(row => row.isNew && row.tipo && row.titulo && row.valor > 0).length} alterações`}
+                    title={
+                      saving
+                        ? 'Salvando alterações...'
+                        : `Salvar ${
+                            rows.filter(row => row.isNew && row.tipo && row.titulo && row.valor > 0).length
+                          } alterações`
+                    }
                   >
                     <HiCheckCircle className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
                     {saving ? 'Salvando...' : 'Salvar'}
                   </button>
                 )}
-                
+
                 <button
                   onClick={fetchSpreadsheetData}
                   className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -549,31 +559,37 @@ function MeiSpreadsheetContent() {
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                     <span className="text-sm text-gray-600">Receitas:</span>
-                    <span className="text-sm font-semibold text-gray-900">{formatCurrency(monthlyTotals.totalReceita)}</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(monthlyTotals.totalReceita)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
                     <span className="text-sm text-gray-600">Despesas:</span>
-                    <span className="text-sm font-semibold text-gray-900">{formatCurrency(monthlyTotals.totalDespesa)}</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {formatCurrency(monthlyTotals.totalDespesa)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-gray-700"></div>
                     <span className="text-sm text-gray-600">Movimentações:</span>
                     <span className="text-sm font-semibold text-gray-900">{totalMovimentacoes}</span>
-                    
+
                     {/* Indicador DAS */}
                     <div className="relative group">
                       <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-full cursor-help">
                         <div className="w-1 h-1 rounded-full bg-white"></div>
                         <span>-{formatCurrency(monthlyTotals.dasTotal)}</span>
                       </div>
-                      
+
                       {/* Tooltip */}
                       <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-30">
                         <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
                           <div className="font-semibold mb-1">DAS - Documento de Arrecadação</div>
                           <div className="text-gray-300">Imposto mensal MEI (6% das receitas)</div>
-                          <div className="text-gray-300">Mínimo: R$ 66,60 | Atual: {formatCurrency(monthlyTotals.dasTotal)}</div>
+                          <div className="text-gray-300">
+                            Mínimo: R$ 66,60 | Atual: {formatCurrency(monthlyTotals.dasTotal)}
+                          </div>
                           {/* Seta do tooltip */}
                           <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
                         </div>
@@ -583,9 +599,7 @@ function MeiSpreadsheetContent() {
                 </div>
               </div>
 
-              <div className="text-sm text-gray-500">
-                Novas linhas são adicionadas automaticamente
-              </div>
+              <div className="text-sm text-gray-500">Novas linhas são adicionadas automaticamente</div>
             </div>
           </div>
         </div>
@@ -598,25 +612,58 @@ function MeiSpreadsheetContent() {
                 <table className="w-full text-sm">
                   <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                     <tr>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Data</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Tipo</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-40">Título</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">Descrição</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">Categoria</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">Cliente</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">Fornecedor</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Nº Nota</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Pagamento</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">Status</th>
-                      <th className="text-right py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">Valor</th>
-                      <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">Ded.</th>
-                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-36">Observações</th>
-                      <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">Ações</th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
+                        Data
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+                        Tipo
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-40">
+                        Título
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
+                        Descrição
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
+                        Categoria
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
+                        Cliente
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-32">
+                        Fornecedor
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
+                        Nº Nota
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
+                        Pagamento
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-24">
+                        Status
+                      </th>
+                      <th className="text-right py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-28">
+                        Valor
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">
+                        Ded.
+                      </th>
+                      <th className="text-left py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-36">
+                        Observações
+                      </th>
+                      <th className="text-center py-3 px-4 text-xs font-semibold text-gray-600 uppercase tracking-wider w-16">
+                        Ações
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
-                    {filteredRows.map((row) => (
-                      <tr key={row.id} className={`hover:bg-gray-50 transition-colors duration-150 ${row.isNew && row.titulo ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''}`}>
+                    {filteredRows.map(row => (
+                      <tr
+                        key={row.id}
+                        className={`hover:bg-gray-50 transition-colors duration-150 ${
+                          row.isNew && row.titulo ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                        }`}
+                      >
                         {/* Data */}
                         <td className="py-3 px-4">
                           <input
@@ -675,12 +722,18 @@ function MeiSpreadsheetContent() {
                             className="text-sm border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-md px-3 py-2 text-gray-900 w-full cursor-pointer"
                           >
                             <option value="">Categoria</option>
-                            {row.tipo === 'receita' && CATEGORIAS_RECEITA.map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                            {row.tipo === 'despesa' && CATEGORIAS_DESPESA.map(cat => (
-                              <option key={cat} value={cat}>{cat}</option>
-                            ))}
+                            {row.tipo === 'receita' &&
+                              CATEGORIAS_RECEITA.map(cat => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
+                            {row.tipo === 'despesa' &&
+                              CATEGORIAS_DESPESA.map(cat => (
+                                <option key={cat} value={cat}>
+                                  {cat}
+                                </option>
+                              ))}
                           </select>
                         </td>
 
@@ -718,8 +771,14 @@ function MeiSpreadsheetContent() {
                         <td className="py-3 px-4">
                           <input
                             type="text"
-                            value={row.tipo === 'receita' ? (row.numeroNota || '') : (row.numeroNotaFiscal || '')}
-                            onChange={e => updateRow(row.id, row.tipo === 'receita' ? 'numeroNota' : 'numeroNotaFiscal', e.target.value)}
+                            value={row.tipo === 'receita' ? row.numeroNota || '' : row.numeroNotaFiscal || ''}
+                            onChange={e =>
+                              updateRow(
+                                row.id,
+                                row.tipo === 'receita' ? 'numeroNota' : 'numeroNotaFiscal',
+                                e.target.value
+                              )
+                            }
                             placeholder="Nº nota..."
                             className="text-sm border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent rounded-md px-3 py-2 text-gray-900 placeholder-gray-400 w-full"
                           />
@@ -734,7 +793,9 @@ function MeiSpreadsheetContent() {
                           >
                             <option value="">Método</option>
                             {METODOS_PAGAMENTO.map(metodo => (
-                              <option key={metodo} value={metodo}>{metodo}</option>
+                              <option key={metodo} value={metodo}>
+                                {metodo}
+                              </option>
                             ))}
                           </select>
                         </td>
@@ -829,7 +890,9 @@ function MeiSpreadsheetContent() {
                             <div>
                               <p className="text-gray-600 mb-2 text-lg font-medium">Nenhuma movimentação encontrada</p>
                               <p className="text-gray-500 mb-6 text-sm">
-                                {searchTerm ? 'Tente buscar por outro termo ou limpe o filtro' : 'Comece preenchendo uma linha da planilha'}
+                                {searchTerm
+                                  ? 'Tente buscar por outro termo ou limpe o filtro'
+                                  : 'Comece preenchendo uma linha da planilha'}
                               </p>
                             </div>
                           </div>
@@ -852,13 +915,19 @@ function MeiSpreadsheetContent() {
                   <div className="w-3 h-3 rounded-full bg-gray-900"></div>
                   <span className="text-lg font-semibold text-gray-900">Resultado Líquido:</span>
                 </div>
-                <div className={`px-6 py-3 rounded-lg border-2 ${monthlyTotals.lucroFinal >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
-                  <span className={`text-2xl font-bold ${monthlyTotals.lucroFinal >= 0 ? 'text-emerald-700' : 'text-red-700'}`}>
+                <div
+                  className={`px-6 py-3 rounded-lg border-2 ${
+                    monthlyTotals.lucroFinal >= 0 ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'
+                  }`}
+                >
+                  <span
+                    className={`text-2xl font-bold ${
+                      monthlyTotals.lucroFinal >= 0 ? 'text-emerald-700' : 'text-red-700'
+                    }`}
+                  >
                     {formatCurrency(monthlyTotals.lucroFinal)}
                   </span>
-                  <span className="text-sm text-gray-600 ml-2">
-                    (margem: {margemLucro.toFixed(1)}%)
-                  </span>
+                  <span className="text-sm text-gray-600 ml-2">(margem: {margemLucro.toFixed(1)}%)</span>
                 </div>
               </div>
             </div>

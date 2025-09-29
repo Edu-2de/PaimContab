@@ -22,7 +22,7 @@ router.get('/despesas', async (req, res) => {
     const userId = req.user.id;
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { company: true }
+      include: { company: true },
     });
 
     if (!user || !user.company) {
@@ -31,7 +31,7 @@ router.get('/despesas', async (req, res) => {
 
     const despesas = await prisma.despesa.findMany({
       where: { companyId: user.company.id },
-      orderBy: { dataPagamento: 'desc' }
+      orderBy: { dataPagamento: 'desc' },
     });
 
     res.json(despesas);
@@ -46,7 +46,7 @@ router.post('/despesas', async (req, res) => {
     const userId = req.user.id;
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { company: true }
+      include: { company: true },
     });
 
     if (!user || !user.company) {
@@ -56,8 +56,8 @@ router.post('/despesas', async (req, res) => {
     const despesa = await prisma.despesa.create({
       data: {
         ...req.body,
-        companyId: user.company.id
-      }
+        companyId: user.company.id,
+      },
     });
 
     res.status(201).json(despesa);
