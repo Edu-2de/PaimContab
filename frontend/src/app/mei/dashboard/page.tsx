@@ -5,16 +5,11 @@ import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
 import {
   HiExclamationTriangle,
-  HiBell,
   HiArrowTrendingUp,
-  HiCurrencyDollar,
-  HiArrowDownRight,
-  HiChartPie,
-  HiClock,
-  HiCheckCircle,
-  HiCalculator,
-  HiDocumentText,
-  HiArrowUpRight,
+  HiArrowTrendingDown,
+  HiPlus,
+  HiMinus,
+  HiArrowRight,
 } from 'react-icons/hi2';
 
 interface Company {
@@ -42,12 +37,22 @@ interface RecentTransaction {
   category: string;
 }
 
-interface NotificationItem {
+interface Receita {
   id: string;
-  type: 'warning' | 'info' | 'success';
-  title: string;
-  message: string;
-  date: string;
+  descricao: string;
+  valor: number;
+  dataRecebimento: string;
+  categoria: string;
+  createdAt: string;
+}
+
+interface Despesa {
+  id: string;
+  descricao: string;
+  valor: number;
+  dataPagamento: string;
+  categoria: string;
+  createdAt: string;
 }
 
 function formatCurrency(v: number) {
@@ -60,75 +65,25 @@ function formatDate(dateStr: string) {
 
 function MeiDashboardContent() {
   const [company, setCompany] = useState<Company | null>(null);
-
-  // Dados mockados para demonstração - em produção viria da API
-  const [metrics] = useState<DashboardMetrics>({
-    totalReceita: 45600.0,
-    totalDespesa: 12300.0,
-    lucroLiquido: 33300.0,
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
+  const [metrics, setMetrics] = useState<DashboardMetrics>({
+    totalReceita: 0,
+    totalDespesa: 0,
+    lucroLiquido: 0,
     limiteFaturamento: 81000.0,
-    faturamentoAtual: 45600.0,
-    proximoDAS: '2024-10-20',
-    valorDAS: 456.0,
+    faturamentoAtual: 0,
+    proximoDAS: '',
+    valorDAS: 0,
   });
-
-  const [recentTransactions] = useState<RecentTransaction[]>([
-    {
-      id: '1',
-      type: 'Receita',
-      description: 'Serviço de consultoria',
-      value: 2500,
-      date: '2024-09-25',
-      category: 'Serviços',
-    },
-    {
-      id: '2',
-      type: 'Despesa',
-      description: 'Internet e telefone',
-      value: 150,
-      date: '2024-09-24',
-      category: 'Utilities',
-    },
-    { id: '3', type: 'Receita', description: 'Venda de produto', value: 800, date: '2024-09-23', category: 'Vendas' },
-    {
-      id: '4',
-      type: 'Despesa',
-      description: 'Material de escritório',
-      value: 200,
-      date: '2024-09-22',
-      category: 'Suprimentos',
-    },
-  ]);
-
-  const [notifications] = useState<NotificationItem[]>([
-    {
-      id: '1',
-      type: 'warning',
-      title: 'DAS Vencendo',
-      message: 'O DAS de setembro vence em 5 dias',
-      date: '2024-09-25',
-    },
-    {
-      id: '2',
-      type: 'info',
-      title: 'Limite de Faturamento',
-      message: 'Você já atingiu 56% do limite anual',
-      date: '2024-09-24',
-    },
-    {
-      id: '3',
-      type: 'success',
-      title: 'Meta Atingida',
-      message: 'Parabéns! Meta de setembro foi atingida',
-      date: '2024-09-23',
-    },
-  ]);
+  const [recentTransactions, setRecentTransactions] = useState<RecentTransaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
       const userObj = JSON.parse(userData);
       fetchCompanyData(userObj.id);
+      fetchDashboardData(userObj.companyId);
     }
   }, []);
 
@@ -150,7 +105,81 @@ function MeiDashboardContent() {
     }
   };
 
-  // Cálculos principais
+  const fetchDashboardData = async (companyId: string) => {
+    if (!companyId) return;
+
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+
+      // Buscar receitas
+      const receitasResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const receitas = receitasResponse.ok ? await receitasResponse.json() : [];
+
+      // Buscar despesas
+      const despesasResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const despesas = despesasResponse.ok ? await despesasResponse.json() : [];
+
+      // Calcular métricas
+      const totalReceita = receitas.reduce((sum: number, r: Receita) => sum + (r.valor || 0), 0);
+      const totalDespesa = despesas.reduce((sum: number, d: Despesa) => sum + (d.valor || 0), 0);
+      const lucroLiquido = totalReceita - totalDespesa;
+
+      // Calcular DAS (6% das receitas, mínimo R$ 66,60)
+      const valorDAS = Math.max(totalReceita * 0.06, 66.6);
+
+      // Próximo DAS (20 do próximo mês)
+      const proximoMes = new Date();
+      proximoMes.setMonth(proximoMes.getMonth() + 1);
+      proximoMes.setDate(20);
+
+      setMetrics({
+        totalReceita,
+        totalDespesa,
+        lucroLiquido,
+        limiteFaturamento: 81000.0,
+        faturamentoAtual: totalReceita,
+        proximoDAS: proximoMes.toISOString().split('T')[0],
+        valorDAS,
+      });
+
+      // Combinar e ordenar transações recentes
+      const allTransactions = [
+        ...receitas.map((r: Receita) => ({
+          id: r.id,
+          type: 'Receita' as const,
+          description: r.descricao || 'Receita',
+          value: r.valor || 0,
+          date: r.dataRecebimento || r.createdAt,
+          category: r.categoria || 'Geral',
+        })),
+        ...despesas.map((d: Despesa) => ({
+          id: d.id,
+          type: 'Despesa' as const,
+          description: d.descricao || 'Despesa',
+          value: d.valor || 0,
+          date: d.dataPagamento || d.createdAt,
+          category: d.categoria || 'Geral',
+        })),
+      ];
+
+      // Ordenar por data (mais recentes primeiro) e pegar apenas os 4 primeiros
+      const sortedTransactions = allTransactions
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 4);
+
+      setRecentTransactions(sortedTransactions);
+    } catch (error) {
+      console.error('Erro ao buscar dados do dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const percentualLimite = (metrics.faturamentoAtual / metrics.limiteFaturamento) * 100;
   const diasParaDAS = Math.ceil(
     (new Date(metrics.proximoDAS).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
@@ -161,339 +190,327 @@ function MeiDashboardContent() {
       <MeiSidebar currentPage="dashboard" />
 
       <div className="mei-content-wrapper">
-        {/* Header */}
-        <div className="bg-white shadow-sm border-b border-slate-200">
-          <div className="px-8 py-6">
-            <div className="flex justify-between items-center">
+        {/* Header Ultra Clean */}
+        <div className="bg-white border-b border-slate-200/60">
+          <div className="px-8 py-8">
+            <div className="flex justify-between items-start">
               <div>
-                <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-                <p className="text-slate-600 mt-1 text-sm">
-                  {company?.name || 'Minha Empresa'} •{' '}
-                  {new Date().toLocaleDateString('pt-BR', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric',
-                  })}
-                </p>
+                <h1 className="text-3xl font-light text-slate-900 tracking-tight">Dashboard Financeiro</h1>
+                <p className="text-slate-500 mt-2 font-medium">{company?.name || 'Minha Empresa MEI'}</p>
               </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Status</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                    <p className="text-sm font-medium text-slate-700">Em dia</p>
-                  </div>
+              <div className="text-right">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-slate-600">Situação Regular</span>
                 </div>
+                <p className="text-xs text-slate-400 mt-1">{new Date().toLocaleDateString('pt-BR')}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Alertas importantes */}
-        {(diasParaDAS <= 7 || percentualLimite > 80) && (
-          <div className="px-8 py-4">
-            <div className="flex gap-4">
-              {diasParaDAS <= 7 && (
-                <div className="flex-1 bg-amber-50 border border-amber-200 rounded-lg p-4">
-                  <div className="flex">
-                    <HiExclamationTriangle className="h-5 w-5 text-amber-500 mt-0.5" />
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-amber-800">DAS Próximo do Vencimento</h3>
-                      <p className="mt-1 text-sm text-amber-700">
-                        Vence em {diasParaDAS} dias • {formatCurrency(metrics.valorDAS)}
-                      </p>
-                    </div>
-                  </div>
+        {/* Alerta DAS Profissional */}
+        {diasParaDAS <= 7 && (
+          <div className="px-8 py-6">
+            <div
+              className="bg-amber-50/50 border border-amber-200/60 rounded-xl p-6 transition-all duration-300 hover:bg-amber-50/70 hover:border-amber-300/60 cursor-pointer"
+              onMouseEnter={() => setHoveredCard('das-alert')}
+              onMouseLeave={() => setHoveredCard(null)}
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0">
+                  <HiExclamationTriangle className="h-6 w-6 text-amber-600" />
                 </div>
-              )}
-
-              {percentualLimite > 80 && (
-                <div className="flex-1 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="flex">
-                    <HiExclamationTriangle className="h-5 w-5 text-red-500 mt-0.5" />
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Atenção ao Limite MEI</h3>
-                      <p className="mt-1 text-sm text-red-700">
-                        {percentualLimite.toFixed(1)}% do limite anual atingido
-                      </p>
-                    </div>
-                  </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-semibold text-amber-900 mb-1">Vencimento DAS</h4>
+                  <p className="text-sm text-amber-800">
+                    Pagamento vence em <span className="font-semibold">{diasParaDAS} dias</span> -{' '}
+                    {formatCurrency(metrics.valorDAS)}
+                  </p>
                 </div>
-              )}
+                <HiArrowRight
+                  className={`h-5 w-5 text-amber-600 transition-transform duration-300 ${
+                    hoveredCard === 'das-alert' ? 'transform translate-x-1' : ''
+                  }`}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        {/* Métricas principais */}
+        {/* Métricas Principais - Design Ultra Profissional */}
         <div className="px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* Receita Total */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Receita</p>
-                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.totalReceita)}</p>
-                  <div className="flex items-center mt-3">
-                    <HiArrowTrendingUp className="w-4 h-4 text-emerald-500 mr-1" />
-                    <span className="text-sm text-emerald-600 font-medium">+12%</span>
-                    <span className="text-xs text-slate-500 ml-1">vs mês anterior</span>
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="bg-white border border-slate-200/60 rounded-xl p-8 animate-pulse">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="h-4 bg-slate-200 rounded w-24"></div>
+                    <div className="w-3 h-3 bg-slate-200 rounded-full"></div>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="h-8 bg-slate-200 rounded w-32"></div>
+                    <div className="h-4 bg-slate-200 rounded w-20"></div>
                   </div>
                 </div>
-                <div className="p-3 bg-emerald-50 rounded-lg">
-                  <HiCurrencyDollar className="w-6 h-6 text-emerald-600" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              {/* Receita Total */}
+              <div
+                className={`bg-white border border-slate-200/60 rounded-xl p-8 transition-all duration-300 cursor-pointer ${
+                  hoveredCard === 'receita'
+                    ? 'border-emerald-300/60 shadow-lg shadow-emerald-100/50 -translate-y-1'
+                    : 'hover:border-slate-300/60'
+                }`}
+                onMouseEnter={() => setHoveredCard('receita')}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Receita Total</h3>
+                  <div
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      hoveredCard === 'receita' ? 'bg-emerald-500' : 'bg-slate-200'
+                    }`}
+                  ></div>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-3xl font-light text-slate-900 tracking-tight">
+                    {formatCurrency(metrics.totalReceita)}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <HiArrowTrendingUp className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-medium text-emerald-600">+12% este mês</span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Despesas */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Despesas</p>
-                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.totalDespesa)}</p>
-                  <div className="flex items-center mt-3">
-                    <HiArrowDownRight className="w-4 h-4 text-red-500 mr-1" />
-                    <span className="text-sm text-red-600 font-medium">-5%</span>
-                    <span className="text-xs text-slate-500 ml-1">vs mês anterior</span>
+              {/* Despesas */}
+              <div
+                className={`bg-white border border-slate-200/60 rounded-xl p-8 transition-all duration-300 cursor-pointer ${
+                  hoveredCard === 'despesas'
+                    ? 'border-rose-300/60 shadow-lg shadow-rose-100/50 -translate-y-1'
+                    : 'hover:border-slate-300/60'
+                }`}
+                onMouseEnter={() => setHoveredCard('despesas')}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Despesas</h3>
+                  <div
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      hoveredCard === 'despesas' ? 'bg-rose-500' : 'bg-slate-200'
+                    }`}
+                  ></div>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-3xl font-light text-slate-900 tracking-tight">
+                    {formatCurrency(metrics.totalDespesa)}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <HiArrowTrendingDown className="w-4 h-4 text-emerald-600" />
+                    <span className="text-sm font-medium text-emerald-600">-5% este mês</span>
                   </div>
                 </div>
-                <div className="p-3 bg-red-50 rounded-lg">
-                  <HiArrowDownRight className="w-6 h-6 text-red-600" />
-                </div>
               </div>
-            </div>
 
-            {/* Lucro Líquido */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Lucro</p>
-                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.lucroLiquido)}</p>
-                  <div className="flex items-center mt-3">
-                    <HiArrowTrendingUp className="w-4 h-4 text-blue-500 mr-1" />
-                    <span className="text-sm text-blue-600 font-medium">+18%</span>
-                    <span className="text-xs text-slate-500 ml-1">vs mês anterior</span>
+              {/* Lucro Líquido */}
+              <div
+                className={`bg-white border border-slate-200/60 rounded-xl p-8 transition-all duration-300 cursor-pointer ${
+                  hoveredCard === 'lucro'
+                    ? 'border-blue-300/60 shadow-lg shadow-blue-100/50 -translate-y-1'
+                    : 'hover:border-slate-300/60'
+                }`}
+                onMouseEnter={() => setHoveredCard('lucro')}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Lucro Líquido</h3>
+                  <div
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      hoveredCard === 'lucro' ? 'bg-blue-500' : 'bg-slate-200'
+                    }`}
+                  ></div>
+                </div>
+                <div className="space-y-3">
+                  <p className="text-3xl font-light text-slate-900 tracking-tight">
+                    {formatCurrency(metrics.lucroLiquido)}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <HiArrowTrendingUp className="w-4 h-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-600">+18% este mês</span>
                   </div>
                 </div>
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <HiChartPie className="w-6 h-6 text-blue-600" />
-                </div>
               </div>
-            </div>
 
-            {/* Próximo DAS */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-600 uppercase tracking-wide">Próximo DAS</p>
-                  <p className="text-2xl font-semibold text-slate-900 mt-2">{formatCurrency(metrics.valorDAS)}</p>
-                  <div className="flex items-center mt-3">
-                    <HiClock className="w-4 h-4 text-amber-500 mr-1" />
-                    <span className="text-sm text-amber-600 font-medium">{diasParaDAS} dias</span>
-                    <span className="text-xs text-slate-500 ml-1">para vencer</span>
-                  </div>
+              {/* DAS */}
+              <div
+                className={`bg-white border border-slate-200/60 rounded-xl p-8 transition-all duration-300 cursor-pointer ${
+                  hoveredCard === 'das'
+                    ? 'border-orange-300/60 shadow-lg shadow-orange-100/50 -translate-y-1'
+                    : 'hover:border-slate-300/60'
+                }`}
+                onMouseEnter={() => setHoveredCard('das')}
+                onMouseLeave={() => setHoveredCard(null)}
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wide">Próximo DAS</h3>
+                  <div
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      hoveredCard === 'das' ? 'bg-orange-500' : 'bg-slate-200'
+                    }`}
+                  ></div>
                 </div>
-                <div className="p-3 bg-amber-50 rounded-lg">
-                  <HiCalculator className="w-6 h-6 text-amber-600" />
+                <div className="space-y-3">
+                  <p className="text-3xl font-light text-slate-900 tracking-tight">
+                    {formatCurrency(metrics.valorDAS)}
+                  </p>
+                  <p className="text-sm font-medium text-slate-600">{diasParaDAS} dias restantes</p>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Gráfico de Limite de Faturamento */}
-        <div className="px-8 py-6">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <div className="flex items-center justify-between mb-6">
+        {/* Limite MEI - Design Minimalista */}
+        <div className="px-8 pb-8">
+          <div
+            className={`bg-white border border-slate-200/60 rounded-xl p-8 transition-all duration-300 ${
+              hoveredCard === 'limite' ? 'border-slate-300/60 shadow-lg shadow-slate-100/50' : ''
+            }`}
+            onMouseEnter={() => setHoveredCard('limite')}
+            onMouseLeave={() => setHoveredCard(null)}
+          >
+            <div className="flex justify-between items-center mb-8">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Limite Anual MEI</h3>
-                <p className="text-sm text-slate-600 mt-1">Acompanhe seu faturamento em relação ao limite</p>
+                <h3 className="text-lg font-medium text-slate-900">Limite Anual MEI</h3>
+                <p className="text-sm text-slate-500 mt-1">Faturamento permitido em 2024</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-semibold text-slate-900">{percentualLimite.toFixed(1)}%</p>
-                <p className="text-sm text-slate-600">utilizado</p>
+                <p className="text-3xl font-light text-slate-900 tracking-tight">{percentualLimite.toFixed(1)}%</p>
+                <p className="text-sm text-slate-500">utilizado</p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="relative">
-                <div className="w-full bg-slate-200 rounded-full h-3">
-                  <div
-                    className={`h-3 rounded-full transition-all duration-1000 ${
-                      percentualLimite > 90 ? 'bg-red-500' : percentualLimite > 80 ? 'bg-amber-500' : 'bg-emerald-500'
-                    }`}
-                    style={{ width: `${Math.min(percentualLimite, 100)}%` }}
-                  ></div>
-                </div>
+              <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                <div
+                  className={`h-3 rounded-full transition-all duration-1000 ${
+                    percentualLimite > 80
+                      ? 'bg-gradient-to-r from-rose-500 to-rose-600'
+                      : percentualLimite > 60
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600'
+                      : 'bg-gradient-to-r from-emerald-500 to-emerald-600'
+                  }`}
+                  style={{ width: `${Math.min(percentualLimite, 100)}%` }}
+                ></div>
               </div>
 
               <div className="flex justify-between items-center text-sm">
-                <div className="text-slate-600">
-                  <span className="font-medium text-slate-900">{formatCurrency(metrics.faturamentoAtual)}</span>
-                  <span className="ml-1">faturado</span>
-                </div>
-                <div className="text-slate-600">
-                  <span>limite </span>
-                  <span className="font-medium text-slate-900">{formatCurrency(metrics.limiteFaturamento)}</span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100">
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Restante</p>
-                  <p className="text-lg font-semibold text-slate-900 mt-1">
-                    {formatCurrency(metrics.limiteFaturamento - metrics.faturamentoAtual)}
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Meta Mensal</p>
-                  <p className="text-lg font-semibold text-slate-900 mt-1">
-                    {formatCurrency(metrics.limiteFaturamento / 12)}
-                  </p>
-                </div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">Margem Segura</p>
-                  <p className="text-lg font-semibold text-slate-900 mt-1">
-                    {formatCurrency(metrics.limiteFaturamento * 0.8)}
-                  </p>
-                </div>
+                <span className="text-slate-600 font-medium">Faturado: {formatCurrency(metrics.faturamentoAtual)}</span>
+                <span className="text-slate-600 font-medium">Limite: {formatCurrency(metrics.limiteFaturamento)}</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Transações e Atividade */}
-        <div className="px-8 py-6">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Transações Recentes */}
-            <div className="lg:col-span-2 bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">Movimentações Recentes</h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">Ver todas</button>
-              </div>
+        {/* Conteúdo Principal - Layout Profissional */}
+        <div className="px-8 pb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Movimentações Recentes */}
+            <div className="lg:col-span-2">
+              <div className="bg-white border border-slate-200/60 rounded-xl overflow-hidden">
+                <div className="px-8 py-6 border-b border-slate-100">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-medium text-slate-900">Movimentações Recentes</h3>
+                    <button className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 flex items-center gap-2 group">
+                      Ver todas
+                      <HiArrowRight className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+                    </button>
+                  </div>
+                </div>
 
-              <div className="space-y-3">
-                {recentTransactions.map(transaction => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div
-                        className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-                          transaction.type === 'Receita' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
-                        }`}
-                      >
-                        {transaction.type === 'Receita' ? (
-                          <HiArrowUpRight className="w-5 h-5" />
-                        ) : (
-                          <HiArrowDownRight className="w-5 h-5" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-slate-900">{transaction.description}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-xs text-slate-500">{transaction.category}</span>
-                          <span className="text-xs text-slate-400">•</span>
-                          <span className="text-xs text-slate-500">{formatDate(transaction.date)}</span>
+                <div className="divide-y divide-slate-100">
+                  {recentTransactions.map(transaction => (
+                    <div
+                      key={transaction.id}
+                      className="px-8 py-6 hover:bg-slate-50/50 transition-colors duration-200 cursor-pointer group"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110 ${
+                              transaction.type === 'Receita'
+                                ? 'bg-emerald-50 group-hover:bg-emerald-100'
+                                : 'bg-rose-50 group-hover:bg-rose-100'
+                            }`}
+                          >
+                            {transaction.type === 'Receita' ? (
+                              <HiPlus className="w-5 h-5 text-emerald-600" />
+                            ) : (
+                              <HiMinus className="w-5 h-5 text-rose-600" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium text-slate-900">{transaction.description}</p>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-sm text-slate-500">{transaction.category}</span>
+                              <span className="text-slate-300">•</span>
+                              <span className="text-sm text-slate-500">{formatDate(transaction.date)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p
+                            className={`text-lg font-medium transition-colors duration-200 ${
+                              transaction.type === 'Receita' ? 'text-emerald-600' : 'text-rose-600'
+                            }`}
+                          >
+                            {transaction.type === 'Receita' ? '+' : '-'}
+                            {formatCurrency(transaction.value)}
+                          </p>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p
-                        className={`font-semibold ${
-                          transaction.type === 'Receita' ? 'text-emerald-600' : 'text-red-600'
-                        }`}
-                      >
-                        {transaction.type === 'Receita' ? '+' : '-'}
-                        {formatCurrency(transaction.value)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Atividades e Notificações */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-900">Atividades</h3>
-                <HiBell className="w-5 h-5 text-slate-400" />
-              </div>
+            {/* Ações Rápidas - Design Profissional */}
+            <div>
+              <div className="bg-white border border-slate-200/60 rounded-xl p-8">
+                <h3 className="text-lg font-medium text-slate-900 mb-8">Ações Rápidas</h3>
 
-              <div className="space-y-4">
-                {notifications.map(notification => (
-                  <div key={notification.id} className="relative">
-                    <div className="flex items-start space-x-3">
-                      <div
-                        className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                          notification.type === 'warning'
-                            ? 'bg-amber-50 text-amber-600'
-                            : notification.type === 'success'
-                            ? 'bg-emerald-50 text-emerald-600'
-                            : 'bg-blue-50 text-blue-600'
-                        }`}
-                      >
-                        {notification.type === 'warning' ? (
-                          <HiExclamationTriangle className="w-4 h-4" />
-                        ) : notification.type === 'success' ? (
-                          <HiCheckCircle className="w-4 h-4" />
-                        ) : (
-                          <HiBell className="w-4 h-4" />
+                <div className="space-y-4">
+                  {[
+                    { label: 'Nova Receita', icon: HiPlus, color: 'emerald' },
+                    { label: 'Nova Despesa', icon: HiMinus, color: 'rose' },
+                    { label: 'Calcular DAS', color: 'orange' },
+                    { label: 'Gerar Relatório', color: 'blue' },
+                  ].map((action, index) => (
+                    <button
+                      key={index}
+                      className={`w-full group flex items-center justify-between p-6 border border-slate-200/60 rounded-xl 
+                        hover:border-${action.color}-200 hover:bg-${action.color}-50/30 
+                        transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-${action.color}-100/50`}
+                    >
+                      <div className="flex items-center gap-4">
+                        {action.icon && (
+                          <action.icon
+                            className={`w-5 h-5 text-${action.color}-600 transition-transform duration-300 group-hover:scale-110`}
+                          />
                         )}
+                        <span className="font-medium text-slate-900 group-hover:text-slate-800">{action.label}</span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-900">{notification.title}</p>
-                        <p className="text-xs text-slate-600 mt-1 line-clamp-2">{notification.message}</p>
-                        <p className="text-xs text-slate-500 mt-2">{formatDate(notification.date)}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                      <HiArrowRight
+                        className={`w-4 h-4 text-slate-400 transition-all duration-300 group-hover:text-${action.color}-600 group-hover:translate-x-1`}
+                      />
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions rápidas */}
-        <div className="px-8 py-6">
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-6">Ações Rápidas</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-emerald-300 hover:bg-emerald-50 transition-all duration-200">
-                <div className="p-3 bg-emerald-100 rounded-lg group-hover:bg-emerald-200 transition-colors">
-                  <HiCurrencyDollar className="w-6 h-6 text-emerald-600" />
-                </div>
-                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-emerald-700">
-                  Adicionar Receita
-                </span>
-              </button>
-
-              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-red-300 hover:bg-red-50 transition-all duration-200">
-                <div className="p-3 bg-red-100 rounded-lg group-hover:bg-red-200 transition-colors">
-                  <HiArrowDownRight className="w-6 h-6 text-red-600" />
-                </div>
-                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-red-700">
-                  Registrar Despesa
-                </span>
-              </button>
-
-              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-amber-300 hover:bg-amber-50 transition-all duration-200">
-                <div className="p-3 bg-amber-100 rounded-lg group-hover:bg-amber-200 transition-colors">
-                  <HiCalculator className="w-6 h-6 text-amber-600" />
-                </div>
-                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-amber-700">Calcular DAS</span>
-              </button>
-
-              <button className="group flex flex-col items-center p-4 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50 transition-all duration-200">
-                <div className="p-3 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                  <HiDocumentText className="w-6 h-6 text-blue-600" />
-                </div>
-                <span className="mt-3 text-sm font-medium text-slate-700 group-hover:text-blue-700">
-                  Gerar Relatório
-                </span>
-              </button>
             </div>
           </div>
         </div>
