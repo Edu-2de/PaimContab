@@ -3,13 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
-import {
-  HiPlus,
-  HiXMark,
-  HiMagnifyingGlass,
-  HiArrowDownTray,
-  HiArrowPath,
-} from 'react-icons/hi2';
+import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
 
 interface Despesa {
   id: string;
@@ -264,9 +258,7 @@ function DespesasContent() {
                 </div>
               </div>
 
-              <div className="text-sm text-gray-500">
-                {filteredDespesas.length} despesas encontradas
-              </div>
+              <div className="text-sm text-gray-500">{filteredDespesas.length} despesas encontradas</div>
             </div>
           </div>
         </div>
@@ -306,15 +298,25 @@ function DespesasContent() {
                 <table className="w-full min-w-[1000px]">
                   <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                     <tr>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-80">Descrição</th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Data</th>
-                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Valor</th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Status</th>
-                      <th className="text-center py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Ações</th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-80">
+                        Descrição
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Data
+                      </th>
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                        Valor
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Status
+                      </th>
+                      <th className="text-center py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                        Ações
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredDespesas.map((despesa) => (
+                    {filteredDespesas.map(despesa => (
                       <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
                         <td className="py-4 px-6">
                           <div>
@@ -335,14 +337,21 @@ function DespesasContent() {
                           <div className="text-xs text-gray-500">{despesa.paymentMethod}</div>
                         </td>
                         <td className="py-4 px-6 text-right">
-                          <div className="text-sm font-mono font-medium text-gray-900">{formatCurrency(despesa.value)}</div>
+                          <div className="text-sm font-mono font-medium text-gray-900">
+                            {formatCurrency(despesa.value)}
+                          </div>
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${
-                              despesa.status === 'Pago' ? 'bg-emerald-500' :
-                              despesa.status === 'Pendente' ? 'bg-amber-500' : 'bg-red-500'
-                            }`}></div>
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                despesa.status === 'Pago'
+                                  ? 'bg-emerald-500'
+                                  : despesa.status === 'Pendente'
+                                  ? 'bg-amber-500'
+                                  : 'bg-red-500'
+                              }`}
+                            ></div>
                             <span className="text-sm text-gray-700">{despesa.status}</span>
                           </div>
                         </td>
@@ -354,7 +363,12 @@ function DespesasContent() {
                               title="Editar"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                />
                               </svg>
                             </button>
                             <button
@@ -400,10 +414,7 @@ function DespesasContent() {
                 <h3 className="text-lg font-medium text-gray-900">
                   {editingDespesa ? 'Editar Despesa' : 'Nova Despesa'}
                 </h3>
-                <button
-                  onClick={resetForm}
-                  className="p-1 text-gray-400 hover:text-gray-600 rounded-md"
-                >
+                <button onClick={resetForm} className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
                   <HiXMark className="w-5 h-5" />
                 </button>
               </div>
@@ -458,7 +469,9 @@ function DespesasContent() {
                 >
                   <option value="">Selecione uma categoria</option>
                   {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -529,8 +542,8 @@ function DespesasContent() {
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   {editingDespesa ? 'Atualizar' : 'Salvar'}
