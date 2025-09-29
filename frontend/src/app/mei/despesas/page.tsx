@@ -57,119 +57,141 @@ function formatDate(dateStr: string) {
 }
 
 function DespesasContent() {
-  const [despesas, setDespesas] = useState<Despesa[]>([
-    {
-      id: '1',
-      description: 'Internet e telefone mensal',
-      value: 150,
-      date: '2024-09-24',
-      category: 'Internet e Telefone',
-      supplier: 'Telecom ABC',
-      invoiceNumber: 'TEL-2024-09',
-      paymentMethod: 'Cartão Débito',
-      status: 'Pago',
-      isDeductible: true,
-    },
-    {
-      id: '2',
-      description: 'Material de escritório',
-      value: 200,
-      date: '2024-09-22',
-      category: 'Material de Escritório',
-      supplier: 'Papelaria XYZ',
-      paymentMethod: 'PIX',
-      status: 'Pago',
-      isDeductible: true,
-    },
-    {
-      id: '3',
-      description: 'Software de contabilidade',
-      value: 89,
-      date: '2024-09-20',
-      category: 'Software e Licenças',
-      supplier: 'Software Inc',
-      paymentMethod: 'Cartão Crédito',
-      status: 'Pago',
-      isDeductible: true,
-    },
-  ]);
-
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [formData, setFormData] = useState<DespesaFormData>({
-    description: '',
-    value: '',
-    date: new Date().toISOString().slice(0, 10),
-    category: '',
-    supplier: '',
-    invoiceNumber: '',
-    paymentMethod: '',
+    descricao: '',
+    valor: '',
+    dataPagamento: new Date().toISOString().slice(0, 10),
+    categoria: '',
+    fornecedor: '',
+    numeroNotaFiscal: '',
+    metodoPagamento: 'PIX',
     status: 'Pago',
-    isDeductible: true,
+    dedutivel: true,
+    observacoes: '',
   });
+
+  // Buscar despesas do backend
+  const fetchDespesas = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDespesas(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar despesas:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDespesas();
+  }, [fetchDespesas]);
 
   // Filtragem de despesas
   const filteredDespesas = despesas.filter(despesa => {
     const matchesSearch =
-      despesa.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.supplier?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const despesaMonth = despesa.date.slice(0, 7);
+      despesa.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      despesa.fornecedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      despesa.categoria.toLowerCase().includes(searchTerm.toLowerCase());
+    const despesaMonth = despesa.dataPagamento.slice(0, 7);
     const matchesMonth = selectedMonth === '' || despesaMonth === selectedMonth;
 
     return matchesSearch && matchesMonth;
   });
 
   // Cálculos de métricas
-  const totalDespesas = filteredDespesas.reduce((sum, despesa) => sum + despesa.value, 0);
+  const totalDespesas = filteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
   const despesasPagas = filteredDespesas
     .filter(d => d.status === 'Pago')
-    .reduce((sum, despesa) => sum + despesa.value, 0);
+    .reduce((sum, despesa) => sum + despesa.valor, 0);
   const despesasPendentes = filteredDespesas
     .filter(d => d.status === 'Pendente')
-    .reduce((sum, despesa) => sum + despesa.value, 0);
+    .reduce((sum, despesa) => sum + despesa.valor, 0);
   const despesasDedutiveis = filteredDespesas
-    .filter(d => d.isDeductible)
-    .reduce((sum, despesa) => sum + despesa.value, 0);
+    .filter(d => d.dedutivel)
+    .reduce((sum, despesa) => sum + despesa.valor, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    try {
+      setSaving(true);
+      const token = localStorage.getItem('authToken');
 
-    const newDespesa: Despesa = {
-      id: editingDespesa ? editingDespesa.id : Date.now().toString(),
-      description: formData.description,
-      value: parseFloat(formData.value),
-      date: formData.date,
-      category: formData.category,
-      supplier: formData.supplier,
-      invoiceNumber: formData.invoiceNumber,
-      paymentMethod: formData.paymentMethod as Despesa['paymentMethod'],
-      status: formData.status as Despesa['status'],
-      isDeductible: formData.isDeductible,
-    };
+      const despesaData = {
+        descricao: formData.descricao,
+        valor: parseFloat(formData.valor),
+        dataPagamento: formData.dataPagamento,
+        categoria: formData.categoria,
+        fornecedor: formData.fornecedor,
+        numeroNotaFiscal: formData.numeroNotaFiscal,
+        metodoPagamento: formData.metodoPagamento,
+        status: formData.status,
+        dedutivel: formData.dedutivel,
+        observacoes: formData.observacoes,
+      };
 
-    if (editingDespesa) {
-      setDespesas(prev => prev.map(d => (d.id === editingDespesa.id ? newDespesa : d)));
-    } else {
-      setDespesas(prev => [newDespesa, ...prev]);
+      let response;
+      if (editingDespesa) {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${editingDespesa.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(despesaData),
+        });
+      } else {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(despesaData),
+        });
+      }
+
+      if (response.ok) {
+        await fetchDespesas(); // Recarregar dados
+        resetForm();
+      } else {
+        console.error('Erro ao salvar despesa');
+      }
+    } catch (error) {
+      console.error('Erro ao salvar despesa:', error);
+    } finally {
+      setSaving(false);
     }
-
-    resetForm();
   };
 
   const resetForm = () => {
     setFormData({
-      description: '',
-      value: '',
-      date: new Date().toISOString().slice(0, 10),
-      category: '',
-      supplier: '',
-      invoiceNumber: '',
-      paymentMethod: '',
+      descricao: '',
+      valor: '',
+      dataPagamento: new Date().toISOString().slice(0, 10),
+      categoria: '',
+      fornecedor: '',
+      numeroNotaFiscal: '',
+      metodoPagamento: 'PIX',
       status: 'Pago',
-      isDeductible: true,
+      dedutivel: true,
+      observacoes: '',
     });
     setEditingDespesa(null);
     setShowModal(false);
@@ -177,15 +199,41 @@ function DespesasContent() {
 
   const handleEdit = (despesa: Despesa) => {
     setFormData({
-      description: despesa.description,
-      value: despesa.value.toString(),
-      date: despesa.date,
-      category: despesa.category,
-      supplier: despesa.supplier || '',
-      invoiceNumber: despesa.invoiceNumber || '',
-      paymentMethod: despesa.paymentMethod,
+      descricao: despesa.descricao,
+      valor: despesa.valor.toString(),
+      dataPagamento: despesa.dataPagamento,
+      categoria: despesa.categoria,
+      fornecedor: despesa.fornecedor || '',
+      numeroNotaFiscal: despesa.numeroNotaFiscal || '',
+      metodoPagamento: despesa.metodoPagamento,
       status: despesa.status,
-      isDeductible: despesa.isDeductible,
+      dedutivel: despesa.dedutivel,
+      observacoes: despesa.observacoes || '',
+    });
+    setEditingDespesa(despesa);
+    setShowModal(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir esta despesa?')) {
+      try {
+        const token = localStorage.getItem('authToken');
+        
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          await fetchDespesas(); // Recarregar dados
+        } else {
+          console.error('Erro ao excluir despesa');
+        }
+      } catch (error) {
+        console.error('Erro ao excluir despesa:', error);
+      }
+    }
+  };
     });
     setEditingDespesa(despesa);
     setShowModal(true);
