@@ -3,13 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
-import {
-  HiPlus,
-  HiXMark,
-  HiMagnifyingGlass,
-  HiArrowDownTray,
-  HiArrowPath,
-} from 'react-icons/hi2';
+import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
 
 interface Despesa {
   id: string;
@@ -90,11 +84,11 @@ function DespesasContent() {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setDespesas(data);
@@ -130,13 +124,11 @@ function DespesasContent() {
   const despesasPendentes = filteredDespesas
     .filter(d => d.status === 'Pendente')
     .reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasDedutiveis = filteredDespesas
-    .filter(d => d.dedutivel)
-    .reduce((sum, despesa) => sum + despesa.valor, 0);
+  const despesasDedutiveis = filteredDespesas.filter(d => d.dedutivel).reduce((sum, despesa) => sum + despesa.valor, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSaving(true);
       const token = localStorage.getItem('authToken');
@@ -226,7 +218,7 @@ function DespesasContent() {
     if (confirm('Tem certeza que deseja excluir esta despesa?')) {
       try {
         const token = localStorage.getItem('authToken');
-        
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
@@ -258,7 +250,7 @@ function DespesasContent() {
               </div>
 
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={fetchDespesas}
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
                   title="Atualizar"
