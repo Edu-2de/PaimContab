@@ -8,18 +8,26 @@ import {
   HiXMark, 
   HiArrowDownTray, 
   HiArrowPath,
-  HiMagnifyingGlass,
-  HiCheckCircle
+  HiMagnifyingGlass
 } from 'react-icons/hi2';
 
 interface SpreadsheetRow {
   id: string;
   data: string;
+  titulo: string;
   descricao: string;
   categoria: string;
   tipo: 'receita' | 'despesa' | '';
   valor: number;
   lucro: number;
+  // Novos campos para receitas
+  cliente?: string;
+  metodoPagamento?: string;
+  status?: string;
+  numeroNota?: string;
+  // Novos campos para despesas
+  fornecedor?: string;
+  dedutivel?: boolean;
   isEditing?: boolean;
   isNew?: boolean;
 }
@@ -72,6 +80,22 @@ const CATEGORIAS_DESPESA = [
   'Outros',
 ];
 
+const METODOS_PAGAMENTO = [
+  'Dinheiro',
+  'PIX',
+  'Cartão Débito',
+  'Cartão Crédito',
+  'Transferência',
+  'Boleto',
+];
+
+const STATUS_OPTIONS = [
+  'Recebido',
+  'Pendente',
+  'Cancelado',
+  'Pago'
+];
+
 function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', {
     style: 'currency',
@@ -99,6 +123,33 @@ function MeiSpreadsheetContent() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  // Detectar se a sidebar está recolhida baseado na largura da tela ou estado
+  useEffect(() => {
+    const checkSidebarState = () => {
+      const sidebarElement = document.querySelector('.mei-sidebar');
+      if (sidebarElement) {
+        const isCollapsed = sidebarElement.classList.contains('collapsed') || window.innerWidth < 1200;
+        setSidebarCollapsed(isCollapsed);
+      }
+    };
+
+    checkSidebarState();
+    window.addEventListener('resize', checkSidebarState);
+    
+    // Observer para detectar mudanças na sidebar
+    const observer = new MutationObserver(checkSidebarState);
+    const sidebarElement = document.querySelector('.mei-sidebar');
+    if (sidebarElement) {
+      observer.observe(sidebarElement, { attributes: true, attributeFilter: ['class'] });
+    }
+
+    return () => {
+      window.removeEventListener('resize', checkSidebarState);
+      observer.disconnect();
+    };
+  }, []);
 
   // Calcular totais
   const calculateTotals = (currentRows: SpreadsheetRow[]) => {
@@ -161,22 +212,32 @@ function MeiSpreadsheetContent() {
       const receitasRows: SpreadsheetRow[] = filteredReceitas.map((receita: Receita) => ({
         id: `receita-${receita.id}`,
         data: new Date(receita.dataRecebimento || receita.createdAt).toISOString().split('T')[0],
-        descricao: receita.descricao || 'Receita',
+        titulo: receita.descricao || 'Receita',
+        descricao: '',
         categoria: receita.categoria || 'Vendas de Produtos',
         tipo: 'receita' as const,
         valor: receita.valor || 0,
         lucro: receita.valor || 0,
+        cliente: '',
+        metodoPagamento: 'PIX',
+        status: 'Recebido',
+        numeroNota: '',
       }));
 
       // Converter despesas para formato da planilha
       const despesasRows: SpreadsheetRow[] = filteredDespesas.map((despesa: Despesa) => ({
         id: `despesa-${despesa.id}`,
         data: new Date(despesa.dataPagamento || despesa.createdAt).toISOString().split('T')[0],
-        descricao: despesa.descricao || 'Despesa',
+        titulo: despesa.descricao || 'Despesa',
+        descricao: '',
         categoria: despesa.categoria || 'Outros',
         tipo: 'despesa' as const,
         valor: despesa.valor || 0,
         lucro: -(despesa.valor || 0),
+        fornecedor: '',
+        metodoPagamento: 'PIX',
+        status: 'Pago',
+        dedutivel: true,
       }));
 
       // Combinar e ordenar por data
@@ -200,11 +261,18 @@ function MeiSpreadsheetContent() {
   const createEmptyRow = (): SpreadsheetRow => ({
     id: `new-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     data: new Date().toISOString().split('T')[0],
+    titulo: '',
     descricao: '',
     categoria: '',
     tipo: '',
     valor: 0,
     lucro: 0,
+    cliente: '',
+    fornecedor: '',
+    metodoPagamento: 'PIX',
+    status: '',
+    numeroNota: '',
+    dedutivel: true,
     isEditing: true,
     isNew: true,
   });
@@ -214,7 +282,7 @@ function MeiSpreadsheetContent() {
     setRows([...rows, newRow]);
   };
 
-  const updateRow = (id: string, field: keyof SpreadsheetRow, value: string | number) => {
+  const updateRow = (id: string, field: keyof SpreadsheetRow, value: string | number | boolean) => {
     setRows(prevRows => {
       const updatedRows = prevRows.map(row => {
         if (row.id === id) {
@@ -224,8 +292,12 @@ function MeiSpreadsheetContent() {
           if (field === 'valor' || field === 'tipo') {
             if (updatedRow.tipo === 'receita') {
               updatedRow.lucro = updatedRow.valor;
+              // Definir status padrão para receitas
+              if (!updatedRow.status) updatedRow.status = 'Recebido';
             } else if (updatedRow.tipo === 'despesa') {
               updatedRow.lucro = -updatedRow.valor;
+              // Definir status padrão para despesas
+              if (!updatedRow.status) updatedRow.status = 'Pago';
             } else {
               updatedRow.lucro = 0;
             }
@@ -255,7 +327,7 @@ function MeiSpreadsheetContent() {
       const token = localStorage.getItem('authToken');
 
       // Filtrar apenas linhas novas ou editadas
-      const newRows = rows.filter(row => row.isNew && row.tipo && row.descricao && row.valor > 0);
+      const newRows = rows.filter(row => row.isNew && row.tipo && row.titulo && row.valor > 0);
 
       for (const row of newRows) {
         if (row.tipo === 'receita') {
@@ -266,7 +338,7 @@ function MeiSpreadsheetContent() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              descricao: row.descricao,
+              descricao: row.titulo,
               valor: row.valor,
               dataRecebimento: row.data,
               categoria: row.categoria,
@@ -280,7 +352,7 @@ function MeiSpreadsheetContent() {
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              descricao: row.descricao,
+              descricao: row.titulo,
               valor: row.valor,
               dataPagamento: row.data,
               categoria: row.categoria,
@@ -302,18 +374,26 @@ function MeiSpreadsheetContent() {
     const headers = [
       'Data',
       'Tipo',
+      'Título',
       'Descrição',
       'Categoria',
+      'Cliente/Fornecedor',
+      'Método Pagamento',
+      'Status',
       'Valor',
-      'Resultado',
+      'Dedutível',
     ];
     const csvData = rows.map(row => [
       formatDate(row.data),
       row.tipo === 'receita' ? 'Receita' : 'Despesa',
+      row.titulo,
       row.descricao,
       row.categoria,
+      row.tipo === 'receita' ? row.cliente : row.fornecedor,
+      row.metodoPagamento,
+      row.status,
       row.valor.toFixed(2),
-      row.lucro.toFixed(2),
+      row.tipo === 'despesa' ? (row.dedutivel ? 'Sim' : 'Não') : 'N/A',
     ]);
 
     const csv = [headers, ...csvData].map(row => row.join(',')).join('\n');
@@ -328,8 +408,11 @@ function MeiSpreadsheetContent() {
 
   // Filtrar linhas pela busca
   const filteredRows = rows.filter(row =>
+    row.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
     row.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
     row.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    row.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    row.fornecedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     formatDate(row.data).includes(searchTerm) ||
     row.tipo.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -354,7 +437,7 @@ function MeiSpreadsheetContent() {
       <MeiSidebar currentPage="planilha" />
 
       <div className="mei-content-wrapper">
-        {/* Header Minimalista */}
+        {/* Header com Botão de Salvar */}
         <div className="bg-white border-b border-gray-200 px-8 py-6">
           <div className="max-w-8xl mx-auto">
             <div className="flex items-center justify-between">
@@ -363,17 +446,28 @@ function MeiSpreadsheetContent() {
                 <p className="text-sm text-gray-500 mt-1">Controle financeiro simplificado</p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                {hasUnsavedRows && (
+                  <button
+                    onClick={saveAllChanges}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                  >
+                    <div className={`w-2 h-2 rounded-full ${saving ? 'bg-emerald-300 animate-pulse' : 'bg-emerald-200'}`}></div>
+                    {saving ? 'Salvando...' : `Salvar ${rows.filter(row => row.isNew).length} alterações`}
+                  </button>
+                )}
+                
                 <button
                   onClick={fetchSpreadsheetData}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
                   title="Atualizar"
                 >
                   <HiArrowPath className="w-4 h-4" />
                 </button>
                 <button
                   onClick={exportToCSV}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
                   title="Exportar"
                 >
                   <HiArrowDownTray className="w-4 h-4" />
@@ -391,7 +485,7 @@ function MeiSpreadsheetContent() {
                 <select
                   value={selectedMonth}
                   onChange={e => setSelectedMonth(e.target.value)}
-                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium"
+                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer hover:text-gray-900 transition-colors"
                 >
                   {Array.from({ length: 12 }, (_, i) => {
                     const date = new Date();
@@ -410,36 +504,42 @@ function MeiSpreadsheetContent() {
                   <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Buscar..."
+                    placeholder="Buscar movimentação..."
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 w-64"
+                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 w-72 transition-all"
                   />
                 </div>
               </div>
 
               <button
                 onClick={addNewRow}
-                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm hover:shadow-md"
               >
                 <HiPlus className="w-4 h-4" />
-                Adicionar
+                Nova Linha
               </button>
             </div>
           </div>
         </div>
 
-        {/* Resumo Simplificado */}
+        {/* Resumo com Indicadores Visuais */}
         <div className="bg-white border-b border-gray-100 px-8 py-6">
           <div className="max-w-8xl mx-auto">
             <div className="grid grid-cols-5 gap-8">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RECEITAS</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.totalReceita)}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm"></div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">RECEITAS</p>
+                  <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.totalReceita)}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">DESPESAS</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.totalDespesa)}</p>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 rounded-full bg-red-500 shadow-sm"></div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">DESPESAS</p>
+                  <p className="text-2xl font-light text-gray-900">{formatCurrency(monthlyTotals.totalDespesa)}</p>
+                </div>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">SUBTOTAL</p>
@@ -454,9 +554,9 @@ function MeiSpreadsheetContent() {
                 <p className={`text-2xl font-medium ${monthlyTotals.lucroFinal >= 0 ? 'text-gray-900' : 'text-gray-600'}`}>
                   {formatCurrency(monthlyTotals.lucroFinal)}
                 </p>
-                <div className="mt-2 w-full bg-gray-100 rounded-full h-1">
+                <div className="mt-2 w-full bg-gray-100 rounded-full h-1.5">
                   <div 
-                    className="h-1 bg-gray-900 rounded-full transition-all duration-300"
+                    className="h-1.5 bg-gray-900 rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(monthlyTotals.limiteMeiUtilizado, 100)}%` }}
                   ></div>
                 </div>
@@ -466,60 +566,83 @@ function MeiSpreadsheetContent() {
           </div>
         </div>
 
-        {/* Tabela Principal - Maior e Expandida */}
+        {/* Tabela Expandida com Informações Detalhadas */}
         <div className="flex-1 px-8 py-6">
           <div className="max-w-none mx-auto">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '500px' }}>
-                <table className="w-full min-w-[1200px]">
+                <table className={`w-full ${sidebarCollapsed ? 'min-w-[1800px]' : 'min-w-[1400px]'}`}>
                   <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                     <tr>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Data</th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Tipo</th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[300px]">Descrição</th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-56">Categoria</th>
-                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Valor</th>
-                      <th className="text-center py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Ações</th>
+                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Data</th>
+                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Tipo</th>
+                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Título</th>
+                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Descrição</th>
+                      <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Categoria</th>
+                      {sidebarCollapsed && (
+                        <>
+                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">Cliente/Fornecedor</th>
+                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Pagamento</th>
+                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Status</th>
+                          <th className="text-left py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Ded.</th>
+                        </>
+                      )}
+                      <th className="text-right py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Valor</th>
+                      <th className="text-center py-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredRows.map((row, index) => (
-                      <tr key={row.id} className={`border-b border-gray-100 hover:bg-gray-25 transition-colors ${row.isNew ? 'bg-blue-25' : ''}`}>
-                        <td className="py-4 px-6">
+                    {filteredRows.map((row) => (
+                      <tr key={row.id} className={`border-b border-gray-100 hover:bg-gray-25 transition-all duration-200 ${row.isNew ? 'bg-blue-25 border-blue-100' : ''}`}>
+                        <td className="py-3 px-4">
                           <input
                             type="date"
                             value={row.data}
                             onChange={e => updateRow(row.id, 'data', e.target.value)}
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-300 rounded-md px-2 py-1 text-gray-900 w-full"
+                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all"
                           />
                         </td>
-                        <td className="py-4 px-6">
-                          <select
-                            value={row.tipo}
-                            onChange={e => updateRow(row.id, 'tipo', e.target.value)}
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-300 rounded-md px-2 py-1 text-gray-900 w-full"
-                          >
-                            <option value="">Selecionar</option>
-                            <option value="receita">Receita</option>
-                            <option value="despesa">Despesa</option>
-                          </select>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            {row.tipo === 'receita' && <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-sm"></div>}
+                            {row.tipo === 'despesa' && <div className="w-2 h-2 rounded-full bg-red-500 shadow-sm"></div>}
+                            {!row.tipo && <div className="w-2 h-2 rounded-full bg-gray-300"></div>}
+                            <select
+                              value={row.tipo}
+                              onChange={e => updateRow(row.id, 'tipo', e.target.value)}
+                              className="text-xs border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-1 py-1 text-gray-900 flex-1 transition-all cursor-pointer"
+                            >
+                              <option value="">Tipo</option>
+                              <option value="receita">Receita</option>
+                              <option value="despesa">Despesa</option>
+                            </select>
+                          </div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-4">
+                          <input
+                            type="text"
+                            value={row.titulo}
+                            onChange={e => updateRow(row.id, 'titulo', e.target.value)}
+                            placeholder="Título principal..."
+                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 w-full font-medium transition-all"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
                           <input
                             type="text"
                             value={row.descricao}
                             onChange={e => updateRow(row.id, 'descricao', e.target.value)}
-                            placeholder="Digite a descrição da movimentação..."
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-300 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 w-full"
+                            placeholder="Detalhes..."
+                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 w-full transition-all"
                           />
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-4">
                           <select
                             value={row.categoria}
                             onChange={e => updateRow(row.id, 'categoria', e.target.value)}
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-300 rounded-md px-2 py-1 text-gray-900 w-full"
+                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all cursor-pointer"
                           >
-                            <option value="">Selecionar categoria</option>
+                            <option value="">Categoria</option>
                             {row.tipo === 'receita' && CATEGORIAS_RECEITA.map(cat => (
                               <option key={cat} value={cat}>{cat}</option>
                             ))}
@@ -528,7 +651,69 @@ function MeiSpreadsheetContent() {
                             ))}
                           </select>
                         </td>
-                        <td className="py-4 px-6">
+                        
+                        {/* Campos extras quando sidebar recolhida */}
+                        {sidebarCollapsed && (
+                          <>
+                            <td className="py-3 px-4">
+                              <input
+                                type="text"
+                                value={row.tipo === 'receita' ? (row.cliente || '') : (row.fornecedor || '')}
+                                onChange={e => updateRow(row.id, row.tipo === 'receita' ? 'cliente' : 'fornecedor', e.target.value)}
+                                placeholder={row.tipo === 'receita' ? 'Cliente...' : 'Fornecedor...'}
+                                className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 w-full transition-all"
+                              />
+                            </td>
+                            <td className="py-3 px-4">
+                              <select
+                                value={row.metodoPagamento || ''}
+                                onChange={e => updateRow(row.id, 'metodoPagamento', e.target.value)}
+                                className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all cursor-pointer"
+                              >
+                                <option value="">Método</option>
+                                {METODOS_PAGAMENTO.map(metodo => (
+                                  <option key={metodo} value={metodo}>{metodo}</option>
+                                ))}
+                              </select>
+                            </td>
+                            <td className="py-3 px-4">
+                              <select
+                                value={row.status || ''}
+                                onChange={e => updateRow(row.id, 'status', e.target.value)}
+                                className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 w-full transition-all cursor-pointer"
+                              >
+                                <option value="">Status</option>
+                                {row.tipo === 'receita' && (
+                                  <>
+                                    <option value="Recebido">Recebido</option>
+                                    <option value="Pendente">Pendente</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                  </>
+                                )}
+                                {row.tipo === 'despesa' && (
+                                  <>
+                                    <option value="Pago">Pago</option>
+                                    <option value="Pendente">Pendente</option>
+                                    <option value="Cancelado">Cancelado</option>
+                                  </>
+                                )}
+                              </select>
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {row.tipo === 'despesa' && (
+                                <input
+                                  type="checkbox"
+                                  checked={row.dedutivel || false}
+                                  onChange={e => updateRow(row.id, 'dedutivel', e.target.checked)}
+                                  className="rounded border-gray-300 text-gray-900 focus:ring-gray-200 w-4 h-4"
+                                  title="Dedutível"
+                                />
+                              )}
+                            </td>
+                          </>
+                        )}
+                        
+                        <td className="py-3 px-4">
                           <input
                             type="number"
                             value={row.valor || ''}
@@ -536,13 +721,13 @@ function MeiSpreadsheetContent() {
                             step="0.01"
                             min="0"
                             placeholder="0,00"
-                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-300 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 text-right font-mono w-full"
+                            className="text-sm border-0 bg-transparent focus:outline-none focus:bg-white focus:ring-2 focus:ring-gray-200 rounded-md px-2 py-1 text-gray-900 placeholder-gray-400 text-right font-mono w-full transition-all"
                           />
                         </td>
-                        <td className="py-4 px-6 text-center">
+                        <td className="py-3 px-4 text-center">
                           <button
                             onClick={() => deleteRow(row.id)}
-                            className="p-2 text-gray-300 hover:text-gray-500 hover:bg-gray-100 rounded-md transition-colors"
+                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-all duration-200"
                             title="Excluir linha"
                           >
                             <HiXMark className="w-4 h-4" />
@@ -553,31 +738,55 @@ function MeiSpreadsheetContent() {
 
                     {/* Espaçamento entre dados e totais */}
                     <tr>
-                      <td colSpan={6} className="py-6"></td>
+                      <td colSpan={sidebarCollapsed ? 11 : 7} className="py-6"></td>
                     </tr>
 
-                    {/* Linha DAS - Mais destacada */}
-                    <tr className="bg-gray-100 border-t-2 border-gray-300">
-                      <td className="py-4 px-6 text-sm font-medium text-gray-600">—</td>
-                      <td className="py-4 px-6 text-sm font-medium text-gray-600">DAS</td>
-                      <td className="py-4 px-6 text-sm font-medium text-gray-600">Documento de Arrecadação do Simples (6% sobre receitas)</td>
-                      <td className="py-4 px-6 text-sm font-medium text-gray-600">Impostos Federais</td>
-                      <td className="py-4 px-6 text-sm font-mono font-medium text-gray-900 text-right">
+                    {/* Linha DAS */}
+                    <tr className="bg-amber-50 border-t-2 border-amber-200">
+                      <td className="py-4 px-4 text-sm font-medium text-amber-700">—</td>
+                      <td className="py-4 px-4 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                        <span className="text-sm font-medium text-amber-700">DAS</span>
+                      </td>
+                      <td className="py-4 px-4 text-sm font-medium text-amber-700">Imposto MEI</td>
+                      <td className="py-4 px-4 text-sm font-medium text-amber-700">6% sobre receitas</td>
+                      <td className="py-4 px-4 text-sm font-medium text-amber-700">Impostos Federais</td>
+                      {sidebarCollapsed && (
+                        <>
+                          <td className="py-4 px-4"></td>
+                          <td className="py-4 px-4"></td>
+                          <td className="py-4 px-4"></td>
+                          <td className="py-4 px-4"></td>
+                        </>
+                      )}
+                      <td className="py-4 px-4 text-sm font-mono font-medium text-amber-800 text-right">
                         -{formatCurrency(monthlyTotals.dasTotal)}
                       </td>
-                      <td className="py-4 px-6"></td>
+                      <td className="py-4 px-4"></td>
                     </tr>
 
-                    {/* Linha Total - Muito mais destacada */}
-                    <tr className="bg-gray-900 text-white border-t-4 border-gray-400">
-                      <td className="py-6 px-6 text-base font-bold tracking-wide">TOTAL FINAL</td>
-                      <td className="py-6 px-6"></td>
-                      <td className="py-6 px-6 text-sm font-medium">Resultado líquido mensal (após DAS)</td>
-                      <td className="py-6 px-6"></td>
-                      <td className="py-6 px-6 text-right font-mono font-bold text-lg">
+                    {/* Linha Total */}
+                    <tr className="bg-gray-900 text-white border-t-4 border-gray-500">
+                      <td className="py-6 px-4 text-base font-bold tracking-wide">TOTAL</td>
+                      <td className="py-6 px-4 flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                        <span className="text-sm font-medium">FINAL</span>
+                      </td>
+                      <td className="py-6 px-4 text-sm font-medium">Resultado Final</td>
+                      <td className="py-6 px-4 text-sm font-medium">Líquido após DAS</td>
+                      <td className="py-6 px-4"></td>
+                      {sidebarCollapsed && (
+                        <>
+                          <td className="py-6 px-4"></td>
+                          <td className="py-6 px-4"></td>
+                          <td className="py-6 px-4"></td>
+                          <td className="py-6 px-4"></td>
+                        </>
+                      )}
+                      <td className="py-6 px-4 text-right font-mono font-bold text-lg">
                         {formatCurrency(monthlyTotals.lucroFinal)}
                       </td>
-                      <td className="py-6 px-6"></td>
+                      <td className="py-6 px-4"></td>
                     </tr>
                   </tbody>
                 </table>
@@ -591,7 +800,7 @@ function MeiSpreadsheetContent() {
                     </p>
                     <button
                       onClick={addNewRow}
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors shadow-sm"
                     >
                       <HiPlus className="w-4 h-4" />
                       Adicionar primeira movimentação
@@ -603,20 +812,6 @@ function MeiSpreadsheetContent() {
           </div>
         </div>
       </div>
-
-      {/* Botão Flutuante de Salvar */}
-      {hasUnsavedRows && (
-        <div className="fixed bottom-6 right-6 z-50">
-          <button
-            onClick={saveAllChanges}
-            disabled={saving}
-            className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-full shadow-lg hover:bg-gray-800 transition-all disabled:opacity-50"
-          >
-            <HiCheckCircle className="w-4 h-4" />
-            {saving ? 'Salvando...' : `Salvar ${rows.filter(row => row.isNew).length} ${rows.filter(row => row.isNew).length === 1 ? 'item' : 'itens'}`}
-          </button>
-        </div>
-      )}
     </div>
   );
 }
