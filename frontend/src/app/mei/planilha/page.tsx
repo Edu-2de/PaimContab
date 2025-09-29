@@ -175,14 +175,22 @@ function MeiSpreadsheetContent() {
     isNew: true,
   });
 
-  // Adicionar linhas vazias automaticamente
-  const ensureEmptyRows = (currentRows: SpreadsheetRow[], minEmpty = 3) => {
+  // Adicionar linhas vazias automaticamente (mínimo 3, ideal 10)
+  const ensureEmptyRows = (currentRows: SpreadsheetRow[], minEmpty = 3, idealEmpty = 10) => {
     const emptyRows = currentRows.filter(row => 
       !row.titulo && !row.tipo && row.valor === 0
     );
 
+    // Se tem menos que o mínimo, adicionar até o ideal
     if (emptyRows.length < minEmpty) {
-      const rowsToAdd = minEmpty - emptyRows.length;
+      const rowsToAdd = idealEmpty;
+      const newRows = Array.from({ length: rowsToAdd }, () => createEmptyRow());
+      return [...currentRows, ...newRows];
+    }
+
+    // Se tem menos que o ideal mas mais que o mínimo, adicionar algumas
+    if (emptyRows.length < idealEmpty) {
+      const rowsToAdd = idealEmpty - emptyRows.length;
       const newRows = Array.from({ length: rowsToAdd }, () => createEmptyRow());
       return [...currentRows, ...newRows];
     }
@@ -262,8 +270,8 @@ function MeiSpreadsheetContent() {
         (a, b) => new Date(a.data).getTime() - new Date(b.data).getTime()
       );
 
-      // Adicionar linhas vazias
-      const rowsWithEmpty = ensureEmptyRows(allRows);
+      // Adicionar linhas vazias (sempre começar com pelo menos 10)
+      const rowsWithEmpty = ensureEmptyRows(allRows, 3, 10);
 
       setRows(rowsWithEmpty);
       setMonthlyTotals(calculateTotals(allRows));
@@ -303,7 +311,7 @@ function MeiSpreadsheetContent() {
       });
 
       // Garantir linhas vazias após atualização
-      const rowsWithEmpty = ensureEmptyRows(updatedRows);
+      const rowsWithEmpty = ensureEmptyRows(updatedRows, 3, 5);
 
       // Calcular totais apenas com dados válidos
       const validRows = rowsWithEmpty.filter(row => row.tipo && row.titulo && row.valor > 0);
@@ -318,7 +326,7 @@ function MeiSpreadsheetContent() {
       const updatedRows = prevRows.filter(row => row.id !== id);
       
       // Garantir linhas vazias após deleção
-      const rowsWithEmpty = ensureEmptyRows(updatedRows);
+      const rowsWithEmpty = ensureEmptyRows(updatedRows, 3, 5);
       
       // Calcular totais apenas com dados válidos
       const validRows = rowsWithEmpty.filter(row => row.tipo && row.titulo && row.valor > 0);
@@ -548,6 +556,25 @@ function MeiSpreadsheetContent() {
                     <div className="w-2 h-2 rounded-full bg-gray-700"></div>
                     <span className="text-sm text-gray-600">Movimentações:</span>
                     <span className="text-sm font-semibold text-gray-900">{totalMovimentacoes}</span>
+                    
+                    {/* Indicador DAS */}
+                    <div className="relative group">
+                      <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-gray-900 text-white text-xs rounded-full cursor-help">
+                        <div className="w-1 h-1 rounded-full bg-white"></div>
+                        <span>-{formatCurrency(monthlyTotals.dasTotal)}</span>
+                      </div>
+                      
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-30">
+                        <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
+                          <div className="font-semibold mb-1">DAS - Documento de Arrecadação</div>
+                          <div className="text-gray-300">Imposto mensal MEI (6% das receitas)</div>
+                          <div className="text-gray-300">Mínimo: R$ 66,60 | Atual: {formatCurrency(monthlyTotals.dasTotal)}</div>
+                          {/* Seta do tooltip */}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-2 h-2 bg-gray-900 rotate-45"></div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
