@@ -74,11 +74,11 @@ function ReceitasContent() {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setReceitas(data);
@@ -117,7 +117,7 @@ function ReceitasContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setSaving(true);
       const token = localStorage.getItem('authToken');
@@ -204,7 +204,7 @@ function ReceitasContent() {
     if (confirm('Tem certeza que deseja excluir esta receita?')) {
       try {
         const token = localStorage.getItem('authToken');
-        
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
