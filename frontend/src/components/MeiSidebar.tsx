@@ -7,17 +7,13 @@ import {
   HiOutlineChartBarSquare,
   HiOutlineCurrencyDollar,
   HiOutlineReceiptRefund,
-  HiOutlineCalculator,
-  HiOutlineDocumentText,
   HiOutlineCog6Tooth,
   HiOutlineArrowRightOnRectangle,
   HiChevronLeft,
   HiChevronRight,
   HiOutlineUserCircle,
   HiOutlineCalendar,
-  HiOutlineClipboardDocumentList,
   HiOutlineBuildingOffice2,
-  HiOutlineUsers,
   HiOutlineTableCells,
 } from 'react-icons/hi2';
 
@@ -63,40 +59,16 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiS
       key: 'despesas',
     },
     {
-      name: 'DAS',
-      href: '/mei/das',
-      icon: HiOutlineCalculator,
-      key: 'das',
-    },
-    {
       name: 'Planilha',
       href: '/mei/planilha',
       icon: HiOutlineTableCells,
       key: 'planilha',
     },
     {
-      name: 'Relatórios',
-      href: '/mei/relatorios',
-      icon: HiOutlineClipboardDocumentList,
-      key: 'relatorios',
-    },
-    {
       name: 'Calendário',
       href: '/mei/calendario',
       icon: HiOutlineCalendar,
       key: 'calendario',
-    },
-    {
-      name: 'Clientes',
-      href: '/mei/clientes',
-      icon: HiOutlineUsers,
-      key: 'clientes',
-    },
-    {
-      name: 'Notas Fiscais',
-      href: '/mei/notas',
-      icon: HiOutlineDocumentText,
-      key: 'notas',
     },
   ];
 
