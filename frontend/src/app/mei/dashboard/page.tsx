@@ -150,7 +150,7 @@ function MeiDashboardContent() {
       // Combinar e ordenar transações recentes
       const allTransactions = [
         ...receitas.map((r: Receita) => ({
-          id: r.id,
+          id: `receita-${r.id}`,
           type: 'Receita' as const,
           description: r.descricao || 'Receita',
           value: r.valor || 0,
@@ -158,7 +158,7 @@ function MeiDashboardContent() {
           category: r.categoria || 'Geral',
         })),
         ...despesas.map((d: Despesa) => ({
-          id: d.id,
+          id: `despesa-${d.id}`,
           type: 'Despesa' as const,
           description: d.descricao || 'Despesa',
           value: d.valor || 0,

@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
+import ErrorBoundary from '../../../components/ErrorBoundary';
+import { MetricsSkeleton, EmptyState, useAsyncOperation } from '../../../components/Loading';
+import { MemoizedMetricCard, useOptimizedFilter } from '../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
+import { sanitizeInput, safeCurrencyFormat, safeDateFormat, useDebouncedValue } from '../../../utils/validation';
 
 interface Receita {
   id: string;
@@ -41,17 +45,14 @@ const categories = [
   'Outros',
 ];
 
-function formatCurrency(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('pt-BR');
+  return safeDateFormat(dateStr);
 }
 
-function ReceitasContent() {
+const ReceitasContent = memo(() => {
   const [receitas, setReceitas] = useState<Receita[]>([]);
-  const [, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
@@ -69,7 +70,25 @@ function ReceitasContent() {
     observacoes: '',
   });
 
-  // Buscar receitas do backend
+  const { isLoading: operationLoading, execute: executeOperation } = useAsyncOperation();
+
+  // Função de filtro otimizada usando useCallback para evitar re-criações
+  const filterReceitas = useCallback((receita: Receita, searchTerm: string) => {
+    const searchTermSanitized = sanitizeInput(searchTerm);
+    if (!searchTermSanitized) return true;
+
+    const searchFields = [receita.descricao, receita.cliente, receita.categoria];
+    return searchFields.some(field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase()));
+  }, []);
+
+  // Usar hook otimizado para filtros
+  const { filteredItems: filteredReceitas, debouncedSearchTerm } = useOptimizedFilter(
+    receitas,
+    searchTerm,
+    filterReceitas
+  );
+
+  // Buscar receitas do backend - memoizado
   const fetchReceitas = useCallback(async () => {
     try {
       setLoading(true);
@@ -87,6 +106,7 @@ function ReceitasContent() {
       console.error('Erro ao carregar receitas:', error);
     } finally {
       setLoading(false);
+      setMetricsLoading(false);
     }
   }, []);
 
@@ -94,26 +114,32 @@ function ReceitasContent() {
     fetchReceitas();
   }, [fetchReceitas]);
 
-  // Filtragem de receitas
-  const filteredReceitas = receitas.filter(receita => {
-    const matchesSearch =
-      receita.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.categoria.toLowerCase().includes(searchTerm.toLowerCase());
-    const receitaMonth = receita.dataRecebimento.slice(0, 7);
-    const matchesMonth = selectedMonth === '' || receitaMonth === selectedMonth;
+  // Filtro adicional por mês usando useMemo para cache
+  const finalFilteredReceitas = useMemo(() => {
+    if (!selectedMonth) return filteredReceitas;
 
-    return matchesSearch && matchesMonth;
-  });
+    return filteredReceitas.filter(receita => {
+      const receitaMonth = receita.dataRecebimento?.slice(0, 7);
+      return receitaMonth === selectedMonth;
+    });
+  }, [filteredReceitas, selectedMonth]);
 
-  // Cálculos de métricas
-  const totalReceitas = filteredReceitas.reduce((sum, receita) => sum + receita.valor, 0);
-  const receitasRecebidas = filteredReceitas
-    .filter(r => r.status === 'Recebido')
-    .reduce((sum, receita) => sum + receita.valor, 0);
-  const receitasPendentes = filteredReceitas
-    .filter(r => r.status === 'Pendente')
-    .reduce((sum, receita) => sum + receita.valor, 0);
+  // Cálculos de métricas memoizados para performance
+  const metrics = useMemo(() => {
+    const totalReceitas = finalFilteredReceitas.reduce((sum, receita) => sum + receita.valor, 0);
+    const receitasRecebidas = finalFilteredReceitas
+      .filter(r => r.status === 'Recebido')
+      .reduce((sum, receita) => sum + receita.valor, 0);
+    const receitasPendentes = finalFilteredReceitas
+      .filter(r => r.status === 'Pendente')
+      .reduce((sum, receita) => sum + receita.valor, 0);
+
+    return {
+      totalReceitas,
+      receitasRecebidas,
+      receitasPendentes,
+    };
+  }, [finalFilteredReceitas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,7 +310,7 @@ function ReceitasContent() {
                 </div>
               </div>
 
-              <div className="text-sm text-gray-500">{filteredReceitas.length} receitas encontradas</div>
+              <div className="text-sm text-gray-500">{finalFilteredReceitas.length} receitas encontradas</div>
             </div>
           </div>
         </div>
@@ -292,23 +318,27 @@ function ReceitasContent() {
         {/* Resumo Simplificado */}
         <div className="bg-white border-b border-gray-100 px-8 py-6">
           <div className="max-w-8xl mx-auto">
-            <div className="grid grid-cols-3 gap-12">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+            {metricsLoading ? (
+              <MetricsSkeleton count={3} />
+            ) : (
+              <div className="grid grid-cols-3 gap-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">TOTAL</p>
+                    <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.totalReceitas)}</p>
+                  </div>
+                </div>
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">TOTAL</p>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(totalReceitas)}</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RECEBIDAS</p>
+                  <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.receitasRecebidas)}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PENDENTES</p>
+                  <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.receitasPendentes)}</p>
                 </div>
               </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RECEBIDAS</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(receitasRecebidas)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PENDENTES</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(receitasPendentes)}</p>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -338,81 +368,133 @@ function ReceitasContent() {
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredReceitas.map(receita => (
-                      <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
-                        <td className="py-4 px-6">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
-                            <div className="text-xs text-gray-500">
-                              {receita.cliente && `${receita.cliente} • `}
-                              {receita.categoria}
+                    {loading ? (
+                      // Skeleton rows durante o carregamento
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <tr key={`skeleton-${index}`} className="border-b border-gray-100">
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
-                          <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="text-sm font-mono font-medium text-gray-900">
-                            {formatCurrency(receita.valor)}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                receita.status === 'Recebido'
-                                  ? 'bg-emerald-500'
-                                  : receita.status === 'Pendente'
-                                  ? 'bg-amber-500'
-                                  : 'bg-red-500'
-                              }`}
-                            ></div>
-                            <span className="text-sm text-gray-700">{receita.status}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEdit(receita)}
-                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                              title="Editar"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-20 mb-1"></div>
+                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-24 ml-auto"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="animate-pulse">
+                              <div className="h-6 w-6 bg-gray-200 rounded mx-auto"></div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : finalFilteredReceitas.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <EmptyState
+                            title={debouncedSearchTerm ? 'Nenhuma receita encontrada' : 'Nenhuma receita cadastrada'}
+                            description={
+                              debouncedSearchTerm
+                                ? `Não encontramos receitas que correspondem ao filtro "${debouncedSearchTerm}".`
+                                : 'Você ainda não cadastrou nenhuma receita. Comece adicionando sua primeira receita.'
+                            }
+                            action={
+                              !debouncedSearchTerm ? (
+                                <button
+                                  onClick={() => setShowModal(true)}
+                                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                  Adicionar Receita
+                                </button>
+                              ) : undefined
+                            }
+                            icon={
+                              <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  fillRule="evenodd"
+                                  d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                  clipRule="evenodd"
                                 />
                               </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(receita.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                              title="Excluir"
-                            >
-                              <HiXMark className="w-4 h-4" />
-                            </button>
-                          </div>
+                            }
+                          />
                         </td>
                       </tr>
-                    ))}
-
-                    {/* Estado vazio */}
-                    {filteredReceitas.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="py-16 text-center">
-                          <p className="text-gray-500 mb-4">Nenhuma receita encontrada</p>
-                          <button
-                            onClick={() => setShowModal(true)}
-                            className="text-sm text-gray-900 hover:text-gray-700"
-                          >
-                            Adicionar primeira receita
-                          </button>
-                        </td>
-                      </tr>
+                    ) : (
+                      finalFilteredReceitas.map(receita => (
+                        <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                          <td className="py-4 px-6">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
+                              <div className="text-xs text-gray-500">
+                                {receita.cliente && `${receita.cliente} • `}
+                                {receita.categoria}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
+                            <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="text-sm font-mono font-medium text-gray-900">
+                              {safeCurrencyFormat(receita.valor)}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  receita.status === 'Recebido'
+                                    ? 'bg-emerald-500'
+                                    : receita.status === 'Pendente'
+                                    ? 'bg-amber-500'
+                                    : 'bg-red-500'
+                                }`}
+                              ></div>
+                              <span className="text-sm text-gray-700">{receita.status}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleEdit(receita)}
+                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                title="Editar"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(receita.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                title="Excluir"
+                              >
+                                <HiXMark className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
@@ -584,12 +666,16 @@ function ReceitasContent() {
       )}
     </div>
   );
-}
+});
+
+ReceitasContent.displayName = 'ReceitasContent';
 
 export default function ReceitasPage() {
   return (
     <MeiProtection>
-      <ReceitasContent />
+      <ErrorBoundary>
+        <ReceitasContent />
+      </ErrorBoundary>
     </MeiProtection>
   );
 }

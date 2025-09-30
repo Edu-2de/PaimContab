@@ -70,11 +70,25 @@ exports.login = async (req, res) => {
 
     console.log('🔐 Tentativa de login:', { email });
 
-    // Buscar usuário com company
+    // Buscar usuário apenas da tabela User
     const user = await prisma.user.findUnique({
       where: { email },
-      include: { company: true },
     });
+
+    if (!user) {
+      console.log('❌ Usuário não encontrado');
+      return res.status(401).json({ message: 'Email ou senha inválidos' });
+    }
+
+    // Buscar empresa do usuário (se tiver)
+    let userCompany = null;
+    try {
+      userCompany = await prisma.company.findUnique({
+        where: { userId: user.id },
+      });
+    } catch (error) {
+      console.log('ℹ️ Usuário sem empresa associada');
+    }
 
     if (!user) {
       console.log('❌ Usuário não encontrado');
@@ -100,7 +114,7 @@ exports.login = async (req, res) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      companyId: user.company?.id || null,
+      companyId: userCompany?.id || null,
       iat: Math.floor(Date.now() / 1000), // Issued at
     };
 
@@ -121,7 +135,7 @@ exports.login = async (req, res) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      companyId: user.company?.id || null,
+      companyId: userCompany?.id || null,
     };
 
     console.log('✅ Login bem-sucedido para:', userResponse.name, '- Role:', userResponse.role);

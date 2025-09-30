@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
+import ErrorBoundary from '../../../components/ErrorBoundary';
+import { MetricsSkeleton, EmptyState } from '../../../components/Loading';
+import { useOptimizedFilter } from '../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
+import { sanitizeInput, safeCurrencyFormat, safeDateFormat } from '../../../utils/validation';
 
 interface Despesa {
   id: string;
@@ -50,17 +54,14 @@ const categories = [
   'Outros',
 ];
 
-function formatCurrency(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('pt-BR');
+  return safeDateFormat(dateStr);
 }
 
 function DespesasContent() {
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
+  const [metricsLoading, setMetricsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
@@ -78,6 +79,24 @@ function DespesasContent() {
     dedutivel: true,
     observacoes: '',
   });
+
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
+
+  // Função de filtro otimizada usando useCallback para evitar re-criações
+  const filterDespesas = useCallback((despesa: Despesa, searchTerm: string) => {
+    const searchTermSanitized = sanitizeInput(searchTerm);
+    if (!searchTermSanitized) return true;
+
+    const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
+    return searchFields.some(field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase()));
+  }, []);
+
+  // Usar hook otimizado para filtros
+  const { filteredItems: filteredDespesas, debouncedSearchTerm: optimizedSearchTerm } = useOptimizedFilter(
+    despesas,
+    searchTerm,
+    filterDespesas
+  );
 
   // Buscar despesas do backend
   const fetchDespesas = useCallback(async () => {
@@ -97,6 +116,7 @@ function DespesasContent() {
       console.error('Erro ao carregar despesas:', error);
     } finally {
       setLoading(false);
+      setMetricsLoading(false);
     }
   }, []);
 
@@ -104,27 +124,57 @@ function DespesasContent() {
     fetchDespesas();
   }, [fetchDespesas]);
 
-  // Filtragem de despesas
+  // Filtragem de despesas usando validação segura
   const filteredDespesas = despesas.filter(despesa => {
-    const matchesSearch =
-      despesa.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.fornecedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.categoria.toLowerCase().includes(searchTerm.toLowerCase());
-    const despesaMonth = despesa.dataPagamento.slice(0, 7);
-    const matchesMonth = selectedMonth === '' || despesaMonth === selectedMonth;
+    // Busca segura por texto
+    const searchTermSanitized = sanitizeInput(debouncedSearchTerm);
+    if (searchTermSanitized) {
+      const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
+      const matchesSearch = searchFields.some(
+        field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
+      );
+      if (!matchesSearch) return false;
+    }
 
-    return matchesSearch && matchesMonth;
+    // Filtro por mês
+    if (selectedMonth) {
+      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
+      if (despesaMonth !== selectedMonth) return false;
+    }
+
+    return true;
   });
 
-  // Cálculos de métricas
-  const totalDespesas = filteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasPagas = filteredDespesas
-    .filter(d => d.status === 'Pago')
-    .reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasPendentes = filteredDespesas
-    .filter(d => d.status === 'Pendente')
-    .reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasDedutiveis = filteredDespesas.filter(d => d.dedutivel).reduce((sum, despesa) => sum + despesa.valor, 0);
+  // Filtro adicional por mês usando useMemo para cache
+  const finalFilteredDespesas = useMemo(() => {
+    if (!selectedMonth) return filteredDespesas;
+
+    return filteredDespesas.filter(despesa => {
+      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
+      return despesaMonth === selectedMonth;
+    });
+  }, [filteredDespesas, selectedMonth]);
+
+  // Cálculos de métricas memoizados para performance
+  const metrics = useMemo(() => {
+    const totalDespesas = finalFilteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasPagas = finalFilteredDespesas
+      .filter(d => d.status === 'Pago')
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasPendentes = finalFilteredDespesas
+      .filter(d => d.status === 'Pendente')
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasDedutiveis = finalFilteredDespesas
+      .filter(d => d.dedutivel)
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+
+    return {
+      totalDespesas,
+      despesasPagas,
+      despesasPendentes,
+      despesasDedutiveis,
+    };
+  }, [finalFilteredDespesas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -277,55 +327,65 @@ function DespesasContent() {
         {/* Métricas */}
         <div className="px-8 py-6">
           <div className="max-w-8xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-xl border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Total de Despesas</p>
-                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(totalDespesas)}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
-                    <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            {metricsLoading ? (
+              <MetricsSkeleton count={4} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Total de Despesas</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.totalDespesas)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Despesas Pagas</p>
-                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasPagas)}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Despesas Pagas</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasPagas)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Despesas Pendentes</p>
-                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasPendentes)}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Despesas Pendentes</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasPendentes)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="bg-white p-6 rounded-xl border border-gray-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-500">Dedutíveis</p>
-                    <p className="text-2xl font-light text-gray-900 mt-1">{formatCurrency(despesasDedutiveis)}</p>
-                  </div>
-                  <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Dedutíveis</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(despesasDedutiveis)}</p>
+                    </div>
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -390,86 +450,134 @@ function DespesasContent() {
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredDespesas.map(despesa => (
-                      <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
-                        <td className="py-4 px-6">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
-                            <div className="text-xs text-gray-500">
-                              {despesa.fornecedor && `${despesa.fornecedor} • `}
-                              {despesa.categoria}
-                              {despesa.dedutivel && ' • Dedutível'}
+                    {loading ? (
+                      // Skeleton rows durante o carregamento
+                      Array.from({ length: 5 }).map((_, index) => (
+                        <tr key={`skeleton-${index}`} className="border-b border-gray-100">
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
-                          <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="text-sm font-mono font-medium text-gray-900">
-                            {formatCurrency(despesa.valor)}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                despesa.status === 'Pago'
-                                  ? 'bg-emerald-500'
-                                  : despesa.status === 'Pendente'
-                                  ? 'bg-amber-500'
-                                  : 'bg-red-500'
-                              }`}
-                            ></div>
-                            <span className="text-sm text-gray-700">{despesa.status}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEdit(despesa)}
-                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                              title="Editar"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-20 mb-1"></div>
+                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-24 ml-auto"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="animate-pulse">
+                              <div className="h-6 w-6 bg-gray-200 rounded mx-auto"></div>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : filteredDespesas.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center">
+                          <EmptyState
+                            title={debouncedSearchTerm ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa cadastrada'}
+                            description={
+                              debouncedSearchTerm
+                                ? `Não encontramos despesas que correspondem ao filtro "${debouncedSearchTerm}".`
+                                : 'Você ainda não cadastrou nenhuma despesa. Comece adicionando sua primeira despesa.'
+                            }
+                            action={
+                              !debouncedSearchTerm ? (
+                                <button
+                                  onClick={() => setShowModal(true)}
+                                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                  Adicionar Despesa
+                                </button>
+                              ) : undefined
+                            }
+                            icon={
+                              <svg fill="currentColor" viewBox="0 0 20 20">
                                 <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  fillRule="evenodd"
+                                  d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                  clipRule="evenodd"
                                 />
                               </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(despesa.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                              title="Excluir"
-                            >
-                              <HiXMark className="w-4 h-4" />
-                            </button>
-                          </div>
+                            }
+                          />
                         </td>
                       </tr>
-                    ))}
-
-                    {/* Estado vazio */}
-                    {filteredDespesas.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="py-16 text-center">
-                          <p className="text-gray-500 mb-4">
-                            {loading ? 'Carregando despesas...' : 'Nenhuma despesa encontrada'}
-                          </p>
-                          {!loading && (
-                            <button
-                              onClick={() => setShowModal(true)}
-                              className="text-sm text-gray-900 hover:text-gray-700"
-                            >
-                              Adicionar primeira despesa
-                            </button>
-                          )}
-                        </td>
-                      </tr>
+                    ) : (
+                      filteredDespesas.map(despesa => (
+                        <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                          <td className="py-4 px-6">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
+                              <div className="text-xs text-gray-500">
+                                {despesa.fornecedor && `${despesa.fornecedor} • `}
+                                {despesa.categoria}
+                                {despesa.dedutivel && ' • Dedutível'}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
+                            <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="text-sm font-mono font-medium text-gray-900">
+                              {safeCurrencyFormat(despesa.valor)}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  despesa.status === 'Pago'
+                                    ? 'bg-emerald-500'
+                                    : despesa.status === 'Pendente'
+                                    ? 'bg-amber-500'
+                                    : 'bg-red-500'
+                                }`}
+                              ></div>
+                              <span className="text-sm text-gray-700">{despesa.status}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleEdit(despesa)}
+                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                title="Editar"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(despesa.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                title="Excluir"
+                              >
+                                <HiXMark className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
                     )}
                   </tbody>
                 </table>
@@ -658,7 +766,9 @@ function DespesasContent() {
 export default function DespesasPage() {
   return (
     <MeiProtection>
-      <DespesasContent />
+      <ErrorBoundary>
+        <DespesasContent />
+      </ErrorBoundary>
     </MeiProtection>
   );
 }
