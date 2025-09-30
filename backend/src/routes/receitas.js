@@ -27,7 +27,7 @@ router.get('/receitas', async (req, res) => {
 
     const receitas = await prisma.receita.findMany({
       where: { companyId },
-      orderBy: { dataRecebimento: 'desc' },
+      orderBy: { date: 'desc' },
     });
 
     res.json(receitas);
