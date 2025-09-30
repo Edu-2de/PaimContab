@@ -70,9 +70,10 @@ exports.login = async (req, res) => {
 
     console.log('🔐 Tentativa de login:', { email });
 
-    // Buscar usuário
+    // Buscar usuário com company
     const user = await prisma.user.findUnique({
       where: { email },
+      include: { company: true }
     });
 
     if (!user) {
@@ -99,6 +100,7 @@ exports.login = async (req, res) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
+      companyId: user.company?.id || null,
       iat: Math.floor(Date.now() / 1000), // Issued at
     };
 
@@ -119,6 +121,7 @@ exports.login = async (req, res) => {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
+      companyId: user.company?.id || null,
     };
 
     console.log('✅ Login bem-sucedido para:', userResponse.name, '- Role:', userResponse.role);
