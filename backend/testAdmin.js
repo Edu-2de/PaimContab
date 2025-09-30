@@ -50,53 +50,51 @@ async function testLoginCompleto() {
     // 4. Testar permissões de admin
     console.log('\n4️⃣ Testando permissões...');
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     if (decoded.role === 'admin') {
       console.log('🔑 Admin detectado - pode acessar tudo');
-      
+
       // Buscar todas as receitas (como admin)
       const todasReceitas = await prisma.receita.findMany({
         include: { company: { select: { companyName: true } } },
         orderBy: { date: 'desc' },
       });
-      
+
       console.log(`📊 Total de receitas no sistema: ${todasReceitas.length}`);
-      
+
       if (todasReceitas.length > 0) {
         console.log('📋 Receitas encontradas:');
         todasReceitas.forEach((receita, index) => {
           console.log(`   ${index + 1}. ${receita.description} - R$ ${receita.value} (${receita.company.companyName})`);
         });
       }
-      
     } else {
       console.log('👤 Usuário comum - acesso limitado à sua empresa');
     }
 
     // 5. Testar criação de receita para outra empresa (só admin pode)
     console.log('\n5️⃣ Testando criação de receita como admin...');
-    
+
     if (adminCompany) {
       const novaReceita = await prisma.receita.create({
         data: {
           description: 'Receita criada pelo Admin',
-          value: 2500.00,
+          value: 2500.0,
           date: new Date(),
           category: 'Teste Admin',
-          companyId: adminCompany.id
-        }
+          companyId: adminCompany.id,
+        },
       });
-      
+
       console.log('✅ Receita criada pelo admin:', {
         id: novaReceita.id,
         description: novaReceita.description,
         value: novaReceita.value,
-        companyId: novaReceita.companyId
+        companyId: novaReceita.companyId,
       });
     }
 
     console.log('\n🎉 Teste concluído com sucesso!');
-
   } catch (error) {
     console.error('❌ Erro no teste:', error.message);
   } finally {

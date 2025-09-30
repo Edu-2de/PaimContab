@@ -23,7 +23,7 @@ router.get('/despesas', async (req, res) => {
     if (req.isAdmin) {
       // Admin pode ver todas as despesas
       const { companyId } = req.query; // Admin pode filtrar por empresa via query
-      
+
       if (companyId) {
         despesas = await prisma.despesa.findMany({
           where: { companyId },
@@ -64,7 +64,7 @@ router.post('/despesas', async (req, res) => {
     if (req.isAdmin) {
       // Admin pode criar despesa para qualquer empresa
       companyId = req.body.companyId;
-      
+
       if (!companyId) {
         return res.status(400).json({ error: 'Admin deve especificar companyId na requisição' });
       }
@@ -103,7 +103,7 @@ router.delete('/despesas/:id', deleteDespesa);
 router.put('/despesas/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Buscar despesa existente
     const existingDespesa = await prisma.despesa.findUnique({
       where: { id },
@@ -133,7 +133,7 @@ router.put('/despesas/:id', async (req, res) => {
 router.delete('/despesas/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Buscar despesa existente
     const existingDespesa = await prisma.despesa.findUnique({
       where: { id },

@@ -106,11 +106,13 @@ function DespesasContent() {
 
   // Filtragem de despesas
   const filteredDespesas = despesas.filter(despesa => {
+    const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch =
-      despesa.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.fornecedor?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      despesa.categoria.toLowerCase().includes(searchTerm.toLowerCase());
-    const despesaMonth = despesa.dataPagamento.slice(0, 7);
+      (despesa.descricao?.toLowerCase().includes(searchTermLower) ?? false) ||
+      (despesa.fornecedor?.toLowerCase().includes(searchTermLower) ?? false) ||
+      (despesa.categoria?.toLowerCase().includes(searchTermLower) ?? false);
+    
+    const despesaMonth = despesa.dataPagamento?.slice(0, 7) ?? '';
     const matchesMonth = selectedMonth === '' || despesaMonth === selectedMonth;
 
     return matchesSearch && matchesMonth;

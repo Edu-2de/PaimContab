@@ -64,7 +64,7 @@ router.post('/receitas', async (req, res) => {
     if (req.isAdmin) {
       // Admin pode criar receita para qualquer empresa
       companyId = req.body.companyId;
-      
+
       if (!companyId) {
         return res.status(400).json({ error: 'Admin deve especificar companyId na requisição' });
       }
@@ -103,7 +103,7 @@ router.delete('/receitas/:id', deleteReceita);
 router.put('/receitas/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Buscar receita existente
     const existingReceita = await prisma.receita.findUnique({
       where: { id },
@@ -133,7 +133,7 @@ router.put('/receitas/:id', async (req, res) => {
 router.delete('/receitas/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // Buscar receita existente
     const existingReceita = await prisma.receita.findUnique({
       where: { id },

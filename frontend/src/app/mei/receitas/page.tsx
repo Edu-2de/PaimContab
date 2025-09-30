@@ -4,6 +4,12 @@ import { useState, useEffect, useCallback } from 'react';
 import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
+import { 
+  sanitizeInput, 
+  safeCurrencyFormat, 
+  safeDateFormat,
+  useDebouncedValue 
+} from '../../../utils/validation';
 
 interface Receita {
   id: string;
@@ -41,12 +47,8 @@ const categories = [
   'Outros',
 ];
 
-function formatCurrency(v: number) {
-  return v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('pt-BR');
+  return safeDateFormat(dateStr);
 }
 
 function ReceitasContent() {
@@ -94,16 +96,28 @@ function ReceitasContent() {
     fetchReceitas();
   }, [fetchReceitas]);
 
-  // Filtragem de receitas
-  const filteredReceitas = receitas.filter(receita => {
-    const matchesSearch =
-      receita.descricao.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.cliente?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      receita.categoria.toLowerCase().includes(searchTerm.toLowerCase());
-    const receitaMonth = receita.dataRecebimento.slice(0, 7);
-    const matchesMonth = selectedMonth === '' || receitaMonth === selectedMonth;
+  // Filtro com debounce para melhor performance
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
-    return matchesSearch && matchesMonth;
+  // Filtragem de receitas usando validação segura
+  const filteredReceitas = receitas.filter(receita => {
+    // Busca segura por texto
+    const searchTermSanitized = sanitizeInput(debouncedSearchTerm);
+    if (searchTermSanitized) {
+      const searchFields = [receita.descricao, receita.cliente, receita.categoria];
+      const matchesSearch = searchFields.some(field => 
+        field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
+      );
+      if (!matchesSearch) return false;
+    }
+    
+    // Filtro por mês
+    if (selectedMonth) {
+      const receitaMonth = receita.dataRecebimento?.slice(0, 7);
+      if (receitaMonth !== selectedMonth) return false;
+    }
+
+    return true;
   });
 
   // Cálculos de métricas
@@ -297,16 +311,16 @@ function ReceitasContent() {
                 <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
                 <div>
                   <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">TOTAL</p>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(totalReceitas)}</p>
+                  <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(totalReceitas)}</p>
                 </div>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RECEBIDAS</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(receitasRecebidas)}</p>
+                <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(receitasRecebidas)}</p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PENDENTES</p>
-                <p className="text-2xl font-light text-gray-900">{formatCurrency(receitasPendentes)}</p>
+                <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(receitasPendentes)}</p>
               </div>
             </div>
           </div>
@@ -355,7 +369,7 @@ function ReceitasContent() {
                         </td>
                         <td className="py-4 px-6 text-right">
                           <div className="text-sm font-mono font-medium text-gray-900">
-                            {formatCurrency(receita.valor)}
+                            {safeCurrencyFormat(receita.valor)}
                           </div>
                         </td>
                         <td className="py-4 px-6">

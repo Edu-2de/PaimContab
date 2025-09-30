@@ -15,6 +15,7 @@ import {
 } from 'react-icons/hi2';
 
 interface DASCalculation {
+  id: string;
   month: string;
   revenue: number;
   dasValue: number;
@@ -65,6 +66,7 @@ function DASContent() {
   // Histórico de DAS
   const [dasHistory, setDasHistory] = useState<DASCalculation[]>([
     {
+      id: 'das-2024-09',
       month: '2024-09',
       revenue: 4500,
       dasValue: 270,
@@ -72,6 +74,7 @@ function DASContent() {
       isPaid: false,
     },
     {
+      id: 'das-2024-08',
       month: '2024-08',
       revenue: 3800,
       dasValue: 228,
@@ -80,6 +83,7 @@ function DASContent() {
       paymentDate: '2024-09-18',
     },
     {
+      id: 'das-2024-07',
       month: '2024-07',
       revenue: 5200,
       dasValue: 312,
@@ -88,6 +92,7 @@ function DASContent() {
       paymentDate: '2024-08-15',
     },
     {
+      id: 'das-2024-06',
       month: '2024-06',
       revenue: 2900,
       dasValue: 174,
@@ -373,7 +378,7 @@ function DASContent() {
                     const daysUntilDue = getDaysUntilDue(das.dueDate);
 
                     return (
-                      <tr key={das.month} className="hover:bg-slate-50">
+                      <tr key={das.id} className="hover:bg-slate-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-slate-900">
                             {new Date(das.month + '-01').toLocaleDateString('pt-BR', {
