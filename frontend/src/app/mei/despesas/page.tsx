@@ -58,7 +58,7 @@ function formatDate(dateStr: string) {
   return safeDateFormat(dateStr);
 }
 
-function DespesasContent() {
+const DespesasContent = memo(() => {
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -377,7 +377,9 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Dedutíveis</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.despesasDedutiveis)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasDedutiveis)}
+                      </p>
                     </div>
                     <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -761,7 +763,9 @@ function DespesasContent() {
       )}
     </div>
   );
-}
+});
+
+DespesasContent.displayName = 'DespesasContent';
 
 export default function DespesasPage() {
   return (
