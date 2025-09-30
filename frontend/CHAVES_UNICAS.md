@@ -1,14 +1,16 @@
 # 🔑 Guia para Evitar Erros de Chaves Duplicadas no React
 
 ## ❌ Problema Resolvido
+
 Erro: `Encountered two children with the same key, '2025-03'. Keys should be unique...`
 
 ## ✅ Soluções Implementadas
 
 ### 1. **Página DAS** - Adicionado campo `id` único
+
 ```typescript
 interface DASCalculation {
-  id: string;          // ✅ Campo ID único adicionado
+  id: string; // ✅ Campo ID único adicionado
   month: string;
   revenue: number;
   dasValue: number;
@@ -20,39 +22,45 @@ interface DASCalculation {
 // ✅ Dados com IDs únicos
 const dasHistory = [
   {
-    id: 'das-2024-09',  // ✅ ID único
+    id: 'das-2024-09', // ✅ ID único
     month: '2024-09',
     revenue: 4500,
     // ...
-  }
+  },
 ];
 
 // ✅ Uso correto da key
-{dasHistory.map(das => (
-  <tr key={das.id}>  {/* ✅ Usando ID em vez de month */}
-    {/* ... */}
-  </tr>
-))}
+{
+  dasHistory.map(das => (
+    <tr key={das.id}>
+      {' '}
+      {/* ✅ Usando ID em vez de month */}
+      {/* ... */}
+    </tr>
+  ));
+}
 ```
 
 ### 2. **Dashboard MEI** - Prefixos únicos para transações
+
 ```typescript
 // ✅ IDs únicos para evitar conflitos entre receitas e despesas
 const allTransactions = [
   ...receitas.map(r => ({
-    id: `receita-${r.id}`,  // ✅ Prefixo único
+    id: `receita-${r.id}`, // ✅ Prefixo único
     type: 'Receita',
     // ...
   })),
   ...despesas.map(d => ({
-    id: `despesa-${d.id}`,  // ✅ Prefixo único
+    id: `despesa-${d.id}`, // ✅ Prefixo único
     type: 'Despesa',
     // ...
-  }))
+  })),
 ];
 ```
 
 ### 3. **Utilitário de Chaves Únicas** - `utils/uniqueKeys.ts`
+
 ```typescript
 // ✅ Funções utilitárias para gerar IDs únicos
 export const generateUniqueId = (prefix: string = 'id'): string => {
@@ -82,92 +90,105 @@ export const removeDuplicates = <T>(array: T[], keyExtractor: (item: T) => strin
 ### ✅ **DO's (Faça)**
 
 1. **Sempre use IDs únicos como keys**
+
 ```tsx
 // ✅ CORRETO
-{items.map(item => (
-  <div key={item.id}>{item.name}</div>
-))}
+{
+  items.map(item => <div key={item.id}>{item.name}</div>);
+}
 ```
 
 2. **Para dados sem ID, combine múltiplos campos**
+
 ```tsx
 // ✅ CORRETO
-{items.map((item, index) => (
-  <div key={`${item.type}-${item.date}-${index}`}>
-    {item.name}
-  </div>
-))}
+{
+  items.map((item, index) => <div key={`${item.type}-${item.date}-${index}`}>{item.name}</div>);
+}
 ```
 
 3. **Use prefixos para evitar conflitos**
+
 ```tsx
 // ✅ CORRETO
 const allData = [
   ...receitas.map(r => ({ ...r, id: `receita-${r.id}` })),
-  ...despesas.map(d => ({ ...d, id: `despesa-${d.id}` }))
+  ...despesas.map(d => ({ ...d, id: `despesa-${d.id}` })),
 ];
 ```
 
 4. **Para arrays aninhados, use IDs compostos**
+
 ```tsx
 // ✅ CORRETO
-{months.map(month => (
-  <div key={month.id}>
-    {month.events.map(event => (
-      <div key={`${month.id}-${event.id}`}>
-        {event.title}
-      </div>
-    ))}
-  </div>
-))}
+{
+  months.map(month => (
+    <div key={month.id}>
+      {month.events.map(event => (
+        <div key={`${month.id}-${event.id}`}>{event.title}</div>
+      ))}
+    </div>
+  ));
+}
 ```
 
 ### ❌ **DON'Ts (Não faça)**
 
 1. **Nunca use apenas o índice como key**
+
 ```tsx
 // ❌ ERRADO
-{items.map((item, index) => (
-  <div key={index}>{item.name}</div>
-))}
+{
+  items.map((item, index) => <div key={index}>{item.name}</div>);
+}
 ```
 
 2. **Não use valores que podem ser duplicados**
+
 ```tsx
 // ❌ ERRADO - months podem ser duplicados
-{items.map(item => (
-  <div key={item.month}>{item.name}</div>
-))}
+{
+  items.map(item => <div key={item.month}>{item.name}</div>);
+}
 ```
 
 3. **Não ignore warnings de keys**
+
 ```tsx
 // ❌ ERRADO
-{items.map(item => (
-  <div>{item.name}</div>  // Sem key!
-))}
+{
+  items.map(item => (
+    <div>{item.name}</div> // Sem key!
+  ));
+}
 ```
 
 ## 🔧 **Como Depurar Chaves Duplicadas**
 
 ### 1. **Ativar Modo Strict no React**
+
 ```tsx
 // next.config.js
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,  // ✅ Ativa warnings
-}
+  reactStrictMode: true, // ✅ Ativa warnings
+};
 ```
 
 ### 2. **Usar Console.log para verificar keys**
+
 ```tsx
 // ✅ Debug de keys
 const keys = items.map(item => item.id);
 console.log('Keys:', keys);
-console.log('Duplicadas:', keys.filter((key, index) => keys.indexOf(key) !== index));
+console.log(
+  'Duplicadas:',
+  keys.filter((key, index) => keys.indexOf(key) !== index)
+);
 ```
 
 ### 3. **Validar unicidade em desenvolvimento**
+
 ```tsx
 // ✅ Validação de desenvolvimento
 if (process.env.NODE_ENV === 'development') {
@@ -191,13 +212,15 @@ if (process.env.NODE_ENV === 'development') {
 ## 🎯 **Status Atual do Projeto**
 
 ✅ **Corrigido:**
+
 - Página DAS: IDs únicos para histórico
 - Dashboard MEI: Prefixos para transações
 - Utilitários: Funções helper criadas
 
 ✅ **Verificado:**
+
 - Receitas: IDs únicos já existentes
-- Despesas: IDs únicos já existentes  
+- Despesas: IDs únicos já existentes
 - Planilha: Geração correta de IDs
 - Calendário: Keys baseadas em event.id
 

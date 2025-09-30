@@ -28,9 +28,9 @@ export const safeToLowerCase = (value: unknown): string => {
 export const safeIncludes = (text: unknown, searchTerm: unknown): boolean => {
   const textSafe = safeToLowerCase(text);
   const searchSafe = safeToLowerCase(searchTerm);
-  
+
   if (!textSafe || !searchSafe) return false;
-  
+
   return textSafe.includes(searchSafe);
 };
 
@@ -43,10 +43,8 @@ export const createSearchFilter = <T extends Record<string, unknown>>(
 ) => {
   return (item: T): boolean => {
     if (!searchTerm.trim()) return true;
-    
-    return searchFields.some(field => 
-      safeIncludes(item[field], searchTerm)
-    );
+
+    return searchFields.some(field => safeIncludes(item[field], searchTerm));
   };
 };
 
@@ -64,7 +62,7 @@ export const isValidDate = (date: unknown): boolean => {
  */
 export const safeExtractYearMonth = (date: unknown): string => {
   if (!isValidDate(date)) return '';
-  
+
   try {
     const dateStr = String(date);
     return dateStr.slice(0, 7); // YYYY-MM
@@ -76,13 +74,10 @@ export const safeExtractYearMonth = (date: unknown): string => {
 /**
  * Filtro de data por mês/ano
  */
-export const createMonthFilter = <T extends Record<string, unknown>>(
-  selectedMonth: string,
-  dateField: keyof T
-) => {
+export const createMonthFilter = <T extends Record<string, unknown>>(selectedMonth: string, dateField: keyof T) => {
   return (item: T): boolean => {
     if (!selectedMonth) return true;
-    
+
     const itemMonth = safeExtractYearMonth(item[dateField]);
     return itemMonth === selectedMonth;
   };
@@ -102,7 +97,7 @@ export const combineFilters = <T>(...filters: ((item: T) => boolean)[]): ((item:
  */
 export const sanitizeInput = (input: unknown): string => {
   if (typeof input !== 'string') return '';
-  
+
   return input
     .trim()
     .replace(/[<>\"']/g, '') // Remove caracteres potencialmente perigosos
@@ -126,13 +121,13 @@ export const safeNumber = (value: unknown): number => {
  */
 export const safeCurrencyFormat = (value: unknown): string => {
   const numValue = safeNumber(value);
-  
+
   try {
     return numValue.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      maximumFractionDigits: 2,
     });
   } catch {
     return `R$ ${numValue.toFixed(2)}`;
@@ -144,7 +139,7 @@ export const safeCurrencyFormat = (value: unknown): string => {
  */
 export const safeDateFormat = (date: unknown): string => {
   if (!isValidDate(date)) return '-';
-  
+
   try {
     return new Date(date as string).toLocaleDateString('pt-BR');
   } catch {
@@ -160,7 +155,7 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
   delay: number
 ): ((...args: Parameters<T>) => void) => {
   let timeoutId: NodeJS.Timeout;
-  
+
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId);
     timeoutId = setTimeout(() => func(...args), delay);
@@ -172,15 +167,15 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
  */
 export const useDebouncedValue = <T>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedValue(value);
     }, delay);
-    
+
     return () => clearTimeout(timer);
   }, [value, delay]);
-  
+
   return debouncedValue;
 };
 

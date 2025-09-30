@@ -9,24 +9,24 @@ export const generateUniqueKey = (item: Record<string, unknown>, index: number, 
   if (item.id && typeof item.id === 'string') {
     return item.id;
   }
-  
+
   // Se o item tem uma propriedade única óbvia
   if (item.uuid && typeof item.uuid === 'string') return item.uuid;
   if (item._id && typeof item._id === 'string') return item._id;
-  
+
   // Para dados que podem ter duplicatas baseadas em data/mês
   if (item.month && typeof item.month === 'string' && item.type && typeof item.type === 'string') {
     return `${item.type}-${item.month}-${index}`;
   }
-  
+
   if (item.month && typeof item.month === 'string') {
     return `${prefix}-${item.month}-${index}`;
   }
-  
+
   if (item.date && typeof item.date === 'string') {
     return `${prefix}-${item.date}-${index}`;
   }
-  
+
   // Como último recurso, use o índice com timestamp
   return `${prefix}-${index}-${Date.now()}`;
 };
@@ -46,11 +46,11 @@ export const removeDuplicates = <T>(array: T[], keyExtractor: (item: T) => strin
 
 // Hook para garantir IDs únicos em listas
 export const useUniqueList = <T extends { id?: string }>(
-  list: T[], 
+  list: T[],
   generateId: (item: T, index: number) => string
 ): (T & { id: string })[] => {
   return list.map((item, index) => ({
     ...item,
-    id: item.id || generateId(item, index)
+    id: item.id || generateId(item, index),
   }));
 };
