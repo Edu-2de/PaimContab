@@ -9,10 +9,10 @@ async function testReceitas() {
 
     // Simular token do usuário admin
     const token = jwt.sign(
-      { 
+      {
         userId: '7c9494d2-296c-4bc7-8360-3d30e51f4e0d',
         companyId: 'd3926a06-c27f-432e-bec3-02729879068b',
-        email: 'admin@admin.com' 
+        email: 'admin@admin.com',
       },
       'seu_jwt_secret',
       { expiresIn: '24h' }
@@ -24,7 +24,7 @@ async function testReceitas() {
 
     // Buscar receitas existentes
     const receitas = await prisma.receita.findMany({
-      where: { companyId: decoded.companyId }
+      where: { companyId: decoded.companyId },
     });
 
     console.log(`📊 Receitas encontradas: ${receitas.length}`);
@@ -33,27 +33,26 @@ async function testReceitas() {
     const novaReceita = await prisma.receita.create({
       data: {
         description: 'Receita Teste API',
-        value: 1500.00,
+        value: 1500.0,
         date: new Date(),
         category: 'Vendas',
-        companyId: decoded.companyId
-      }
+        companyId: decoded.companyId,
+      },
     });
 
     console.log('✅ Receita criada:', {
       id: novaReceita.id,
       description: novaReceita.description,
       value: novaReceita.value,
-      companyId: novaReceita.companyId
+      companyId: novaReceita.companyId,
     });
 
     // Buscar receitas novamente
     const receitasAtualizadas = await prisma.receita.findMany({
-      where: { companyId: decoded.companyId }
+      where: { companyId: decoded.companyId },
     });
 
     console.log(`📈 Total de receitas após criação: ${receitasAtualizadas.length}`);
-
   } catch (error) {
     console.error('❌ Erro:', error.message);
   } finally {

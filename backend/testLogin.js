@@ -11,7 +11,7 @@ async function testLogin() {
     // Buscar usuário admin
     const user = await prisma.user.findUnique({
       where: { email: 'admin@admin.com' },
-      include: { Company: true }
+      include: { Company: true },
     });
 
     if (!user) {
@@ -26,28 +26,27 @@ async function testLogin() {
     // Simular token JWT
     if (user.Company) {
       const token = jwt.sign(
-        { 
+        {
           userId: user.id,
           companyId: user.Company.id,
-          email: user.email 
+          email: user.email,
         },
         'seu_jwt_secret',
         { expiresIn: '24h' }
       );
 
       console.log('🔑 Token gerado com companyId incluído');
-      
+
       // Decodificar token para verificar
       const decoded = jwt.verify(token, 'seu_jwt_secret');
       console.log('📝 Dados do token:', {
         userId: decoded.userId,
         companyId: decoded.companyId,
-        email: decoded.email
+        email: decoded.email,
       });
     } else {
       console.log('❌ Usuário não tem empresa associada');
     }
-
   } catch (error) {
     console.error('❌ Erro:', error.message);
   } finally {
