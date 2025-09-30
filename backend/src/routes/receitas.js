@@ -18,17 +18,37 @@ router.use(adminOrOwnerMiddleware);
 // Rotas de receitas simplificadas
 router.get('/receitas', async (req, res) => {
   try {
-    // Buscar companyId do token
-    const companyId = req.user.companyId;
+    let receitas;
 
-    if (!companyId) {
-      return res.status(404).json({ error: 'Empresa não encontrada no token' });
+    if (req.isAdmin) {
+      // Admin pode ver todas as receitas
+      const { companyId } = req.query; // Admin pode filtrar por empresa via query
+      
+      if (companyId) {
+        receitas = await prisma.receita.findMany({
+          where: { companyId },
+          include: { company: { select: { companyName: true } } },
+          orderBy: { date: 'desc' },
+        });
+      } else {
+        receitas = await prisma.receita.findMany({
+          include: { company: { select: { companyName: true } } },
+          orderBy: { date: 'desc' },
+        });
+      }
+    } else {
+      // Usuário comum vê apenas suas receitas
+      const companyId = req.user.companyId;
+
+      if (!companyId) {
+        return res.status(404).json({ error: 'Empresa não encontrada no token' });
+      }
+
+      receitas = await prisma.receita.findMany({
+        where: { companyId },
+        orderBy: { date: 'desc' },
+      });
     }
-
-    const receitas = await prisma.receita.findMany({
-      where: { companyId },
-      orderBy: { date: 'desc' },
-    });
 
     res.json(receitas);
   } catch (error) {
