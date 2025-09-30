@@ -27,7 +27,7 @@ router.get('/despesas', async (req, res) => {
 
     const despesas = await prisma.despesa.findMany({
       where: { companyId },
-      orderBy: { dataPagamento: 'desc' }
+      orderBy: { dataPagamento: 'desc' },
     });
 
     res.json(despesas);
@@ -50,7 +50,7 @@ router.post('/despesas', async (req, res) => {
       data: {
         ...req.body,
         companyId,
-      }
+      },
     });
 
     res.status(201).json(despesa);
