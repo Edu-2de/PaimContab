@@ -86,11 +86,9 @@ function DespesasContent() {
   const filterDespesas = useCallback((despesa: Despesa, searchTerm: string) => {
     const searchTermSanitized = sanitizeInput(searchTerm);
     if (!searchTermSanitized) return true;
-    
+
     const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
-    return searchFields.some(
-      field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
-    );
+    return searchFields.some(field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase()));
   }, []);
 
   // Usar hook otimizado para filtros
@@ -150,7 +148,7 @@ function DespesasContent() {
   // Filtro adicional por mês usando useMemo para cache
   const finalFilteredDespesas = useMemo(() => {
     if (!selectedMonth) return filteredDespesas;
-    
+
     return filteredDespesas.filter(despesa => {
       const despesaMonth = despesa.dataPagamento?.slice(0, 7);
       return despesaMonth === selectedMonth;
@@ -174,7 +172,7 @@ function DespesasContent() {
       totalDespesas,
       despesasPagas,
       despesasPendentes,
-      despesasDedutiveis
+      despesasDedutiveis,
     };
   }, [finalFilteredDespesas]);
 
@@ -337,7 +335,9 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Total de Despesas</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.totalDespesas)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.totalDespesas)}
+                      </p>
                     </div>
                     <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-red-500 rounded-full"></div>
@@ -349,7 +349,9 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Despesas Pagas</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.despesasPagas)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasPagas)}
+                      </p>
                     </div>
                     <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -361,7 +363,9 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Despesas Pendentes</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.despesasPendentes)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasPendentes)}
+                      </p>
                     </div>
                     <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
