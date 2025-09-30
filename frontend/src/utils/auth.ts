@@ -51,6 +51,7 @@ export const tokenManager = {
         email: payload.email,
         role: payload.role,
         isActive: payload.isActive,
+        companyId: payload.companyId,
       };
     } catch (error) {
       console.error('Erro ao decodificar token:', error);
