@@ -24,7 +24,7 @@ export const MemoizedListItem = memo<{
   const formattedValue = useMemo(() => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(value);
   }, [value]);
 
@@ -67,21 +67,15 @@ export const MemoizedListItem = memo<{
       <td className="py-4 px-6">
         <div>
           <div className="text-sm font-medium text-gray-900 mb-1">{title}</div>
-          {subtitle && (
-            <div className="text-xs text-gray-500">{subtitle}</div>
-          )}
+          {subtitle && <div className="text-xs text-gray-500">{subtitle}</div>}
         </div>
       </td>
       <td className="py-4 px-6 text-right">
-        <div className="text-sm font-mono font-medium text-gray-900">
-          {formattedValue}
-        </div>
+        <div className="text-sm font-mono font-medium text-gray-900">{formattedValue}</div>
       </td>
       <td className="py-4 px-6">
         {status && (
-          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor}`}>
-            {status}
-          </span>
+          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColor}`}>{status}</span>
         )}
       </td>
       <td className="py-4 px-6 text-center">
@@ -105,7 +99,11 @@ export const MemoizedListItem = memo<{
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clipRule="evenodd" />
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L7.586 12l-1.293 1.293a1 1 0 101.414 1.414L9 13.414l2.293 2.293a1 1 0 001.414-1.414L11.414 12l1.293-1.293z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414L7.586 12l-1.293 1.293a1 1 0 101.414 1.414L9 13.414l2.293 2.293a1 1 0 001.414-1.414L11.414 12l1.293-1.293z"
+                  clipRule="evenodd"
+                />
               </svg>
             </button>
           )}
@@ -129,7 +127,7 @@ export const MemoizedMetricCard = memo<{
   const formattedValue = useMemo(() => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(value);
   }, [value]);
 
@@ -139,7 +137,7 @@ export const MemoizedMetricCard = memo<{
       blue: 'bg-blue-100 text-blue-600',
       red: 'bg-red-100 text-red-600',
       amber: 'bg-amber-100 text-amber-600',
-      purple: 'bg-purple-100 text-purple-600'
+      purple: 'bg-purple-100 text-purple-600',
     };
     return colors[colorScheme];
   }, [colorScheme]);
@@ -161,16 +159,10 @@ export const MemoizedMetricCard = memo<{
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-600">{title}</h3>
-        {icon && (
-          <div className={`p-2 rounded-full ${colorClasses}`}>
-            {icon}
-          </div>
-        )}
+        {icon && <div className={`p-2 rounded-full ${colorClasses}`}>{icon}</div>}
       </div>
       <p className="text-2xl font-bold text-gray-900 mb-1">{formattedValue}</p>
-      {subtitle && (
-        <p className="text-sm text-gray-600">{subtitle}</p>
-      )}
+      {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
     </div>
   );
 });
@@ -214,9 +206,12 @@ export const MemoizedFormField = memo<{
   required?: boolean;
   options?: { value: string; label: string }[];
 }>(({ label, name, type = 'text', value, onChange, error, placeholder, required, options }) => {
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    onChange(name, e.target.value);
-  }, [name, onChange]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      onChange(name, e.target.value);
+    },
+    [name, onChange]
+  );
 
   const fieldId = useMemo(() => `field-${name}`, [name]);
 
@@ -226,7 +221,7 @@ export const MemoizedFormField = memo<{
         {label}
         {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      
+
       {options ? (
         <select
           id={fieldId}
@@ -255,10 +250,8 @@ export const MemoizedFormField = memo<{
           className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
         />
       )}
-      
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
 });
@@ -268,32 +261,35 @@ MemoizedFormField.displayName = 'MemoizedFormField';
 // Hook para otimizar chamadas de API
 export const useOptimizedAPI = () => {
   const cache = useMemo(() => new Map<string, unknown>(), []);
-  
-  const cachedFetch = useCallback(async (url: string, options?: RequestInit) => {
-    const cacheKey = `${url}-${JSON.stringify(options)}`;
-    
-    if (cache.has(cacheKey)) {
-      return cache.get(cacheKey);
-    }
-    
-    try {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      
-      // Cache por 5 minutos
-      cache.set(cacheKey, data);
-      setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000);
-      
-      return data;
-    } catch (error) {
-      cache.delete(cacheKey);
-      throw error;
-    }
-  }, [cache]);
-  
+
+  const cachedFetch = useCallback(
+    async (url: string, options?: RequestInit) => {
+      const cacheKey = `${url}-${JSON.stringify(options)}`;
+
+      if (cache.has(cacheKey)) {
+        return cache.get(cacheKey);
+      }
+
+      try {
+        const response = await fetch(url, options);
+        const data = await response.json();
+
+        // Cache por 5 minutos
+        cache.set(cacheKey, data);
+        setTimeout(() => cache.delete(cacheKey), 5 * 60 * 1000);
+
+        return data;
+      } catch (error) {
+        cache.delete(cacheKey);
+        throw error;
+      }
+    },
+    [cache]
+  );
+
   const clearCache = useCallback(() => {
     cache.clear();
   }, [cache]);
-  
+
   return { cachedFetch, clearCache };
 };

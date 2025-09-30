@@ -3,18 +3,20 @@
 import React from 'react';
 
 // Loading Spinner simples
-export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg'; className?: string }> = ({ 
-  size = 'md', 
-  className = '' 
+export const LoadingSpinner: React.FC<{ size?: 'sm' | 'md' | 'lg'; className?: string }> = ({
+  size = 'md',
+  className = '',
 }) => {
   const sizeClasses = {
     sm: 'w-4 h-4',
     md: 'w-8 h-8',
-    lg: 'w-12 h-12'
+    lg: 'w-12 h-12',
   };
 
   return (
-    <div className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 ${sizeClasses[size]} ${className}`} />
+    <div
+      className={`animate-spin rounded-full border-2 border-gray-300 border-t-blue-600 ${sizeClasses[size]} ${className}`}
+    />
   );
 };
 
@@ -36,10 +38,7 @@ export const ButtonLoading: React.FC<{ size?: 'sm' | 'md' }> = ({ size = 'sm' })
 };
 
 // Skeleton para tabelas
-export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({ 
-  rows = 5, 
-  columns = 4 
-}) => {
+export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({ rows = 5, columns = 4 }) => {
   return (
     <div className="animate-pulse">
       <div className="bg-white rounded-lg shadow-sm border border-gray-200">
@@ -51,18 +50,13 @@ export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
             ))}
           </div>
         </div>
-        
+
         {/* Rows skeleton */}
         {Array.from({ length: rows }).map((_, rowIndex) => (
           <div key={rowIndex} className="px-6 py-4 border-b border-gray-100 last:border-b-0">
             <div className="flex space-x-4">
               {Array.from({ length: columns }).map((_, colIndex) => (
-                <div 
-                  key={colIndex} 
-                  className={`h-4 bg-gray-200 rounded ${
-                    colIndex === 0 ? 'flex-2' : 'flex-1'
-                  }`} 
-                />
+                <div key={colIndex} className={`h-4 bg-gray-200 rounded ${colIndex === 0 ? 'flex-2' : 'flex-1'}`} />
               ))}
             </div>
           </div>
@@ -96,14 +90,14 @@ export const FormSkeleton: React.FC = () => {
     <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 animate-pulse">
       <div className="space-y-6">
         <div className="h-6 bg-gray-200 rounded w-1/4" />
-        
+
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="space-y-2">
             <div className="h-4 bg-gray-200 rounded w-1/3" />
             <div className="h-10 bg-gray-200 rounded w-full" />
           </div>
         ))}
-        
+
         <div className="flex justify-end space-x-4 pt-4">
           <div className="h-10 bg-gray-200 rounded w-20" />
           <div className="h-10 bg-gray-200 rounded w-20" />
@@ -124,19 +118,15 @@ export const InlineLoading: React.FC<{ message?: string }> = ({ message = 'Carre
 };
 
 // Empty state para quando não há dados
-export const EmptyState: React.FC<{ 
-  title: string; 
-  description: string; 
+export const EmptyState: React.FC<{
+  title: string;
+  description: string;
   action?: React.ReactNode;
   icon?: React.ReactNode;
 }> = ({ title, description, action, icon }) => {
   return (
     <div className="text-center py-12">
-      {icon && (
-        <div className="w-16 h-16 mx-auto mb-4 text-gray-400">
-          {icon}
-        </div>
-      )}
+      {icon && <div className="w-16 h-16 mx-auto mb-4 text-gray-400">{icon}</div>}
       <h3 className="text-lg font-medium text-gray-900 mb-2">{title}</h3>
       <p className="text-gray-600 mb-6 max-w-md mx-auto">{description}</p>
       {action}
@@ -145,36 +135,29 @@ export const EmptyState: React.FC<{
 };
 
 // Skeleton genérico reutilizável
-export const Skeleton: React.FC<{ 
-  width?: string; 
-  height?: string; 
+export const Skeleton: React.FC<{
+  width?: string;
+  height?: string;
   className?: string;
   variant?: 'rectangular' | 'circular' | 'text';
-}> = ({ 
-  width = 'w-full', 
-  height = 'h-4', 
-  className = '', 
-  variant = 'rectangular' 
-}) => {
+}> = ({ width = 'w-full', height = 'h-4', className = '', variant = 'rectangular' }) => {
   const baseClasses = 'bg-gray-200 animate-pulse';
   const variantClasses = {
     rectangular: 'rounded',
     circular: 'rounded-full',
-    text: 'rounded'
+    text: 'rounded',
   };
 
-  return (
-    <div className={`${baseClasses} ${variantClasses[variant]} ${width} ${height} ${className}`} />
-  );
+  return <div className={`${baseClasses} ${variantClasses[variant]} ${width} ${height} ${className}`} />;
 };
 
 // Hook para estados de loading
 export const useLoadingState = (initialState = false) => {
   const [isLoading, setIsLoading] = React.useState(initialState);
-  
+
   const startLoading = React.useCallback(() => setIsLoading(true), []);
   const stopLoading = React.useCallback(() => setIsLoading(false), []);
-  
+
   return { isLoading, startLoading, stopLoading, setIsLoading };
 };
 
@@ -182,11 +165,11 @@ export const useLoadingState = (initialState = false) => {
 export const useAsyncOperation = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<Error | null>(null);
-  
+
   const execute = React.useCallback(async <T,>(operation: () => Promise<T>): Promise<T> => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const result = await operation();
       return result;
@@ -198,6 +181,6 @@ export const useAsyncOperation = () => {
       setIsLoading(false);
     }
   }, []);
-  
+
   return { isLoading, error, execute };
 };

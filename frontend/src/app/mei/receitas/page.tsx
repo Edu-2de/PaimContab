@@ -71,16 +71,14 @@ const ReceitasContent = memo(() => {
   });
 
   const { isLoading: operationLoading, execute: executeOperation } = useAsyncOperation();
-  
+
   // Função de filtro otimizada usando useCallback para evitar re-criações
   const filterReceitas = useCallback((receita: Receita, searchTerm: string) => {
     const searchTermSanitized = sanitizeInput(searchTerm);
     if (!searchTermSanitized) return true;
-    
+
     const searchFields = [receita.descricao, receita.cliente, receita.categoria];
-    return searchFields.some(
-      field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
-    );
+    return searchFields.some(field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase()));
   }, []);
 
   // Usar hook otimizado para filtros
@@ -119,7 +117,7 @@ const ReceitasContent = memo(() => {
   // Filtro adicional por mês usando useMemo para cache
   const finalFilteredReceitas = useMemo(() => {
     if (!selectedMonth) return filteredReceitas;
-    
+
     return filteredReceitas.filter(receita => {
       const receitaMonth = receita.dataRecebimento?.slice(0, 7);
       return receitaMonth === selectedMonth;
@@ -139,7 +137,7 @@ const ReceitasContent = memo(() => {
     return {
       totalReceitas,
       receitasRecebidas,
-      receitasPendentes
+      receitasPendentes,
     };
   }, [finalFilteredReceitas]);
 
@@ -407,15 +405,15 @@ const ReceitasContent = memo(() => {
                       <tr>
                         <td colSpan={5} className="py-12 text-center">
                           <EmptyState
-                            title={debouncedSearchTerm ? "Nenhuma receita encontrada" : "Nenhuma receita cadastrada"}
+                            title={debouncedSearchTerm ? 'Nenhuma receita encontrada' : 'Nenhuma receita cadastrada'}
                             description={
-                              debouncedSearchTerm 
+                              debouncedSearchTerm
                                 ? `Não encontramos receitas que correspondem ao filtro "${debouncedSearchTerm}".`
-                                : "Você ainda não cadastrou nenhuma receita. Comece adicionando sua primeira receita."
+                                : 'Você ainda não cadastrou nenhuma receita. Comece adicionando sua primeira receita.'
                             }
                             action={
                               !debouncedSearchTerm ? (
-                                <button 
+                                <button
                                   onClick={() => setShowModal(true)}
                                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                 >
@@ -425,7 +423,11 @@ const ReceitasContent = memo(() => {
                             }
                             icon={
                               <svg fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             }
                           />
@@ -433,65 +435,65 @@ const ReceitasContent = memo(() => {
                       </tr>
                     ) : (
                       finalFilteredReceitas.map(receita => (
-                      <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
-                        <td className="py-4 px-6">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
-                            <div className="text-xs text-gray-500">
-                              {receita.cliente && `${receita.cliente} • `}
-                              {receita.categoria}
+                        <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                          <td className="py-4 px-6">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
+                              <div className="text-xs text-gray-500">
+                                {receita.cliente && `${receita.cliente} • `}
+                                {receita.categoria}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
-                          <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="text-sm font-mono font-medium text-gray-900">
-                            {safeCurrencyFormat(receita.valor)}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                receita.status === 'Recebido'
-                                  ? 'bg-emerald-500'
-                                  : receita.status === 'Pendente'
-                                  ? 'bg-amber-500'
-                                  : 'bg-red-500'
-                              }`}
-                            ></div>
-                            <span className="text-sm text-gray-700">{receita.status}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEdit(receita)}
-                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                              title="Editar"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(receita.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                              title="Excluir"
-                            >
-                              <HiXMark className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
+                            <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="text-sm font-mono font-medium text-gray-900">
+                              {safeCurrencyFormat(receita.valor)}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  receita.status === 'Recebido'
+                                    ? 'bg-emerald-500'
+                                    : receita.status === 'Pendente'
+                                    ? 'bg-amber-500'
+                                    : 'bg-red-500'
+                                }`}
+                              ></div>
+                              <span className="text-sm text-gray-700">{receita.status}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleEdit(receita)}
+                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                title="Editar"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(receita.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                title="Excluir"
+                              >
+                                <HiXMark className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       ))
                     )}
                   </tbody>

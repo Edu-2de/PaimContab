@@ -82,6 +82,24 @@ function DespesasContent() {
 
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
+  // Função de filtro otimizada usando useCallback para evitar re-criações
+  const filterDespesas = useCallback((despesa: Despesa, searchTerm: string) => {
+    const searchTermSanitized = sanitizeInput(searchTerm);
+    if (!searchTermSanitized) return true;
+    
+    const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
+    return searchFields.some(
+      field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
+    );
+  }, []);
+
+  // Usar hook otimizado para filtros
+  const { filteredItems: filteredDespesas, debouncedSearchTerm: optimizedSearchTerm } = useOptimizedFilter(
+    despesas,
+    searchTerm,
+    filterDespesas
+  );
+
   // Buscar despesas do backend
   const fetchDespesas = useCallback(async () => {
     try {
@@ -114,12 +132,12 @@ function DespesasContent() {
     const searchTermSanitized = sanitizeInput(debouncedSearchTerm);
     if (searchTermSanitized) {
       const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
-      const matchesSearch = searchFields.some(field => 
-        field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
+      const matchesSearch = searchFields.some(
+        field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
       );
       if (!matchesSearch) return false;
     }
-    
+
     // Filtro por mês
     if (selectedMonth) {
       const despesaMonth = despesa.dataPagamento?.slice(0, 7);
@@ -127,15 +145,38 @@ function DespesasContent() {
     }
 
     return true;
-  });  // Cálculos de métricas
-  const totalDespesas = filteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasPagas = filteredDespesas
-    .filter(d => d.status === 'Pago')
-    .reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasPendentes = filteredDespesas
-    .filter(d => d.status === 'Pendente')
-    .reduce((sum, despesa) => sum + despesa.valor, 0);
-  const despesasDedutiveis = filteredDespesas.filter(d => d.dedutivel).reduce((sum, despesa) => sum + despesa.valor, 0);
+  });
+
+  // Filtro adicional por mês usando useMemo para cache
+  const finalFilteredDespesas = useMemo(() => {
+    if (!selectedMonth) return filteredDespesas;
+    
+    return filteredDespesas.filter(despesa => {
+      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
+      return despesaMonth === selectedMonth;
+    });
+  }, [filteredDespesas, selectedMonth]);
+
+  // Cálculos de métricas memoizados para performance
+  const metrics = useMemo(() => {
+    const totalDespesas = finalFilteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasPagas = finalFilteredDespesas
+      .filter(d => d.status === 'Pago')
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasPendentes = finalFilteredDespesas
+      .filter(d => d.status === 'Pendente')
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasDedutiveis = finalFilteredDespesas
+      .filter(d => d.dedutivel)
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+
+    return {
+      totalDespesas,
+      despesasPagas,
+      despesasPendentes,
+      despesasDedutiveis
+    };
+  }, [finalFilteredDespesas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -296,7 +337,7 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Total de Despesas</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(totalDespesas)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.totalDespesas)}</p>
                     </div>
                     <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-red-500 rounded-full"></div>
@@ -308,7 +349,7 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Despesas Pagas</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(despesasPagas)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.despesasPagas)}</p>
                     </div>
                     <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-green-500 rounded-full"></div>
@@ -320,7 +361,7 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Despesas Pendentes</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(despesasPendentes)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.despesasPendentes)}</p>
                     </div>
                     <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
@@ -442,15 +483,15 @@ function DespesasContent() {
                       <tr>
                         <td colSpan={5} className="py-12 text-center">
                           <EmptyState
-                            title={debouncedSearchTerm ? "Nenhuma despesa encontrada" : "Nenhuma despesa cadastrada"}
+                            title={debouncedSearchTerm ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa cadastrada'}
                             description={
-                              debouncedSearchTerm 
+                              debouncedSearchTerm
                                 ? `Não encontramos despesas que correspondem ao filtro "${debouncedSearchTerm}".`
-                                : "Você ainda não cadastrou nenhuma despesa. Comece adicionando sua primeira despesa."
+                                : 'Você ainda não cadastrou nenhuma despesa. Comece adicionando sua primeira despesa.'
                             }
                             action={
                               !debouncedSearchTerm ? (
-                                <button 
+                                <button
                                   onClick={() => setShowModal(true)}
                                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                 >
@@ -460,7 +501,11 @@ function DespesasContent() {
                             }
                             icon={
                               <svg fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                                <path
+                                  fillRule="evenodd"
+                                  d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             }
                           />
@@ -468,66 +513,66 @@ function DespesasContent() {
                       </tr>
                     ) : (
                       filteredDespesas.map(despesa => (
-                      <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
-                        <td className="py-4 px-6">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
-                            <div className="text-xs text-gray-500">
-                              {despesa.fornecedor && `${despesa.fornecedor} • `}
-                              {despesa.categoria}
-                              {despesa.dedutivel && ' • Dedutível'}
+                        <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                          <td className="py-4 px-6">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
+                              <div className="text-xs text-gray-500">
+                                {despesa.fornecedor && `${despesa.fornecedor} • `}
+                                {despesa.categoria}
+                                {despesa.dedutivel && ' • Dedutível'}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
-                          <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <div className="text-sm font-mono font-medium text-gray-900">
-                            {safeCurrencyFormat(despesa.valor)}
-                          </div>
-                        </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                despesa.status === 'Pago'
-                                  ? 'bg-emerald-500'
-                                  : despesa.status === 'Pendente'
-                                  ? 'bg-amber-500'
-                                  : 'bg-red-500'
-                              }`}
-                            ></div>
-                            <span className="text-sm text-gray-700">{despesa.status}</span>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 text-center">
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEdit(despesa)}
-                              className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                              title="Editar"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={2}
-                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => handleDelete(despesa.id)}
-                              className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                              title="Excluir"
-                            >
-                              <HiXMark className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
+                            <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <div className="text-sm font-mono font-medium text-gray-900">
+                              {safeCurrencyFormat(despesa.valor)}
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`w-2 h-2 rounded-full ${
+                                  despesa.status === 'Pago'
+                                    ? 'bg-emerald-500'
+                                    : despesa.status === 'Pendente'
+                                    ? 'bg-amber-500'
+                                    : 'bg-red-500'
+                                }`}
+                              ></div>
+                              <span className="text-sm text-gray-700">{despesa.status}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => handleEdit(despesa)}
+                                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                                title="Editar"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(despesa.id)}
+                                className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                title="Excluir"
+                              >
+                                <HiXMark className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
                       ))
                     )}
                   </tbody>

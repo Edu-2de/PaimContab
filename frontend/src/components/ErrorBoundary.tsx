@@ -26,7 +26,7 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo);
-    
+
     // Log erro para serviço de monitoramento (ex: Sentry)
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
@@ -49,11 +49,9 @@ class ErrorBoundary extends Component<Props, State> {
             <div className="w-16 h-16 mx-auto mb-6 bg-red-100 rounded-full flex items-center justify-center">
               <HiExclamationTriangle className="w-8 h-8 text-red-600" />
             </div>
-            
-            <h1 className="text-xl font-semibold text-gray-900 mb-2">
-              Oops! Algo deu errado
-            </h1>
-            
+
+            <h1 className="text-xl font-semibold text-gray-900 mb-2">Oops! Algo deu errado</h1>
+
             <p className="text-gray-600 mb-6">
               Ocorreu um erro inesperado. Nossa equipe foi notificada e está trabalhando para resolver o problema.
             </p>
@@ -70,7 +68,7 @@ class ErrorBoundary extends Component<Props, State> {
                 </pre>
               </details>
             )}
-            
+
             <div className="space-y-3">
               <button
                 onClick={this.handleRetry}
@@ -79,9 +77,9 @@ class ErrorBoundary extends Component<Props, State> {
                 <HiArrowPath className="w-4 h-4" />
                 Tentar novamente
               </button>
-              
+
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => (window.location.href = '/')}
                 className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium"
               >
                 Voltar ao início
@@ -100,7 +98,7 @@ class ErrorBoundary extends Component<Props, State> {
 export const useErrorHandler = () => {
   return (error: Error, errorInfo?: string) => {
     console.error('Erro capturado:', error, errorInfo);
-    
+
     // Em produção, enviar para serviço de monitoramento
     if (process.env.NODE_ENV === 'production') {
       // Exemplo: Sentry.captureException(error);
@@ -119,9 +117,7 @@ export const FormErrorBoundary: React.FC<Props> = ({ children, ...props }) => {
             <HiExclamationTriangle className="w-5 h-5" />
             <span className="font-medium">Erro no formulário</span>
           </div>
-          <p className="text-red-700 mt-1 text-sm">
-            Ocorreu um problema ao processar o formulário. Tente novamente.
-          </p>
+          <p className="text-red-700 mt-1 text-sm">Ocorreu um problema ao processar o formulário. Tente novamente.</p>
         </div>
       }
     >
@@ -138,12 +134,8 @@ export const ListErrorBoundary: React.FC<Props> = ({ children, ...props }) => {
       fallback={
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
           <HiExclamationTriangle className="w-12 h-12 text-yellow-600 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-yellow-800 mb-2">
-            Erro ao carregar dados
-          </h3>
-          <p className="text-yellow-700">
-            Não foi possível carregar a lista. Tente recarregar a página.
-          </p>
+          <h3 className="text-lg font-medium text-yellow-800 mb-2">Erro ao carregar dados</h3>
+          <p className="text-yellow-700">Não foi possível carregar a lista. Tente recarregar a página.</p>
         </div>
       }
     >
