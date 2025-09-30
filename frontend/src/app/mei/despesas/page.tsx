@@ -377,7 +377,7 @@ function DespesasContent() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-500">Dedutíveis</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(despesasDedutiveis)}</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">{safeCurrencyFormat(metrics.despesasDedutiveis)}</p>
                     </div>
                     <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -483,7 +483,7 @@ function DespesasContent() {
                           </td>
                         </tr>
                       ))
-                    ) : filteredDespesas.length === 0 ? (
+                    ) : finalFilteredDespesas.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-12 text-center">
                           <EmptyState
@@ -516,7 +516,7 @@ function DespesasContent() {
                         </td>
                       </tr>
                     ) : (
-                      filteredDespesas.map(despesa => (
+                      finalFilteredDespesas.map(despesa => (
                         <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
                           <td className="py-4 px-6">
                             <div>
