@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
-const authMiddleware = require('../middleware/authMiddleware');
+const adminOrOwnerMiddleware = require('../middleware/adminOrOwnerMiddleware');
 const {
   getReceitas,
   getReceitaById,
@@ -13,7 +13,7 @@ const {
 } = require('../controllers/receitaController');
 
 // Aplicar middleware de autenticação em todas as rotas
-router.use(authMiddleware);
+router.use(adminOrOwnerMiddleware);
 
 // Rotas de receitas simplificadas
 router.get('/receitas', async (req, res) => {
