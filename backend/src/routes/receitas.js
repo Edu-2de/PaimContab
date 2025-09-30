@@ -23,7 +23,7 @@ router.get('/receitas', async (req, res) => {
     if (req.isAdmin) {
       // Admin pode ver todas as receitas
       const { companyId } = req.query; // Admin pode filtrar por empresa via query
-      
+
       if (companyId) {
         receitas = await prisma.receita.findMany({
           where: { companyId },
