@@ -18,50 +18,44 @@ router.use(authMiddleware);
 // Rotas de despesas simplificadas
 router.get('/despesas', async (req, res) => {
   try {
-    // Buscar empresa do usuário logado
-    const userId = req.user.id;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { company: true },
-    });
+    // Buscar companyId do token
+    const companyId = req.user.companyId;
 
-    if (!user || !user.company) {
-      return res.status(404).json({ error: 'Empresa não encontrada' });
+    if (!companyId) {
+      return res.status(404).json({ error: 'Empresa não encontrada no token' });
     }
 
     const despesas = await prisma.despesa.findMany({
-      where: { companyId: user.company.id },
-      orderBy: { dataPagamento: 'desc' },
+      where: { companyId },
+      orderBy: { date: 'desc' },
     });
 
     res.json(despesas);
   } catch (error) {
+    console.error('Erro ao buscar despesas:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 router.post('/despesas', async (req, res) => {
   try {
-    // Buscar empresa do usuário logado
-    const userId = req.user.id;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { company: true },
-    });
+    // Buscar companyId do token
+    const companyId = req.user.companyId;
 
-    if (!user || !user.company) {
-      return res.status(404).json({ error: 'Empresa não encontrada' });
+    if (!companyId) {
+      return res.status(404).json({ error: 'Empresa não encontrada no token' });
     }
 
     const despesa = await prisma.despesa.create({
       data: {
         ...req.body,
-        companyId: user.company.id,
+        companyId,
       },
     });
 
     res.status(201).json(despesa);
   } catch (error) {
+    console.error('Erro ao criar despesa:', error);
     res.status(500).json({ error: error.message });
   }
 });

@@ -15,57 +15,52 @@ const {
 // Aplicar middleware de autenticação em todas as rotas
 router.use(authMiddleware);
 
-// Rotas de receitas
+// Rotas de receitas simplificadas
 router.get('/receitas', async (req, res) => {
   try {
-    // Buscar empresa do usuário logado
-    const userId = req.user.id;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { company: true },
-    });
+    // Buscar companyId do token
+    const companyId = req.user.companyId;
 
-    if (!user || !user.company) {
-      return res.status(404).json({ error: 'Empresa não encontrada' });
+    if (!companyId) {
+      return res.status(404).json({ error: 'Empresa não encontrada no token' });
     }
 
     const receitas = await prisma.receita.findMany({
-      where: { companyId: user.company.id },
-      orderBy: { dataRecebimento: 'desc' },
+      where: { companyId },
+      orderBy: { date: 'desc' },
     });
 
     res.json(receitas);
   } catch (error) {
+    console.error('Erro ao buscar receitas:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
 router.post('/receitas', async (req, res) => {
   try {
-    // Buscar empresa do usuário logado
-    const userId = req.user.id;
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { company: true },
-    });
+    // Buscar companyId do token
+    const companyId = req.user.companyId;
 
-    if (!user || !user.company) {
-      return res.status(404).json({ error: 'Empresa não encontrada' });
+    if (!companyId) {
+      return res.status(404).json({ error: 'Empresa não encontrada no token' });
     }
 
     const receita = await prisma.receita.create({
       data: {
         ...req.body,
-        companyId: user.company.id,
+        companyId,
       },
     });
 
     res.status(201).json(receita);
   } catch (error) {
+    console.error('Erro ao criar receita:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
+// Rotas de receitas com companyId
 router.get('/company/:companyId/receitas', getReceitas);
 router.get('/company/:companyId/receitas/stats', getReceitasStats);
 router.get('/receitas/:id', getReceitaById);
