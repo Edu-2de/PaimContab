@@ -1,19 +1,22 @@
 # ✅ Correção do Sistema de MEI - Receitas e Despesas
 
 ## 🎯 Problema Identificado
+
 O usuário relatou que ao tentar adicionar receitas ou despesas ao histórico da MEI, os dados não estavam sendo salvos no banco de dados. O diagnóstico correto foi que as APIs necessitavam do `companyId` na requisição, mas o frontend não estava passando essa informação.
 
 ## 🔧 Soluções Implementadas
 
 ### 1. Modificação do AuthController
+
 - **Arquivo**: `backend/src/controllers/authController.js`
-- **Mudanças**: 
+- **Mudanças**:
   - Incluído relacionamento `Company` na busca do usuário
   - Adicionado `companyId` no payload do token JWT
   - Adicionado `companyId` na resposta do login
 
 ### 2. Criação de Rotas Simplificadas
-- **Arquivos**: 
+
+- **Arquivos**:
   - `backend/src/routes/receitas.js`
   - `backend/src/routes/despesas.js`
 - **Mudanças**:
@@ -22,18 +25,21 @@ O usuário relatou que ao tentar adicionar receitas ou despesas ao histórico da
   - Eliminada necessidade de passar `companyId` na URL
 
 ### 3. Atualização do Frontend Auth Utils
+
 - **Arquivo**: `frontend/src/utils/auth.ts`
-- **Mudanças**: 
+- **Mudanças**:
   - Adicionado `companyId` no tipo `User`
   - Função `getUserFromToken()` agora extrai `companyId` do token
 
 ### 4. Criação de Empresa para Admin
+
 - **Script**: `backend/scripts/createAdminCompany.js`
 - **Resultado**: Usuário admin agora possui empresa associada para testes
 
 ## 📝 Schema do Banco Corrigido
 
 ### Receita
+
 ```
 - id: String (UUID)
 - description: String
@@ -44,9 +50,10 @@ O usuário relatou que ao tentar adicionar receitas ou despesas ao histórico da
 ```
 
 ### Despesa
+
 ```
 - id: String (UUID)
-- description: String  
+- description: String
 - value: Float
 - date: DateTime
 - category: String
@@ -56,6 +63,7 @@ O usuário relatou que ao tentar adicionar receitas ou despesas ao histórico da
 ## ✅ Testes Realizados
 
 ### 1. Login com CompanyId
+
 ```
 ✅ Usuário encontrado: admin@admin.com
 📍 Empresa: Empresa Admin MEI
@@ -64,6 +72,7 @@ O usuário relatou que ao tentar adicionar receitas ou despesas ao histórico da
 ```
 
 ### 2. Criação de Receita
+
 ```
 ✅ Receita criada: {
   id: '26cb7fdb-7a4b-4e85-beaa-8aba93b659b9',
@@ -76,39 +85,42 @@ O usuário relatou que ao tentar adicionar receitas ou despesas ao histórico da
 ## 🚀 Como Usar Agora
 
 ### Frontend
+
 ```javascript
 // O frontend agora pode fazer chamadas simples:
 fetch('/api/receitas', {
   headers: {
-    'Authorization': `Bearer ${token}`
-  }
-})
+    Authorization: `Bearer ${token}`,
+  },
+});
 
 fetch('/api/receitas', {
   method: 'POST',
   headers: {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json'
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
   },
   body: JSON.stringify({
     description: 'Nova receita',
     value: 1000,
     date: new Date(),
-    category: 'Vendas'
-  })
-})
+    category: 'Vendas',
+  }),
+});
 ```
 
 ### Fluxo Completo
+
 1. ✅ Usuário faz login
 2. ✅ Backend gera token com `companyId`
-3. ✅ Frontend extrai `companyId` do token  
+3. ✅ Frontend extrai `companyId` do token
 4. ✅ APIs usam `companyId` automaticamente
 5. ✅ Receitas/Despesas são salvas corretamente
 
 ## 🎉 Status: PROBLEMA RESOLVIDO
 
 O sistema agora funciona corretamente:
+
 - ✅ Login inclui `companyId` no token
 - ✅ APIs extraem `companyId` automaticamente
 - ✅ Receitas e despesas são salvas no banco
