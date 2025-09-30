@@ -6,7 +6,7 @@ async function createAdminCompany() {
     // Buscar usuário admin
     const adminUser = await prisma.user.findUnique({
       where: { email: 'admin@admin.com' },
-      include: { Company: true }
+      include: { Company: true },
     });
 
     if (!adminUser) {
@@ -26,13 +26,12 @@ async function createAdminCompany() {
         companyName: 'Empresa Admin MEI',
         cnpj: '12345678000190',
         userId: adminUser.id,
-        businessType: 'MEI'
-      }
+        businessType: 'MEI',
+      },
     });
 
     console.log('✅ Empresa criada para admin:', company.name);
     console.log('CompanyId:', company.id);
-
   } catch (error) {
     console.error('❌ Erro:', error);
   } finally {
