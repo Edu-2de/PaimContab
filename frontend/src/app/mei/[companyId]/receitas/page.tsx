@@ -344,9 +344,7 @@ const ReceitasContent = memo(() => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-xl p-6 shadow-sm">
                   <h3 className="text-sm font-medium text-gray-500">Total de Receitas</h3>
-                  <p className="text-2xl font-light text-gray-900 mt-2">
-                    {safeCurrencyFormat(metrics.totalReceitas)}
-                  </p>
+                  <p className="text-2xl font-light text-gray-900 mt-2">{safeCurrencyFormat(metrics.totalReceitas)}</p>
                   <p className="text-xs text-gray-500 mt-1">{finalFilteredReceitas.length} registros</p>
                 </div>
 
@@ -384,14 +382,14 @@ const ReceitasContent = memo(() => {
                   type="text"
                   placeholder="Buscar receitas..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm"
                 />
               </div>
 
               <select
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={e => setSelectedMonth(e.target.value)}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm"
               >
                 <option value="">Todos os meses</option>
@@ -427,11 +425,11 @@ const ReceitasContent = memo(() => {
                 description={
                   debouncedSearchTerm
                     ? `Não encontramos receitas com "${debouncedSearchTerm}"`
-                    : "Comece adicionando sua primeira receita"
+                    : 'Comece adicionando sua primeira receita'
                 }
                 action={{
-                  label: "Nova Receita",
-                  onClick: () => setShowModal(true)
+                  label: 'Nova Receita',
+                  onClick: () => setShowModal(true),
                 }}
               />
             ) : (
@@ -461,17 +459,11 @@ const ReceitasContent = memo(() => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {finalFilteredReceitas.map((receita) => (
+                      {finalFilteredReceitas.map(receita => (
                         <tr key={receita.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">
-                              {receita.descricao}
-                            </div>
-                            {receita.cliente && (
-                              <div className="text-sm text-gray-500">
-                                Cliente: {receita.cliente}
-                              </div>
-                            )}
+                            <div className="text-sm font-medium text-gray-900">{receita.descricao}</div>
+                            {receita.cliente && <div className="text-sm text-gray-500">Cliente: {receita.cliente}</div>}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {safeCurrencyFormat(receita.valor)}
@@ -492,9 +484,7 @@ const ReceitasContent = memo(() => {
                               {receita.status}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {receita.categoria}
-                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{receita.categoria}</td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
                               onClick={() => handleEdit(receita)}
@@ -528,10 +518,7 @@ const ReceitasContent = memo(() => {
               <h2 className="text-xl font-semibold text-gray-900">
                 {editingReceita ? 'Editar Receita' : 'Nova Receita'}
               </h2>
-              <button
-                onClick={resetForm}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-              >
+              <button onClick={resetForm} className="text-gray-400 hover:text-gray-600 transition-colors">
                 <HiXMark className="w-6 h-6" />
               </button>
             </div>
@@ -539,59 +526,51 @@ const ReceitasContent = memo(() => {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Descrição *</label>
                   <input
                     type="text"
                     required
                     value={formData.descricao}
-                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                    onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     placeholder="Ex: Venda de produto X"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Valor *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Valor *</label>
                   <input
                     type="number"
                     step="0.01"
                     required
                     value={formData.valor}
-                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                    onChange={e => setFormData({ ...formData, valor: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     placeholder="0,00"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data de Recebimento *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Data de Recebimento *</label>
                   <input
                     type="date"
                     required
                     value={formData.dataRecebimento}
-                    onChange={(e) => setFormData({ ...formData, dataRecebimento: e.target.value })}
+                    onChange={e => setFormData({ ...formData, dataRecebimento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Categoria *
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoria *</label>
                   <select
                     required
                     value={formData.categoria}
-                    onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
+                    onChange={e => setFormData({ ...formData, categoria: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   >
                     <option value="">Selecione uma categoria</option>
-                    {categories.map((cat) => (
+                    {categories.map(cat => (
                       <option key={cat} value={cat}>
                         {cat}
                       </option>
@@ -600,38 +579,32 @@ const ReceitasContent = memo(() => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Cliente
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
                   <input
                     type="text"
                     value={formData.cliente}
-                    onChange={(e) => setFormData({ ...formData, cliente: e.target.value })}
+                    onChange={e => setFormData({ ...formData, cliente: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     placeholder="Nome do cliente"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Número da Nota
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número da Nota</label>
                   <input
                     type="text"
                     value={formData.numeroNota}
-                    onChange={(e) => setFormData({ ...formData, numeroNota: e.target.value })}
+                    onChange={e => setFormData({ ...formData, numeroNota: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     placeholder="Ex: NF-001"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Método de Pagamento
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Método de Pagamento</label>
                   <select
                     value={formData.metodoPagamento}
-                    onChange={(e) => setFormData({ ...formData, metodoPagamento: e.target.value })}
+                    onChange={e => setFormData({ ...formData, metodoPagamento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   >
                     <option value="PIX">PIX</option>
@@ -644,12 +617,10 @@ const ReceitasContent = memo(() => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                   <select
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    onChange={e => setFormData({ ...formData, status: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   >
                     <option value="Recebido">Recebido</option>
@@ -659,12 +630,10 @@ const ReceitasContent = memo(() => {
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Observações
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Observações</label>
                   <textarea
                     value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                    onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                     placeholder="Observações adicionais..."
