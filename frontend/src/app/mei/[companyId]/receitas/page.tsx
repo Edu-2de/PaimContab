@@ -150,7 +150,7 @@ const ReceitasContent = memo(() => {
   const finalFilteredReceitas = useMemo(() => {
     if (!selectedMonth) return filteredReceitas;
 
-    return filteredReceitas.filter(receita => {
+    return filteredReceitas.filter((receita: Receita) => {
       const receitaMonth = receita.dataRecebimento?.slice(0, 7);
       return receitaMonth === selectedMonth;
     });
@@ -158,13 +158,13 @@ const ReceitasContent = memo(() => {
 
   // Cálculos de métricas memoizados para performance
   const metrics = useMemo(() => {
-    const totalReceitas = finalFilteredReceitas.reduce((sum, receita) => sum + receita.valor, 0);
+    const totalReceitas = finalFilteredReceitas.reduce((sum: number, receita: Receita) => sum + receita.valor, 0);
     const receitasRecebidas = finalFilteredReceitas
-      .filter(r => r.status === 'Recebido')
-      .reduce((sum, receita) => sum + receita.valor, 0);
+      .filter((r: Receita) => r.status === 'Recebido')
+      .reduce((sum: number, receita: Receita) => sum + receita.valor, 0);
     const receitasPendentes = finalFilteredReceitas
-      .filter(r => r.status === 'Pendente')
-      .reduce((sum, receita) => sum + receita.valor, 0);
+      .filter((r: Receita) => r.status === 'Pendente')
+      .reduce((sum: number, receita: Receita) => sum + receita.valor, 0);
 
     return {
       totalReceitas,
@@ -299,7 +299,7 @@ const ReceitasContent = memo(() => {
 
   return (
     <div className="mei-page-container">
-      <MeiSidebar currentPage="receitas" companyId={companyId} />
+      <MeiSidebar currentPage="receitas" />
 
       <div className="mei-content-wrapper">
         {/* Header Minimalista */}
@@ -354,7 +354,7 @@ const ReceitasContent = memo(() => {
                     {safeCurrencyFormat(metrics.receitasRecebidas)}
                   </p>
                   <p className="text-xs text-emerald-600 mt-1">
-                    {finalFilteredReceitas.filter(r => r.status === 'Recebido').length} recebidas
+                    {finalFilteredReceitas.filter((r: Receita) => r.status === 'Recebido').length} recebidas
                   </p>
                 </div>
 
@@ -364,7 +364,7 @@ const ReceitasContent = memo(() => {
                     {safeCurrencyFormat(metrics.receitasPendentes)}
                   </p>
                   <p className="text-xs text-amber-600 mt-1">
-                    {finalFilteredReceitas.filter(r => r.status === 'Pendente').length} pendentes
+                    {finalFilteredReceitas.filter((r: Receita) => r.status === 'Pendente').length} pendentes
                   </p>
                 </div>
               </div>
