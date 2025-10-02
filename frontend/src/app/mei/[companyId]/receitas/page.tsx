@@ -97,7 +97,7 @@ const ReceitasContent = memo(() => {
   }, [companyId, router]);
 
   // Filtro otimizado usando debounce
-  const { filteredData: filteredReceitas, debouncedSearchTerm } = useOptimizedFilter(
+  const { filteredItems: filteredReceitas, debouncedSearchTerm } = useOptimizedFilter(
     receitas,
     searchTerm,
     useCallback((receita: Receita, term: string) => {
