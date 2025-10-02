@@ -7,7 +7,7 @@ import ErrorBoundary from '../../../components/ErrorBoundary';
 import { MetricsSkeleton, EmptyState } from '../../../components/Loading';
 import { useOptimizedFilter } from '../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
-import { sanitizeInput, safeCurrencyFormat, safeDateFormat } from '../../../utils/validation';
+import { sanitizeInput, safeCurrencyFormat, safeDateFormat, useDebouncedValue } from '../../../utils/validation';
 
 interface Despesa {
   id: string;
@@ -92,7 +92,7 @@ const DespesasContent = memo(() => {
   }, []);
 
   // Usar hook otimizado para filtros
-  const { filteredItems: filteredDespesas, debouncedSearchTerm: optimizedSearchTerm } = useOptimizedFilter(
+  useOptimizedFilter(
     despesas,
     searchTerm,
     filterDespesas
@@ -144,6 +144,8 @@ const DespesasContent = memo(() => {
 
     return true;
   });
+
+  // Se quiser usar o filtro otimizado, substitua 'filteredDespesas' por 'optimizedFilteredDespesas' nas partes relevantes do código.
 
   // Filtro adicional por mês usando useMemo para cache
   const finalFilteredDespesas = useMemo(() => {
