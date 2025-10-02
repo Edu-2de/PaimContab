@@ -6,7 +6,23 @@ import MeiProtection from '../../../../components/MeiProtection';
 import MeiSidebar from '../../../../components/MeiSidebar';
 import ErrorBoundary from '../../../../components/ErrorBoundary';
 import { MetricsSkeleton, EmptyState } from '../../../../components/Loading';
-import { useOptimizedFilter } from '../../../../components/PerformanceOptimizedComponents';
+              <EmptyState
+                title="Nenhuma receita encontrada"
+                description={
+                  debouncedSearchTerm
+                    ? `Não encontramos receitas com "${debouncedSearchTerm}"`
+                    : "Comece adicionando sua primeira receita"
+                }
+                actionButton={
+                  <button
+                    onClick={() => setShowModal(true)}
+                    className="inline-flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors text-sm"
+                  >
+                    <HiPlus className="w-4 h-4" />
+                    Nova Receita
+                  </button>
+                }
+              />OptimizedFilter } from '../../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowPath } from 'react-icons/hi2';
 import { sanitizeInput, safeCurrencyFormat, safeDateFormat } from '../../../../utils/validation';
 import CompanyAccessManager from '../../../../utils/companyAccess';
