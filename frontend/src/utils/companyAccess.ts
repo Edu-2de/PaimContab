@@ -1,6 +1,6 @@
 /**
  * Sistema de Controle de Acesso por Empresa
- * 
+ *
  * Gerencia permissões de acesso às empresas:
  * - MEI: Pode acessar apenas sua própria empresa
  * - Admin: Pode acessar qualquer empresa
@@ -37,16 +37,13 @@ export class CompanyAccessManager {
   /**
    * Valida se o usuário pode acessar a empresa especificada
    */
-  static validateCompanyAccess(
-    user: User | null,
-    companyId: string
-  ): AccessValidation {
+  static validateCompanyAccess(user: User | null, companyId: string): AccessValidation {
     if (!user) {
       return {
         hasAccess: false,
         isOwner: false,
         isAdmin: false,
-        reason: 'Usuário não autenticado'
+        reason: 'Usuário não autenticado',
       };
     }
 
@@ -58,7 +55,7 @@ export class CompanyAccessManager {
       return {
         hasAccess: true,
         isOwner: false,
-        isAdmin: true
+        isAdmin: true,
       };
     }
 
@@ -67,7 +64,7 @@ export class CompanyAccessManager {
       return {
         hasAccess: true,
         isOwner: true,
-        isAdmin: false
+        isAdmin: false,
       };
     }
 
@@ -75,7 +72,7 @@ export class CompanyAccessManager {
       hasAccess: false,
       isOwner: false,
       isAdmin: false,
-      reason: 'Acesso negado: Usuário não possui permissão para esta empresa'
+      reason: 'Acesso negado: Usuário não possui permissão para esta empresa',
     };
   }
 
@@ -171,12 +168,12 @@ export class CompanyAccessManager {
    */
   static buildApiUrl(baseUrl: string, endpoint: string, companyId?: string): string {
     const user = this.getUserFromStorage();
-    
+
     if (user?.role === 'admin' && companyId) {
       // Admin acessa com query parameter
       return `${baseUrl}${endpoint}?companyId=${companyId}`;
     }
-    
+
     // MEI acessa endpoint normal (companyId vem do token)
     return `${baseUrl}${endpoint}`;
   }
@@ -187,15 +184,12 @@ export class CompanyAccessManager {
   static async getCompanyInfo(companyId: string): Promise<Company | null> {
     try {
       const headers = this.getAuthHeaders();
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/company/${companyId}`,
-        { headers }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/company/${companyId}`, { headers });
 
       if (response.ok) {
         return await response.json();
       }
-      
+
       throw new Error(`Erro ao buscar empresa: ${response.status}`);
     } catch (error) {
       console.error('Erro ao buscar informações da empresa:', error);
