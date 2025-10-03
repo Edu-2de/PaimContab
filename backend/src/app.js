@@ -12,6 +12,7 @@ const receitasRoutes = require('./routes/receitas');
 const despesasRoutes = require('./routes/despesas');
 const dasRoutes = require('./routes/das');
 const calendarRoutes = require('./routes/calendar');
+const consultationsRoutes = require('./routes/consultations');
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,7 @@ app.use('/api', receitasRoutes);
 app.use('/api', despesasRoutes);
 app.use('/api', dasRoutes);
 app.use('/api/calendar', calendarRoutes);
+app.use('/api/consultations', consultationsRoutes);
 
 app.get('/', (req, res) => {
   res.send('PaimContab backend running!');
