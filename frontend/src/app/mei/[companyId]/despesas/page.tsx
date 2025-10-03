@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback, memo, useMemo } from 'react';
-import MeiProtection from '../../../components/MeiProtection';
-import MeiSidebar from '../../../components/MeiSidebar';
-import ErrorBoundary from '../../../components/ErrorBoundary';
-import { MetricsSkeleton, EmptyState } from '../../../components/Loading';
-import { useOptimizedFilter } from '../../../components/PerformanceOptimizedComponents';
+import { useParams, useRouter } from 'next/navigation';
+import MeiProtection from '../../../../components/MeiProtection';
+import MeiSidebar from '../../../../components/MeiSidebar';
+import ErrorBoundary from '../../../../components/ErrorBoundary';
+import { MetricsSkeleton, EmptyState } from '../../../../components/Loading';
+import { useOptimizedFilter } from '../../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
-import { sanitizeInput, safeCurrencyFormat, safeDateFormat, useDebouncedValue } from '../../../utils/validation';
+import { sanitizeInput, safeCurrencyFormat, safeDateFormat, useDebouncedValue } from '../../../../utils/validation';
 
 interface Despesa {
   id: string;
@@ -59,6 +60,10 @@ function formatDate(dateStr: string) {
 }
 
 const DespesasContent = memo(() => {
+  const params = useParams();
+  const router = useRouter();
+  const companyId = params.companyId as string;
+
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -67,6 +72,8 @@ const DespesasContent = memo(() => {
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [hasAccess, setHasAccess] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState<DespesaFormData>({
     descricao: '',
     valor: '',
@@ -80,6 +87,34 @@ const DespesasContent = memo(() => {
     observacoes: '',
   });
 
+  // Verificar acesso à empresa
+  useEffect(() => {
+    const validateAccess = () => {
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        router.push('/Login');
+        return;
+      }
+
+      const userObj = JSON.parse(userData);
+
+      // Verificar se é admin ou se é o dono da empresa
+      if (userObj.role === 'admin') {
+        setIsAdmin(true);
+        setHasAccess(true);
+      } else if (userObj.companyId === companyId) {
+        setHasAccess(true);
+      } else {
+        // Usuário tentando acessar empresa de outro
+        router.push(`/mei/${userObj.companyId}/despesas`);
+      }
+    };
+
+    if (companyId) {
+      validateAccess();
+    }
+  }, [companyId, router]);
+
   const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
   // Função de filtro otimizada usando useCallback para evitar re-criações
@@ -92,19 +127,20 @@ const DespesasContent = memo(() => {
   }, []);
 
   // Usar hook otimizado para filtros
-  useOptimizedFilter(
-    despesas,
-    searchTerm,
-    filterDespesas
-  );
+  useOptimizedFilter(despesas, searchTerm, filterDespesas);
 
   // Buscar despesas do backend
   const fetchDespesas = useCallback(async () => {
+    if (!hasAccess) return;
+
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+      // Se for admin, passar companyId como query parameter
+      const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -118,11 +154,13 @@ const DespesasContent = memo(() => {
       setLoading(false);
       setMetricsLoading(false);
     }
-  }, []);
+  }, [companyId, isAdmin, hasAccess]);
 
   useEffect(() => {
-    fetchDespesas();
-  }, [fetchDespesas]);
+    if (hasAccess) {
+      fetchDespesas();
+    }
+  }, [fetchDespesas, hasAccess]);
 
   // Filtragem de despesas usando validação segura
   const filteredDespesas = despesas.filter(despesa => {
@@ -196,6 +234,8 @@ const DespesasContent = memo(() => {
         status: formData.status,
         dedutivel: formData.dedutivel,
         observacoes: formData.observacoes,
+        // Se for admin, incluir companyId no body
+        ...(isAdmin && { companyId }),
       };
 
       let response;
@@ -209,7 +249,8 @@ const DespesasContent = memo(() => {
           body: JSON.stringify(despesaData),
         });
       } else {
-        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+        const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -291,7 +332,7 @@ const DespesasContent = memo(() => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MeiSidebar currentPage="despesas" />
+      <MeiSidebar currentPage="despesas" companyId={companyId} />
 
       <div className="mei-content-wrapper">
         {/* Header Minimalista */}
@@ -301,6 +342,7 @@ const DespesasContent = memo(() => {
               <div>
                 <h1 className="text-2xl font-light text-gray-900">Despesas</h1>
                 <p className="text-sm text-gray-500 mt-1">Controle financeiro de saídas</p>
+                {isAdmin && <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>}
               </div>
 
               <div className="flex items-center gap-2">

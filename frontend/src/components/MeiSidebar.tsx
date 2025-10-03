@@ -20,6 +20,7 @@ import {
 interface MeiSidebarProps {
   currentPage?: string;
   onToggle?: (collapsed: boolean) => void;
+  companyId?: string;
 }
 
 interface User {
@@ -32,41 +33,55 @@ interface Company {
   cnpj?: string;
 }
 
-export default function MeiSidebar({ currentPage = 'dashboard', onToggle }: MeiSidebarProps) {
+export default function MeiSidebar({ currentPage = 'dashboard', onToggle, companyId }: MeiSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const pathname = usePathname();
 
+  // Obter companyId do usuário se não for passado como prop
+  const effectiveCompanyId =
+    companyId ||
+    (() => {
+      if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          return user.companyId;
+        }
+      }
+      return null;
+    })();
+
   const navigationItems = [
     {
       name: 'Dashboard',
-      href: '/mei/dashboard',
+      href: `/mei/${effectiveCompanyId}/dashboard`,
       icon: HiOutlineChartBarSquare,
       key: 'dashboard',
     },
     {
       name: 'Receitas',
-      href: '/mei/receitas',
+      href: `/mei/${effectiveCompanyId}/receitas`,
       icon: HiOutlineCurrencyDollar,
       key: 'receitas',
     },
     {
       name: 'Despesas',
-      href: '/mei/despesas',
+      href: `/mei/${effectiveCompanyId}/despesas`,
       icon: HiOutlineReceiptRefund,
       key: 'despesas',
     },
     {
       name: 'Planilha',
-      href: '/mei/planilha',
+      href: `/mei/${effectiveCompanyId}/planilha`,
       icon: HiOutlineTableCells,
       key: 'planilha',
     },
     {
       name: 'Calendário',
-      href: '/mei/calendario',
+      href: `/mei/${effectiveCompanyId}/calendario`,
       icon: HiOutlineCalendar,
       key: 'calendario',
     },

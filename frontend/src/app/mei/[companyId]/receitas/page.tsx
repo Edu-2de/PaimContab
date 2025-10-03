@@ -1,56 +1,48 @@
 'use client';
 
 import { useState, useEffect, useCallback, memo, useMemo } from 'react';
-import MeiProtection from '../../../components/MeiProtection';
-import MeiSidebar from '../../../components/MeiSidebar';
-import ErrorBoundary from '../../../components/ErrorBoundary';
-import { MetricsSkeleton, EmptyState } from '../../../components/Loading';
-import { useOptimizedFilter } from '../../../components/PerformanceOptimizedComponents';
+import { useParams, useRouter } from 'next/navigation';
+import MeiProtection from '../../../../components/MeiProtection';
+import MeiSidebar from '../../../../components/MeiSidebar';
+import ErrorBoundary from '../../../../components/ErrorBoundary';
+import { MetricsSkeleton, EmptyState, useAsyncOperation } from '../../../../components/Loading';
+import { useOptimizedFilter } from '../../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
-import { sanitizeInput, safeCurrencyFormat, safeDateFormat, useDebouncedValue } from '../../../utils/validation';
+import { sanitizeInput, safeCurrencyFormat, safeDateFormat } from '../../../../utils/validation';
 
-interface Despesa {
+interface Receita {
   id: string;
   descricao: string;
   valor: number;
-  dataPagamento: string;
+  dataRecebimento: string;
   categoria: string;
-  fornecedor?: string;
-  numeroNotaFiscal?: string;
+  cliente?: string;
+  numeroNota?: string;
   metodoPagamento: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
-  status: 'Pago' | 'Pendente' | 'Cancelado';
-  dedutivel: boolean;
+  status: 'Recebido' | 'Pendente' | 'Cancelado';
   observacoes?: string;
   createdAt: string;
 }
 
-interface DespesaFormData {
+interface ReceitaFormData {
   descricao: string;
   valor: string;
-  dataPagamento: string;
+  dataRecebimento: string;
   categoria: string;
-  fornecedor: string;
-  numeroNotaFiscal: string;
+  cliente: string;
+  numeroNota: string;
   metodoPagamento: string;
   status: string;
-  dedutivel: boolean;
   observacoes: string;
 }
 
 const categories = [
-  'Material de Escritório',
-  'Equipamentos',
-  'Software e Licenças',
-  'Internet/Telefone',
-  'Marketing/Publicidade',
-  'Combustível',
-  'Manutenção',
-  'Taxas/Impostos',
+  'Vendas de Produtos',
+  'Prestação de Serviços',
+  'Comissões',
+  'Royalties',
   'Consultoria',
-  'Treinamentos',
-  'Aluguel',
-  'Energia Elétrica',
-  'Matéria-prima',
+  'Licenciamento',
   'Outros',
 ];
 
@@ -58,125 +50,138 @@ function formatDate(dateStr: string) {
   return safeDateFormat(dateStr);
 }
 
-const DespesasContent = memo(() => {
-  const [despesas, setDespesas] = useState<Despesa[]>([]);
+const ReceitasContent = memo(() => {
+  const params = useParams();
+  const router = useRouter();
+  const companyId = params.companyId as string;
+
+  const [receitas, setReceitas] = useState<Receita[]>([]);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
+  const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [formData, setFormData] = useState<DespesaFormData>({
+  const [hasAccess, setHasAccess] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [formData, setFormData] = useState<ReceitaFormData>({
     descricao: '',
     valor: '',
-    dataPagamento: new Date().toISOString().slice(0, 10),
+    dataRecebimento: new Date().toISOString().slice(0, 10),
     categoria: '',
-    fornecedor: '',
-    numeroNotaFiscal: '',
+    cliente: '',
+    numeroNota: '',
     metodoPagamento: 'PIX',
-    status: 'Pago',
-    dedutivel: true,
+    status: 'Recebido',
     observacoes: '',
   });
 
-  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
+  // Verificar acesso à empresa
+  useEffect(() => {
+    const validateAccess = () => {
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        router.push('/Login');
+        return;
+      }
+
+      const userObj = JSON.parse(userData);
+
+      // Verificar se é admin ou se é o dono da empresa
+      if (userObj.role === 'admin') {
+        setIsAdmin(true);
+        setHasAccess(true);
+      } else if (userObj.companyId === companyId) {
+        setHasAccess(true);
+      } else {
+        // Usuário tentando acessar empresa de outro
+        router.push(`/mei/${userObj.companyId}/receitas`);
+      }
+    };
+
+    if (companyId) {
+      validateAccess();
+    }
+  }, [companyId, router]);
+
+  useAsyncOperation();
 
   // Função de filtro otimizada usando useCallback para evitar re-criações
-  const filterDespesas = useCallback((despesa: Despesa, searchTerm: string) => {
+  const filterReceitas = useCallback((receita: Receita, searchTerm: string) => {
     const searchTermSanitized = sanitizeInput(searchTerm);
     if (!searchTermSanitized) return true;
 
-    const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
+    const searchFields = [receita.descricao, receita.cliente, receita.categoria];
     return searchFields.some(field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase()));
   }, []);
 
   // Usar hook otimizado para filtros
-  useOptimizedFilter(
-    despesas,
+  const { filteredItems: filteredReceitas, debouncedSearchTerm } = useOptimizedFilter(
+    receitas,
     searchTerm,
-    filterDespesas
+    filterReceitas
   );
 
-  // Buscar despesas do backend
-  const fetchDespesas = useCallback(async () => {
+  // Buscar receitas do backend - memoizado
+  const fetchReceitas = useCallback(async () => {
+    if (!hasAccess) return;
+
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+      // Se for admin, passar companyId como query parameter
+      const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setDespesas(data);
+        setReceitas(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar despesas:', error);
+      console.error('Erro ao carregar receitas:', error);
     } finally {
       setLoading(false);
       setMetricsLoading(false);
     }
-  }, []);
+  }, [companyId, isAdmin, hasAccess]);
 
   useEffect(() => {
-    fetchDespesas();
-  }, [fetchDespesas]);
-
-  // Filtragem de despesas usando validação segura
-  const filteredDespesas = despesas.filter(despesa => {
-    // Busca segura por texto
-    const searchTermSanitized = sanitizeInput(debouncedSearchTerm);
-    if (searchTermSanitized) {
-      const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
-      const matchesSearch = searchFields.some(
-        field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
-      );
-      if (!matchesSearch) return false;
+    if (hasAccess) {
+      fetchReceitas();
     }
-
-    // Filtro por mês
-    if (selectedMonth) {
-      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
-      if (despesaMonth !== selectedMonth) return false;
-    }
-
-    return true;
-  });
-
-  // Se quiser usar o filtro otimizado, substitua 'filteredDespesas' por 'optimizedFilteredDespesas' nas partes relevantes do código.
+  }, [fetchReceitas, hasAccess]);
 
   // Filtro adicional por mês usando useMemo para cache
-  const finalFilteredDespesas = useMemo(() => {
-    if (!selectedMonth) return filteredDespesas;
+  const finalFilteredReceitas = useMemo(() => {
+    if (!selectedMonth) return filteredReceitas;
 
-    return filteredDespesas.filter(despesa => {
-      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
-      return despesaMonth === selectedMonth;
+    return filteredReceitas.filter(receita => {
+      const receitaMonth = receita.dataRecebimento?.slice(0, 7);
+      return receitaMonth === selectedMonth;
     });
-  }, [filteredDespesas, selectedMonth]);
+  }, [filteredReceitas, selectedMonth]);
 
   // Cálculos de métricas memoizados para performance
   const metrics = useMemo(() => {
-    const totalDespesas = finalFilteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
-    const despesasPagas = finalFilteredDespesas
-      .filter(d => d.status === 'Pago')
-      .reduce((sum, despesa) => sum + despesa.valor, 0);
-    const despesasPendentes = finalFilteredDespesas
-      .filter(d => d.status === 'Pendente')
-      .reduce((sum, despesa) => sum + despesa.valor, 0);
-    const despesasDedutiveis = finalFilteredDespesas
-      .filter(d => d.dedutivel)
-      .reduce((sum, despesa) => sum + despesa.valor, 0);
+    const totalReceitas = finalFilteredReceitas.reduce((sum, receita) => sum + receita.valor, 0);
+    const receitasRecebidas = finalFilteredReceitas
+      .filter(r => r.status === 'Recebido')
+      .reduce((sum, receita) => sum + receita.valor, 0);
+    const receitasPendentes = finalFilteredReceitas
+      .filter(r => r.status === 'Pendente')
+      .reduce((sum, receita) => sum + receita.valor, 0);
 
     return {
-      totalDespesas,
-      despesasPagas,
-      despesasPendentes,
-      despesasDedutiveis,
+      totalReceitas,
+      receitasRecebidas,
+      receitasPendentes,
     };
-  }, [finalFilteredDespesas]);
+  }, [finalFilteredReceitas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -185,50 +190,52 @@ const DespesasContent = memo(() => {
       setSaving(true);
       const token = localStorage.getItem('authToken');
 
-      const despesaData = {
+      const receitaData = {
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
-        dataPagamento: formData.dataPagamento,
+        dataRecebimento: formData.dataRecebimento,
         categoria: formData.categoria,
-        fornecedor: formData.fornecedor,
-        numeroNotaFiscal: formData.numeroNotaFiscal,
+        cliente: formData.cliente,
+        numeroNota: formData.numeroNota,
         metodoPagamento: formData.metodoPagamento,
         status: formData.status,
-        dedutivel: formData.dedutivel,
         observacoes: formData.observacoes,
+        // Se for admin, incluir companyId no body
+        ...(isAdmin && { companyId }),
       };
 
       let response;
-      if (editingDespesa) {
-        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${editingDespesa.id}`, {
+      if (editingReceita) {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${editingReceita.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(despesaData),
+          body: JSON.stringify(receitaData),
         });
       } else {
-        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
+        const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(despesaData),
+          body: JSON.stringify(receitaData),
         });
       }
 
       if (response.ok) {
-        await fetchDespesas(); // Recarregar dados
+        await fetchReceitas(); // Recarregar dados
         resetForm();
       } else {
         const errorText = await response.text();
-        console.error('Erro ao salvar despesa:', response.status, errorText);
-        alert(`Erro ao salvar despesa: ${response.status} - ${errorText}`);
+        console.error('Erro ao salvar receita:', response.status, errorText);
+        alert(`Erro ao salvar receita: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('Erro ao salvar despesa:', error);
+      console.error('Erro ao salvar receita:', error);
     } finally {
       setSaving(false);
     }
@@ -238,60 +245,58 @@ const DespesasContent = memo(() => {
     setFormData({
       descricao: '',
       valor: '',
-      dataPagamento: new Date().toISOString().slice(0, 10),
+      dataRecebimento: new Date().toISOString().slice(0, 10),
       categoria: '',
-      fornecedor: '',
-      numeroNotaFiscal: '',
+      cliente: '',
+      numeroNota: '',
       metodoPagamento: 'PIX',
-      status: 'Pago',
-      dedutivel: true,
+      status: 'Recebido',
       observacoes: '',
     });
-    setEditingDespesa(null);
+    setEditingReceita(null);
     setShowModal(false);
   };
 
-  const handleEdit = (despesa: Despesa) => {
+  const handleEdit = (receita: Receita) => {
     setFormData({
-      descricao: despesa.descricao,
-      valor: despesa.valor.toString(),
-      dataPagamento: despesa.dataPagamento,
-      categoria: despesa.categoria,
-      fornecedor: despesa.fornecedor || '',
-      numeroNotaFiscal: despesa.numeroNotaFiscal || '',
-      metodoPagamento: despesa.metodoPagamento,
-      status: despesa.status,
-      dedutivel: despesa.dedutivel,
-      observacoes: despesa.observacoes || '',
+      descricao: receita.descricao,
+      valor: receita.valor.toString(),
+      dataRecebimento: receita.dataRecebimento,
+      categoria: receita.categoria,
+      cliente: receita.cliente || '',
+      numeroNota: receita.numeroNota || '',
+      metodoPagamento: receita.metodoPagamento,
+      status: receita.status,
+      observacoes: receita.observacoes || '',
     });
-    setEditingDespesa(despesa);
+    setEditingReceita(receita);
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta despesa?')) {
+    if (confirm('Tem certeza que deseja excluir esta receita?')) {
       try {
         const token = localStorage.getItem('authToken');
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.ok) {
-          await fetchDespesas(); // Recarregar dados
+          await fetchReceitas(); // Recarregar dados
         } else {
-          console.error('Erro ao excluir despesa');
+          console.error('Erro ao excluir receita');
         }
       } catch (error) {
-        console.error('Erro ao excluir despesa:', error);
+        console.error('Erro ao excluir receita:', error);
       }
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MeiSidebar currentPage="despesas" />
+      <MeiSidebar currentPage="receitas" companyId={companyId} />
 
       <div className="mei-content-wrapper">
         {/* Header Minimalista */}
@@ -299,16 +304,13 @@ const DespesasContent = memo(() => {
           <div className="max-w-8xl mx-auto">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-light text-gray-900">Despesas</h1>
-                <p className="text-sm text-gray-500 mt-1">Controle financeiro de saídas</p>
+                <h1 className="text-2xl font-light text-gray-900">Receitas</h1>
+                <p className="text-sm text-gray-500 mt-1">Controle financeiro de entradas</p>
+                {isAdmin && <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>}
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  onClick={fetchDespesas}
-                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
-                  title="Atualizar"
-                >
+                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
                   <HiArrowPath className="w-4 h-4" />
                 </button>
                 <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
@@ -319,130 +321,88 @@ const DespesasContent = memo(() => {
                   className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <HiPlus className="w-4 h-4" />
-                  Nova Despesa
+                  Nova Receita
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Métricas */}
-        <div className="px-8 py-6">
+        {/* Controles de Filtro */}
+        <div className="bg-white border-b border-gray-100 px-8 py-4">
+          <div className="max-w-8xl mx-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6">
+                <select
+                  value={selectedMonth}
+                  onChange={e => setSelectedMonth(e.target.value)}
+                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
+                >
+                  <option value="">Todos os períodos</option>
+                  <option value="2024-09">Setembro 2024</option>
+                  <option value="2024-08">Agosto 2024</option>
+                  <option value="2024-07">Julho 2024</option>
+                </select>
+
+                <div className="relative">
+                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar receitas..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 w-72"
+                  />
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-500">{finalFilteredReceitas.length} receitas encontradas</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Resumo Simplificado */}
+        <div className="bg-white border-b border-gray-100 px-8 py-6">
           <div className="max-w-8xl mx-auto">
             {metricsLoading ? (
-              <MetricsSkeleton count={4} />
+              <MetricsSkeleton count={3} />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-xl border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Total de Despesas</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">
-                        {safeCurrencyFormat(metrics.totalDespesas)}
-                      </p>
-                    </div>
-                    <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
-                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                    </div>
+              <div className="grid grid-cols-3 gap-12">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">TOTAL</p>
+                    <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.totalReceitas)}</p>
                   </div>
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Despesas Pagas</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">
-                        {safeCurrencyFormat(metrics.despesasPagas)}
-                      </p>
-                    </div>
-                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RECEBIDAS</p>
+                  <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.receitasRecebidas)}</p>
                 </div>
-
-                <div className="bg-white p-6 rounded-xl border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Despesas Pendentes</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">
-                        {safeCurrencyFormat(metrics.despesasPendentes)}
-                      </p>
-                    </div>
-                    <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                      <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-white p-6 rounded-xl border border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Dedutíveis</p>
-                      <p className="text-2xl font-light text-gray-900 mt-1">
-                        {safeCurrencyFormat(metrics.despesasDedutiveis)}
-                      </p>
-                    </div>
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PENDENTES</p>
+                  <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.receitasPendentes)}</p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Filtros */}
-        <div className="px-8 pb-6">
-          <div className="max-w-8xl mx-auto">
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                      type="text"
-                      placeholder="Buscar despesas..."
-                      value={searchTerm}
-                      onChange={e => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="sm:w-48">
-                  <select
-                    value={selectedMonth}
-                    onChange={e => setSelectedMonth(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                  >
-                    <option value="">Todos os meses</option>
-                    <option value="2024-12">Dezembro 2024</option>
-                    <option value="2024-11">Novembro 2024</option>
-                    <option value="2024-10">Outubro 2024</option>
-                    <option value="2024-09">Setembro 2024</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tabela de Despesas */}
-        <div className="px-8 pb-8">
-          <div className="max-w-8xl mx-auto">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
+        {/* Tabela Principal */}
+        <div className="flex-1 px-8 py-6">
+          <div className="max-w-none mx-auto">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '500px' }}>
+                <table className="w-full min-w-[1000px]">
+                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
+                    <tr>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-80">
                         Descrição
                       </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
-                        Data / Método
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Data
                       </th>
-                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
                         Valor
                       </th>
                       <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
@@ -487,15 +447,15 @@ const DespesasContent = memo(() => {
                           </td>
                         </tr>
                       ))
-                    ) : finalFilteredDespesas.length === 0 ? (
+                    ) : finalFilteredReceitas.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-12 text-center">
                           <EmptyState
-                            title={debouncedSearchTerm ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa cadastrada'}
+                            title={debouncedSearchTerm ? 'Nenhuma receita encontrada' : 'Nenhuma receita cadastrada'}
                             description={
                               debouncedSearchTerm
-                                ? `Não encontramos despesas que correspondem ao filtro "${debouncedSearchTerm}".`
-                                : 'Você ainda não cadastrou nenhuma despesa. Comece adicionando sua primeira despesa.'
+                                ? `Não encontramos receitas que correspondem ao filtro "${debouncedSearchTerm}".`
+                                : 'Você ainda não cadastrou nenhuma receita. Comece adicionando sua primeira receita.'
                             }
                             action={
                               !debouncedSearchTerm ? (
@@ -503,7 +463,7 @@ const DespesasContent = memo(() => {
                                   onClick={() => setShowModal(true)}
                                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                 >
-                                  Adicionar Despesa
+                                  Adicionar Receita
                                 </button>
                               ) : undefined
                             }
@@ -520,45 +480,44 @@ const DespesasContent = memo(() => {
                         </td>
                       </tr>
                     ) : (
-                      finalFilteredDespesas.map(despesa => (
-                        <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                      finalFilteredReceitas.map(receita => (
+                        <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
                           <td className="py-4 px-6">
                             <div>
-                              <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
+                              <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
                               <div className="text-xs text-gray-500">
-                                {despesa.fornecedor && `${despesa.fornecedor} • `}
-                                {despesa.categoria}
-                                {despesa.dedutivel && ' • Dedutível'}
+                                {receita.cliente && `${receita.cliente} • `}
+                                {receita.categoria}
                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
-                            <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
+                            <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
+                            <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="text-sm font-mono font-medium text-gray-900">
-                              {safeCurrencyFormat(despesa.valor)}
+                              {safeCurrencyFormat(receita.valor)}
                             </div>
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-2">
                               <div
                                 className={`w-2 h-2 rounded-full ${
-                                  despesa.status === 'Pago'
+                                  receita.status === 'Recebido'
                                     ? 'bg-emerald-500'
-                                    : despesa.status === 'Pendente'
+                                    : receita.status === 'Pendente'
                                     ? 'bg-amber-500'
                                     : 'bg-red-500'
                                 }`}
                               ></div>
-                              <span className="text-sm text-gray-700">{despesa.status}</span>
+                              <span className="text-sm text-gray-700">{receita.status}</span>
                             </div>
                           </td>
                           <td className="py-4 px-6 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
-                                onClick={() => handleEdit(despesa)}
+                                onClick={() => handleEdit(receita)}
                                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                                 title="Editar"
                               >
@@ -572,7 +531,7 @@ const DespesasContent = memo(() => {
                                 </svg>
                               </button>
                               <button
-                                onClick={() => handleDelete(despesa.id)}
+                                onClick={() => handleDelete(receita.id)}
                                 className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                 title="Excluir"
                               >
@@ -598,7 +557,7 @@ const DespesasContent = memo(() => {
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {editingDespesa ? 'Editar Despesa' : 'Nova Despesa'}
+                  {editingReceita ? 'Editar Receita' : 'Nova Receita'}
                 </h3>
                 <button onClick={resetForm} className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
                   <HiXMark className="w-5 h-5" />
@@ -614,7 +573,7 @@ const DespesasContent = memo(() => {
                   value={formData.descricao}
                   onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                  placeholder="Digite a descrição da despesa..."
+                  placeholder="Digite a descrição da receita..."
                   required
                 />
               </div>
@@ -634,11 +593,11 @@ const DespesasContent = memo(() => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Pagamento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Recebimento</label>
                   <input
                     type="date"
-                    value={formData.dataPagamento}
-                    onChange={e => setFormData({ ...formData, dataPagamento: e.target.value })}
+                    value={formData.dataRecebimento}
+                    onChange={e => setFormData({ ...formData, dataRecebimento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   />
@@ -664,22 +623,22 @@ const DespesasContent = memo(() => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Fornecedor</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
                   <input
                     type="text"
-                    value={formData.fornecedor}
-                    onChange={e => setFormData({ ...formData, fornecedor: e.target.value })}
+                    value={formData.cliente}
+                    onChange={e => setFormData({ ...formData, cliente: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                    placeholder="Nome do fornecedor (opcional)"
+                    placeholder="Nome do cliente (opcional)"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota Fiscal</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota</label>
                   <input
                     type="text"
-                    value={formData.numeroNotaFiscal}
-                    onChange={e => setFormData({ ...formData, numeroNotaFiscal: e.target.value })}
+                    value={formData.numeroNota}
+                    onChange={e => setFormData({ ...formData, numeroNota: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     placeholder="NF-001 (opcional)"
                   />
@@ -713,23 +672,11 @@ const DespesasContent = memo(() => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
-                    <option value="Pago">Pago</option>
+                    <option value="Recebido">Recebido</option>
                     <option value="Pendente">Pendente</option>
                     <option value="Cancelado">Cancelado</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.dedutivel}
-                    onChange={e => setFormData({ ...formData, dedutivel: e.target.checked })}
-                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-200"
-                  />
-                  <span className="text-sm text-gray-700">Despesa dedutível</span>
-                </label>
               </div>
 
               <div>
@@ -756,7 +703,7 @@ const DespesasContent = memo(() => {
                   disabled={saving}
                   className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Salvando...' : editingDespesa ? 'Atualizar' : 'Salvar'}
+                  {saving ? 'Salvando...' : editingReceita ? 'Atualizar' : 'Salvar'}
                 </button>
               </div>
             </form>
@@ -767,13 +714,13 @@ const DespesasContent = memo(() => {
   );
 });
 
-DespesasContent.displayName = 'DespesasContent';
+ReceitasContent.displayName = 'ReceitasContent';
 
-export default function DespesasPage() {
+export default function ReceitasPage() {
   return (
     <MeiProtection>
       <ErrorBoundary>
-        <DespesasContent />
+        <ReceitasContent />
       </ErrorBoundary>
     </MeiProtection>
   );

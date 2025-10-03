@@ -5,9 +5,9 @@ import MeiProtection from '../../../components/MeiProtection';
 import MeiSidebar from '../../../components/MeiSidebar';
 import ErrorBoundary from '../../../components/ErrorBoundary';
 import { MetricsSkeleton, EmptyState, useAsyncOperation } from '../../../components/Loading';
-import { MemoizedMetricCard, useOptimizedFilter } from '../../../components/PerformanceOptimizedComponents';
+import { useOptimizedFilter } from '../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
-import { sanitizeInput, safeCurrencyFormat, safeDateFormat, useDebouncedValue } from '../../../utils/validation';
+import { sanitizeInput, safeCurrencyFormat, safeDateFormat } from '../../../utils/validation';
 
 interface Receita {
   id: string;
@@ -70,7 +70,7 @@ const ReceitasContent = memo(() => {
     observacoes: '',
   });
 
-  const { isLoading: operationLoading, execute: executeOperation } = useAsyncOperation();
+  useAsyncOperation();
 
   // Função de filtro otimizada usando useCallback para evitar re-criações
   const filterReceitas = useCallback((receita: Receita, searchTerm: string) => {
