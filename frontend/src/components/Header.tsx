@@ -45,7 +45,7 @@ export default function Header() {
   const headerRef = useRef<HTMLDivElement>(null);
 
   // Autenticação
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; companyId?: string } | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
 
   // Para controlar dropdown mobile separado do desktop
@@ -282,7 +282,7 @@ export default function Header() {
                     className="absolute right-0 top-full mt-2 z-50 bg-white border border-gray-100 rounded-xl shadow-xl animate-fadein py-2 min-w-[160px]"
                   >
                     <Link
-                      href="/mei/dashboard"
+                      href={user.companyId ? `/mei/${user.companyId}/dashboard` : '/setup-company'}
                       className="block px-5 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition font-medium rounded"
                       onClick={() => setProfileOpen(false)}
                     >
@@ -457,7 +457,7 @@ export default function Header() {
                     className="absolute right-0 left-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl z-50 animate-fadein py-2"
                   >
                     <Link
-                      href="/mei/dashboard"
+                      href={user.companyId ? `/mei/${user.companyId}/dashboard` : '/setup-company'}
                       className="block px-5 py-2 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition font-medium rounded"
                       onClick={() => {
                         setMobileProfileOpen(false);
