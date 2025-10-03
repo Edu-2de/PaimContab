@@ -2,23 +2,22 @@ const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
 const adminOrOwnerMiddleware = require('../middleware/adminOrOwnerMiddleware');
+const { validateConsultation } = require('../middleware/validationMiddleware');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// GET /api/consultations/available-dates - Retorna datas disponíveis no mês
+// GET /api/consultations/available-dates
 router.get('/available-dates', authMiddleware, async (req, res) => {
   try {
     const { year, month } = req.query;
 
     if (!year || !month) {
-      return res.status(400).json({ error: 'Ano e mês são obrigatórios' });
+      return res.status(400).json({ error: 'Year and month are required' });
     }
 
-    // Criar data de início e fim do mês
     const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
     const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59);
 
-    // Buscar datas já agendadas no mês
     const bookedDates = await prisma.consultationBooking.findMany({
       where: {
         consultationDate: {
@@ -31,7 +30,6 @@ router.get('/available-dates', authMiddleware, async (req, res) => {
       },
     });
 
-    // Converter para array de strings (YYYY-MM-DD)
     const bookedDateStrings = bookedDates.map(booking => {
       const date = new Date(booking.consultationDate);
       return date.toISOString().split('T')[0];
@@ -39,27 +37,16 @@ router.get('/available-dates', authMiddleware, async (req, res) => {
 
     res.json({ bookedDates: bookedDateStrings });
   } catch (error) {
-    console.error('Erro ao buscar datas disponíveis:', error);
-    res.status(500).json({ error: 'Erro ao buscar datas disponíveis' });
+    console.error('Error fetching available dates:', error.message);
+    res.status(500).json({ error: 'Error fetching available dates' });
   }
 });
 
-// POST /api/consultations - Criar novo agendamento
-router.post('/', authMiddleware, async (req, res) => {
+// POST /api/consultations
+router.post('/', authMiddleware, validateConsultation, async (req, res) => {
   try {
     const { consultationDate, startTime, notes } = req.body;
     const userId = req.user.userId;
-
-    // Validar campos obrigatórios
-    if (!consultationDate || !startTime) {
-      return res.status(400).json({ error: 'Data e horário são obrigatórios' });
-    }
-
-    // Validar horário (19h-22h)
-    const hour = parseInt(startTime.split(':')[0]);
-    if (hour < 19 || hour >= 22) {
-      return res.status(400).json({ error: 'Horário deve ser entre 19h e 22h' });
-    }
 
     // Buscar informações do usuário e empresa
     const user = await prisma.user.findUnique({
