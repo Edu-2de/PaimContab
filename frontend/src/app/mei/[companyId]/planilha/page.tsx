@@ -4,13 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import MeiProtection from '../../../../components/MeiProtection';
 import MeiSidebar from '../../../../components/MeiSidebar';
-import {
-  HiArrowDownTray,
-  HiArrowPath,
-  HiMagnifyingGlass,
-  HiChartBarSquare,
-  HiCheckCircle,
-} from 'react-icons/hi2';
+import { HiArrowDownTray, HiArrowPath, HiMagnifyingGlass, HiChartBarSquare, HiCheckCircle } from 'react-icons/hi2';
 
 // Interface completa da planilha - armazena todos os campos mas exibe simplificado
 interface SpreadsheetRow {
@@ -403,7 +397,7 @@ function MeiSpreadsheetContent() {
     if (!row.tipo) return false;
     if (!row.valor || row.valor <= 0) return false;
     if (!row.data || row.data === '') return false;
-    
+
     return true;
   };
 
@@ -423,7 +417,7 @@ function MeiSpreadsheetContent() {
       // Se a linha já existe no banco (não é isNew), fazer PUT
       if (!row.isNew && row.originalId) {
         const endpoint = row.tipo === 'receita' ? 'receitas' : 'despesas';
-        
+
         const bodyData: Record<string, string | number | boolean | null> = {
           descricao: row.descricao,
           valor: row.valor,
@@ -466,7 +460,7 @@ function MeiSpreadsheetContent() {
 
       // Desativar modo de edição
       updateRow(row.id, 'isEditing', false);
-      
+
       // Recarregar dados para garantir sincronia
       await fetchSpreadsheetData();
     } catch (error) {
@@ -494,9 +488,9 @@ function MeiSpreadsheetContent() {
     // Confirmar deleção
     const confirmDelete = window.confirm(
       `Tem certeza que deseja deletar esta ${row.tipo === 'receita' ? 'receita' : 'despesa'}?\n\n` +
-      `Descrição: ${row.descricao}\n` +
-      `Valor: R$ ${row.valor.toFixed(2)}\n\n` +
-      `Esta ação não pode ser desfeita!`
+        `Descrição: ${row.descricao}\n` +
+        `Valor: R$ ${row.valor.toFixed(2)}\n\n` +
+        `Esta ação não pode ser desfeita!`
     );
 
     if (!confirmDelete) return;
@@ -1036,7 +1030,11 @@ function MeiSpreadsheetContent() {
                           ) : (
                             <span
                               className={`text-sm font-mono font-semibold ${
-                                row.tipo === 'receita' ? 'text-emerald-600' : row.tipo === 'despesa' ? 'text-red-600' : 'text-gray-700'
+                                row.tipo === 'receita'
+                                  ? 'text-emerald-600'
+                                  : row.tipo === 'despesa'
+                                  ? 'text-red-600'
+                                  : 'text-gray-700'
                               }`}
                             >
                               {formatCurrency(row.valor)}
@@ -1054,22 +1052,20 @@ function MeiSpreadsheetContent() {
                                 onChange={e => updateRow(row.id, 'dedutivel', e.target.checked)}
                                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
                               />
-                            ) : (
-                              row.dedutivel ? (
-                                <div className="flex items-center justify-center">
-                                  <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">
-                                    <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                                      <path
-                                        fillRule="evenodd"
-                                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                        clipRule="evenodd"
-                                      />
-                                    </svg>
-                                  </div>
+                            ) : row.dedutivel ? (
+                              <div className="flex items-center justify-center">
+                                <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center">
+                                  <svg className="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                    <path
+                                      fillRule="evenodd"
+                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                      clipRule="evenodd"
+                                    />
+                                  </svg>
                                 </div>
-                              ) : (
-                                <span className="text-sm text-gray-400">—</span>
-                              )
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">—</span>
                             )
                           ) : (
                             <span className="text-sm text-gray-400">—</span>
@@ -1125,8 +1121,18 @@ function MeiSpreadsheetContent() {
                                 className="p-2 bg-gray-900 text-white hover:bg-gray-800 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
                                 title="Editar"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="2"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                                  />
                                 </svg>
                               </button>
                             )}
@@ -1141,7 +1147,13 @@ function MeiSpreadsheetContent() {
                                 }`}
                                 title={isRowValid(row) ? 'Salvar' : 'Preencha todos os campos obrigatórios'}
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="2.5"
+                                >
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                               </button>
@@ -1152,7 +1164,13 @@ function MeiSpreadsheetContent() {
                                 className="p-2 bg-red-600 text-white hover:bg-red-700 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
                                 title="Excluir"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="2.5"
+                                >
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               </button>
