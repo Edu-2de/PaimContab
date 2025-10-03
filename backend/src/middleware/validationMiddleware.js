@@ -3,7 +3,7 @@ const validator = require('validator');
 /**
  * Sanitize and validate user input to prevent XSS and injection attacks
  */
-const sanitizeInput = (input) => {
+const sanitizeInput = input => {
   if (typeof input !== 'string') return input;
   return validator.escape(input.trim());
 };
@@ -11,35 +11,35 @@ const sanitizeInput = (input) => {
 /**
  * Validate email format
  */
-const isValidEmail = (email) => {
+const isValidEmail = email => {
   return validator.isEmail(email);
 };
 
 /**
  * Validate password strength (min 6 characters)
  */
-const isValidPassword = (password) => {
+const isValidPassword = password => {
   return typeof password === 'string' && password.length >= 6;
 };
 
 /**
  * Validate UUID format
  */
-const isValidUUID = (id) => {
+const isValidUUID = id => {
   return validator.isUUID(id);
 };
 
 /**
  * Validate numeric value
  */
-const isValidNumber = (value) => {
+const isValidNumber = value => {
   return !isNaN(parseFloat(value)) && isFinite(value);
 };
 
 /**
  * Validate date format
  */
-const isValidDate = (date) => {
+const isValidDate = date => {
   return validator.isISO8601(date);
 };
 
@@ -63,7 +63,7 @@ const validateRegistration = (req, res, next) => {
 
   req.body.name = sanitizeInput(name);
   req.body.email = email.toLowerCase().trim();
-  
+
   next();
 };
 
@@ -82,7 +82,7 @@ const validateLogin = (req, res, next) => {
   }
 
   req.body.email = email.toLowerCase().trim();
-  
+
   next();
 };
 
@@ -102,11 +102,11 @@ const validateTransaction = (req, res, next) => {
 
   req.body.descricao = sanitizeInput(descricao);
   req.body.categoria = sanitizeInput(categoria);
-  
+
   if (req.body.cliente) req.body.cliente = sanitizeInput(req.body.cliente);
   if (req.body.fornecedor) req.body.fornecedor = sanitizeInput(req.body.fornecedor);
   if (req.body.observacoes) req.body.observacoes = sanitizeInput(req.body.observacoes);
-  
+
   next();
 };
 
@@ -132,7 +132,7 @@ const validateConsultation = (req, res, next) => {
   if (req.body.notes) {
     req.body.notes = sanitizeInput(req.body.notes);
   }
-  
+
   next();
 };
 
