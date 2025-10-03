@@ -60,15 +60,28 @@ exports.createCheckoutSession = async (req, res) => {
       email: user.email,
     });
 
-    // Buscar usuário completo no banco pelo ID do token
+    // Buscar usuário completo no banco pelo ID do token (incluindo empresa)
     const fullUser = await prisma.user.findUnique({
       where: { id: user.userId },
+      include: { Company: true },
     });
 
     if (!fullUser) {
       console.log('❌ Usuário não encontrado:', user.userId);
       return res.status(404).json({ message: 'Usuário não encontrado' });
     }
+
+    // ⚠️ VERIFICAR SE O USUÁRIO TEM EMPRESA CADASTRADA
+    if (!fullUser.Company) {
+      console.log('❌ Usuário sem empresa cadastrada:', user.userId);
+      return res.status(400).json({ 
+        message: 'É necessário cadastrar uma empresa antes de assinar um plano',
+        code: 'NO_COMPANY',
+        redirectTo: '/setup-company'
+      });
+    }
+
+    console.log('✅ Empresa encontrada:', { companyId: fullUser.Company.id, companyName: fullUser.Company.companyName });
 
     // Planos disponíveis (hardcoded por enquanto)
     const plans = {
@@ -131,40 +144,118 @@ exports.stripeWebhook = async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+  console.log('🔔 WEBHOOK RECEBIDO');
+  console.log('📋 Headers:', {
+    signature: sig ? 'Presente' : 'Ausente',
+    contentType: req.headers['content-type'],
+  });
+
   let event;
 
   try {
     // Verificar assinatura do webhook
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    console.log('✅ Webhook signature verificada com sucesso');
   } catch (err) {
     console.log('❌ Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
   console.log('✅ Webhook recebido:', event.type);
+  console.log('📦 Event ID:', event.id);
 
   // Processar diferentes tipos de eventos
   switch (event.type) {
     case 'checkout.session.completed':
       const session = event.data.object;
-      console.log('💳 Checkout session completed:', session.id);
+      console.log('💳 ===== CHECKOUT SESSION COMPLETED =====');
+      console.log('💳 Session ID:', session.id);
+      console.log('💳 Payment Status:', session.payment_status);
+      console.log('💳 Customer Email:', session.customer_details?.email);
+      console.log('📋 Metadata:', JSON.stringify(session.metadata, null, 2));
+      console.log('💰 Amount Total:', session.amount_total / 100, 'BRL');
 
       try {
-        // Buscar usuário e plano pelos metadados
+        // Buscar usuário pelos metadados
         const user = await prisma.user.findUnique({
           where: { id: session.metadata.userId },
         });
 
-        const plan = await prisma.plan.findUnique({
-          where: { id: session.metadata.planId },
-        });
-
-        if (!user || !plan) {
-          console.error('❌ Usuário ou plano não encontrado nos metadados');
+        if (!user) {
+          console.error('❌ Usuário não encontrado:', session.metadata.userId);
           break;
         }
 
-        // Criar assinatura no banco
+        console.log('✅ Usuário encontrado:', { id: user.id, email: user.email, name: user.name });
+
+        // Buscar plano pelo ID fornecido nos metadados (essencial, profissional, premium)
+        let plan = await prisma.plan.findFirst({
+          where: { id: session.metadata.planId },
+        });
+
+        if (!plan) {
+          console.error('❌ Plano não encontrado no banco:', session.metadata.planId);
+          console.log('⚠️ Tentando criar plano dinamicamente...');
+          
+          // Planos com IDs fixos
+          const planDefinitions = {
+            essencial: { name: 'Essencial', price: 19.0, description: 'O básico para começar a organizar seu MEI com autonomia.' },
+            profissional: { name: 'Profissional', price: 39.0, description: 'Automação, controle avançado e suporte personalizado para crescer.' },
+            premium: { name: 'Premium', price: 69.0, description: 'Solução completa e personalizada, com mentoria e relatórios sob medida.' },
+          };
+
+          const planData = planDefinitions[session.metadata.planId];
+          if (!planData) {
+            console.error('❌ Plano não encontrado nas definições:', session.metadata.planId);
+            break;
+          }
+
+          console.log('📝 Criando plano:', planData);
+
+          // Criar plano se não existir
+          plan = await prisma.plan.create({
+            data: {
+              id: session.metadata.planId,
+              name: planData.name,
+              price: planData.price,
+              description: planData.description,
+            },
+          });
+
+          console.log('✅ Plano criado com sucesso:', { id: plan.id, name: plan.name, price: plan.price });
+        } else {
+          console.log('✅ Plano encontrado no banco:', { id: plan.id, name: plan.name, price: plan.price });
+        }
+
+        // Verificar se já existe assinatura ativa para este usuário
+        const existingSubscription = await prisma.subscription.findFirst({
+          where: {
+            userId: user.id,
+            isActive: true,
+          },
+        });
+
+        if (existingSubscription) {
+          console.log('⚠️ Usuário já tem assinatura ativa:', existingSubscription.id);
+          console.log('🔄 Desativando assinatura anterior...');
+          
+          await prisma.subscription.update({
+            where: { id: existingSubscription.id },
+            data: { isActive: false },
+          });
+          
+          console.log('✅ Assinatura anterior desativada');
+        }
+
+        // Criar nova assinatura
+        console.log('📝 Criando nova assinatura...');
+        console.log('📋 Dados:', {
+          userId: user.id,
+          planId: plan.id,
+          isActive: true,
+          startDate: new Date().toISOString(),
+        });
+
         const subscription = await prisma.subscription.create({
           data: {
             userId: user.id,
@@ -178,13 +269,20 @@ exports.stripeWebhook = async (req, res) => {
           },
         });
 
-        console.log('✅ Assinatura criada:', subscription.id);
+        console.log('✅ ===== ASSINATURA CRIADA COM SUCESSO =====');
+        console.log('✅ Subscription ID:', subscription.id);
+        console.log('✅ User:', subscription.user.name, '-', subscription.user.email);
+        console.log('✅ Plan:', subscription.plan.name, '- R$', subscription.plan.price);
+        console.log('✅ Status:', subscription.isActive ? 'ATIVA' : 'INATIVA');
+        console.log('✅ Start Date:', subscription.startDate);
+        console.log('===============================================');
 
         // Enviar email para admins (descomente quando configurar o email)
         // await notifyAdmins(subscription.user, subscription.plan, subscription);
         console.log('📧 Email para admins desabilitado temporariamente');
       } catch (error) {
         console.error('❌ Erro ao criar assinatura:', error);
+        console.error('Stack trace:', error.stack);
       }
       break;
 

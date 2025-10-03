@@ -70,8 +70,16 @@ function PaymentContent() {
       }
 
       if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Erro ${response.status}: ${errorData}`);
+        const errorData = await response.json();
+        
+        // Se não tem empresa, redirecionar para setup-company
+        if (errorData.code === 'NO_COMPANY') {
+          alert('Você precisa cadastrar sua empresa antes de assinar um plano.');
+          window.location.href = '/setup-company';
+          return;
+        }
+        
+        throw new Error(errorData.message || `Erro ${response.status}`);
       }
 
       const data = await response.json();
