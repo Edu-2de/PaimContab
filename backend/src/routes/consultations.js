@@ -48,7 +48,6 @@ router.post('/', authMiddleware, validateConsultation, async (req, res) => {
     const { consultationDate, startTime, notes } = req.body;
     const userId = req.user.userId;
 
-
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: { company: true },
