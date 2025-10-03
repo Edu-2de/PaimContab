@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 router.get('/available-dates', authMiddleware, async (req, res) => {
   try {
     const { year, month } = req.query;
-    
+
     if (!year || !month) {
       return res.status(400).json({ error: 'Ano e mês são obrigatórios' });
     }
@@ -23,12 +23,12 @@ router.get('/available-dates', authMiddleware, async (req, res) => {
       where: {
         consultationDate: {
           gte: startDate,
-          lte: endDate
-        }
+          lte: endDate,
+        },
       },
       select: {
-        consultationDate: true
-      }
+        consultationDate: true,
+      },
     });
 
     // Converter para array de strings (YYYY-MM-DD)
@@ -64,7 +64,7 @@ router.post('/', authMiddleware, async (req, res) => {
     // Buscar informações do usuário e empresa
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { company: true }
+      include: { company: true },
     });
 
     if (!user || !user.company) {
@@ -77,9 +77,9 @@ router.post('/', authMiddleware, async (req, res) => {
       where: {
         consultationDate: {
           gte: new Date(dateObj.setHours(0, 0, 0, 0)),
-          lt: new Date(dateObj.setHours(23, 59, 59, 999))
-        }
-      }
+          lt: new Date(dateObj.setHours(23, 59, 59, 999)),
+        },
+      },
     });
 
     if (existingBooking) {
@@ -95,8 +95,8 @@ router.post('/', authMiddleware, async (req, res) => {
         companyName: user.company.name,
         userName: user.name,
         userEmail: user.email,
-        notes: notes || ''
-      }
+        notes: notes || '',
+      },
     });
 
     // Enviar email para admins (será implementado)
@@ -105,12 +105,12 @@ router.post('/', authMiddleware, async (req, res) => {
     res.status(201).json(booking);
   } catch (error) {
     console.error('Erro ao criar agendamento:', error);
-    
+
     // Erro de unique constraint
     if (error.code === 'P2002') {
       return res.status(409).json({ error: 'Esta data já está reservada' });
     }
-    
+
     res.status(500).json({ error: 'Erro ao criar agendamento' });
   }
 });
@@ -123,7 +123,7 @@ router.get('/', authMiddleware, adminOrOwnerMiddleware, async (req, res) => {
     // Se é admin sem companyId, retorna todos
     if (req.isAdmin && !req.query.companyId) {
       const bookings = await prisma.consultationBooking.findMany({
-        orderBy: { consultationDate: 'desc' }
+        orderBy: { consultationDate: 'desc' },
       });
       return res.json(bookings);
     }
@@ -131,7 +131,7 @@ router.get('/', authMiddleware, adminOrOwnerMiddleware, async (req, res) => {
     // Retorna apenas da empresa específica
     const bookings = await prisma.consultationBooking.findMany({
       where: { companyId },
-      orderBy: { consultationDate: 'desc' }
+      orderBy: { consultationDate: 'desc' },
     });
 
     res.json(bookings);
@@ -148,7 +148,7 @@ router.delete('/:id', authMiddleware, adminOrOwnerMiddleware, async (req, res) =
 
     // Buscar agendamento
     const booking = await prisma.consultationBooking.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!booking) {
@@ -163,7 +163,7 @@ router.delete('/:id', authMiddleware, adminOrOwnerMiddleware, async (req, res) =
     // Atualizar status para cancelado
     const updated = await prisma.consultationBooking.update({
       where: { id },
-      data: { status: 'cancelled' }
+      data: { status: 'cancelled' },
     });
 
     res.json(updated);
@@ -178,7 +178,7 @@ async function sendEmailToAdmins(booking) {
   try {
     // Buscar todos os admins
     const admins = await prisma.user.findMany({
-      where: { role: 'admin' }
+      where: { role: 'admin' },
     });
 
     const adminEmails = admins.map(admin => admin.email);
@@ -194,14 +194,13 @@ async function sendEmailToAdmins(booking) {
       usuario: booking.userName,
       data: booking.consultationDate,
       horario: booking.startTime,
-      email: booking.userEmail
+      email: booking.userEmail,
     });
 
     // TODO: Implementar envio real de email com nodemailer
     // const nodemailer = require('nodemailer');
     // const transporter = nodemailer.createTransport({ ... });
     // await transporter.sendMail({ ... });
-
   } catch (error) {
     console.error('Erro ao enviar email para admins:', error);
     // Não falhar a requisição se o email falhar
