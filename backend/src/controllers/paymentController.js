@@ -74,14 +74,17 @@ exports.createCheckoutSession = async (req, res) => {
     // ⚠️ VERIFICAR SE O USUÁRIO TEM EMPRESA CADASTRADA
     if (!fullUser.Company) {
       console.log('❌ Usuário sem empresa cadastrada:', user.userId);
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'É necessário cadastrar uma empresa antes de assinar um plano',
         code: 'NO_COMPANY',
-        redirectTo: '/setup-company'
+        redirectTo: '/setup-company',
       });
     }
 
-    console.log('✅ Empresa encontrada:', { companyId: fullUser.Company.id, companyName: fullUser.Company.companyName });
+    console.log('✅ Empresa encontrada:', {
+      companyId: fullUser.Company.id,
+      companyName: fullUser.Company.companyName,
+    });
 
     // Planos disponíveis (hardcoded por enquanto)
     const plans = {
@@ -196,12 +199,24 @@ exports.stripeWebhook = async (req, res) => {
         if (!plan) {
           console.error('❌ Plano não encontrado no banco:', session.metadata.planId);
           console.log('⚠️ Tentando criar plano dinamicamente...');
-          
+
           // Planos com IDs fixos
           const planDefinitions = {
-            essencial: { name: 'Essencial', price: 19.0, description: 'O básico para começar a organizar seu MEI com autonomia.' },
-            profissional: { name: 'Profissional', price: 39.0, description: 'Automação, controle avançado e suporte personalizado para crescer.' },
-            premium: { name: 'Premium', price: 69.0, description: 'Solução completa e personalizada, com mentoria e relatórios sob medida.' },
+            essencial: {
+              name: 'Essencial',
+              price: 19.0,
+              description: 'O básico para começar a organizar seu MEI com autonomia.',
+            },
+            profissional: {
+              name: 'Profissional',
+              price: 39.0,
+              description: 'Automação, controle avançado e suporte personalizado para crescer.',
+            },
+            premium: {
+              name: 'Premium',
+              price: 69.0,
+              description: 'Solução completa e personalizada, com mentoria e relatórios sob medida.',
+            },
           };
 
           const planData = planDefinitions[session.metadata.planId];
@@ -238,12 +253,12 @@ exports.stripeWebhook = async (req, res) => {
         if (existingSubscription) {
           console.log('⚠️ Usuário já tem assinatura ativa:', existingSubscription.id);
           console.log('🔄 Desativando assinatura anterior...');
-          
+
           await prisma.subscription.update({
             where: { id: existingSubscription.id },
             data: { isActive: false },
           });
-          
+
           console.log('✅ Assinatura anterior desativada');
         }
 
