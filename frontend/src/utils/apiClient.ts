@@ -1,4 +1,4 @@
-// Utilitário para fazer requisições API com tratamento de erros de token
+import { tokenManager } from './auth';
 
 interface ApiResponse<T = unknown> {
   data?: T;
@@ -6,63 +6,7 @@ interface ApiResponse<T = unknown> {
   success: boolean;
 }
 
-// Utilitário para gerenciar tokens
-const tokenManager = {
-  getToken(): string | null {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('authToken');
-    }
-    return null;
-  },
-
-  setToken(token: string): void {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('authToken', token);
-    }
-  },
-
-  removeToken(): void {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('user');
-    }
-  },
-
-  isTokenValid(): boolean {
-    const token = this.getToken();
-    if (!token) return false;
-
-    try {
-      // Decodifica o payload do JWT sem verificar a assinatura
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const now = Date.now() / 1000;
-      
-      // Verifica se o token não expirou
-      return payload.exp > now;
-    } catch (error) {
-      console.error('Erro ao validar token:', error);
-      return false;
-    }
-  },
-
-  getAuthHeaders(): Record<string, string> {
-    const token = this.getToken();
-    return {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-    };
-  },
-
-  requireAuth(): void {
-    if (typeof window !== 'undefined') {
-      this.removeToken();
-      window.location.href = '/Login';
-    }
-  },
-};
-
 export const apiClient = {
-  // Método GET
   async get<T = unknown>(url: string): Promise<ApiResponse<T>> {
     try {
       if (!tokenManager.isTokenValid()) {
@@ -95,13 +39,11 @@ export const apiClient = {
 
       const data = await response.json();
       return { success: true, data };
-    } catch (error) {
-      console.error('Erro na requisição GET:', error);
+    } catch {
       return { success: false, error: 'Erro de conexão' };
     }
   },
 
-  // Método POST
   async post<T = unknown>(url: string, body: unknown = {}): Promise<ApiResponse<T>> {
     try {
       if (!tokenManager.isTokenValid()) {
@@ -136,13 +78,11 @@ export const apiClient = {
 
       const data = await response.json();
       return { success: true, data };
-    } catch (error) {
-      console.error('Erro na requisição POST:', error);
+    } catch {
       return { success: false, error: 'Erro de conexão' };
     }
   },
 
-  // Método PUT
   async put<T = unknown>(url: string, body: unknown = {}): Promise<ApiResponse<T>> {
     try {
       if (!tokenManager.isTokenValid()) {
@@ -177,13 +117,11 @@ export const apiClient = {
 
       const data = await response.json();
       return { success: true, data };
-    } catch (error) {
-      console.error('Erro na requisição PUT:', error);
+    } catch {
       return { success: false, error: 'Erro de conexão' };
     }
   },
 
-  // Método DELETE
   async delete<T = unknown>(url: string): Promise<ApiResponse<T>> {
     try {
       if (!tokenManager.isTokenValid()) {
@@ -217,13 +155,11 @@ export const apiClient = {
 
       const data = await response.json();
       return { success: true, data };
-    } catch (error) {
-      console.error('Erro na requisição DELETE:', error);
+    } catch {
       return { success: false, error: 'Erro de conexão' };
     }
   },
 
-  // Método PATCH
   async patch<T = unknown>(url: string, body: unknown = {}): Promise<ApiResponse<T>> {
     try {
       if (!tokenManager.isTokenValid()) {
@@ -258,12 +194,8 @@ export const apiClient = {
 
       const data = await response.json();
       return { success: true, data };
-    } catch (error) {
-      console.error('Erro na requisição PATCH:', error);
+    } catch {
       return { success: false, error: 'Erro de conexão' };
     }
   },
 };
-
-// Exporta também o tokenManager para uso direto se necessário
-export { tokenManager };

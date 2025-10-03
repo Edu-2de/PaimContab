@@ -1,30 +1,18 @@
-// Utilitários de validação seguros para strings e filtros
+import { useState, useEffect } from 'react';
 
-/**
- * Verifica se um valor é uma string válida
- */
 export const isValidString = (value: unknown): value is string => {
   return typeof value === 'string' && value.length > 0;
 };
 
-/**
- * Retorna uma string segura para operações de toLowerCase
- */
 export const safeString = (value: unknown): string => {
   if (isValidString(value)) return value;
   return '';
 };
 
-/**
- * Função segura para toLowerCase que não falha com valores undefined/null
- */
 export const safeToLowerCase = (value: unknown): string => {
   return safeString(value).toLowerCase();
 };
 
-/**
- * Função segura para verificar se uma string contém outra (case-insensitive)
- */
 export const safeIncludes = (text: unknown, searchTerm: unknown): boolean => {
   const textSafe = safeToLowerCase(text);
   const searchSafe = safeToLowerCase(searchTerm);
@@ -34,9 +22,6 @@ export const safeIncludes = (text: unknown, searchTerm: unknown): boolean => {
   return textSafe.includes(searchSafe);
 };
 
-/**
- * Filtro de busca universal para qualquer objeto
- */
 export const createSearchFilter = <T extends Record<string, unknown>>(
   searchTerm: string,
   searchFields: (keyof T)[]
@@ -48,32 +33,23 @@ export const createSearchFilter = <T extends Record<string, unknown>>(
   };
 };
 
-/**
- * Valida se uma data é válida
- */
 export const isValidDate = (date: unknown): boolean => {
   if (!date) return false;
   const dateObj = new Date(date as string);
   return !isNaN(dateObj.getTime());
 };
 
-/**
- * Extrai ano-mês de uma data de forma segura (YYYY-MM)
- */
 export const safeExtractYearMonth = (date: unknown): string => {
   if (!isValidDate(date)) return '';
 
   try {
     const dateStr = String(date);
-    return dateStr.slice(0, 7); // YYYY-MM
+    return dateStr.slice(0, 7);
   } catch {
     return '';
   }
 };
 
-/**
- * Filtro de data por mês/ano
- */
 export const createMonthFilter = <T extends Record<string, unknown>>(selectedMonth: string, dateField: keyof T) => {
   return (item: T): boolean => {
     if (!selectedMonth) return true;
@@ -83,30 +59,21 @@ export const createMonthFilter = <T extends Record<string, unknown>>(selectedMon
   };
 };
 
-/**
- * Combina múltiplos filtros
- */
 export const combineFilters = <T>(...filters: ((item: T) => boolean)[]): ((item: T) => boolean) => {
   return (item: T): boolean => {
     return filters.every(filter => filter(item));
   };
 };
 
-/**
- * Função para sanitizar entrada do usuário
- */
 export const sanitizeInput = (input: unknown): string => {
   if (typeof input !== 'string') return '';
 
   return input
     .trim()
-    .replace(/[<>\"']/g, '') // Remove caracteres potencialmente perigosos
-    .substring(0, 1000); // Limita tamanho
+    .replace(/[<>"']/g, '')
+    .substring(0, 1000);
 };
 
-/**
- * Valida número de forma segura
- */
 export const safeNumber = (value: unknown): number => {
   if (typeof value === 'number' && !isNaN(value)) return value;
   if (typeof value === 'string') {
@@ -116,9 +83,6 @@ export const safeNumber = (value: unknown): number => {
   return 0;
 };
 
-/**
- * Formata moeda de forma segura
- */
 export const safeCurrencyFormat = (value: unknown): string => {
   const numValue = safeNumber(value);
 
@@ -134,9 +98,6 @@ export const safeCurrencyFormat = (value: unknown): string => {
   }
 };
 
-/**
- * Formata data de forma segura
- */
 export const safeDateFormat = (date: unknown): string => {
   if (!isValidDate(date)) return '-';
 
@@ -147,9 +108,6 @@ export const safeDateFormat = (date: unknown): string => {
   }
 };
 
-/**
- * Debounce function para otimizar performance de filtros
- */
 export const debounce = <T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number
@@ -162,9 +120,6 @@ export const debounce = <T extends (...args: unknown[]) => unknown>(
   };
 };
 
-/**
- * Hook personalizado para filtros com debounce
- */
 export const useDebouncedValue = <T>(value: T, delay: number): T => {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
@@ -178,6 +133,3 @@ export const useDebouncedValue = <T>(value: T, delay: number): T => {
 
   return debouncedValue;
 };
-
-// Importações necessárias
-import { useState, useEffect } from 'react';

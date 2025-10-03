@@ -37,7 +37,7 @@ export default function CalendarioPage() {
 
   const fetchBookings = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const userStr = localStorage.getItem('user');
       const userObj = JSON.parse(userStr || '{}');
 
@@ -62,7 +62,7 @@ export default function CalendarioPage() {
 
   const fetchAvailableDates = useCallback(async (year: number, month: number) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`${BACKEND_URL}/api/consultations/available-dates?year=${year}&month=${month}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -111,7 +111,7 @@ export default function CalendarioPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`${BACKEND_URL}/api/consultations`, {
         method: 'POST',
         headers: {
@@ -149,7 +149,7 @@ export default function CalendarioPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`${BACKEND_URL}/api/consultations/${id}`, {
         method: 'DELETE',
         headers: {
