@@ -132,8 +132,14 @@ export default function LoginRegisterPage() {
               console.log('🔧 Redirecionando para painel admin');
               window.location.href = '/admin/dashboard';
             } else {
-              console.log('👥 Redirecionando para home');
-              window.location.href = '/';
+              // Verificar se tem empresa associada
+              if (data.user.companyId) {
+                console.log('👥 Redirecionando para dashboard MEI:', data.user.companyId);
+                window.location.href = `/mei/${data.user.companyId}/dashboard`;
+              } else {
+                console.log('⚠️ Usuário sem empresa, redirecionando para setup');
+                window.location.href = '/setup-company';
+              }
             }
           } else {
             setError('Erro: token ou dados do usuário não retornados.');

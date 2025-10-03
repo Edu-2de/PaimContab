@@ -5,44 +5,53 @@ import { useParams, useRouter } from 'next/navigation';
 import MeiProtection from '../../../../components/MeiProtection';
 import MeiSidebar from '../../../../components/MeiSidebar';
 import ErrorBoundary from '../../../../components/ErrorBoundary';
-import { MetricsSkeleton, EmptyState, useAsyncOperation } from '../../../../components/Loading';
+import { MetricsSkeleton, EmptyState } from '../../../../components/Loading';
 import { useOptimizedFilter } from '../../../../components/PerformanceOptimizedComponents';
 import { HiPlus, HiXMark, HiMagnifyingGlass, HiArrowDownTray, HiArrowPath } from 'react-icons/hi2';
-import { sanitizeInput, safeCurrencyFormat, safeDateFormat } from '../../../../utils/validation';
+import { sanitizeInput, safeCurrencyFormat, safeDateFormat, useDebouncedValue } from '../../../../utils/validation';
 
-interface Receita {
+interface Despesa {
   id: string;
   descricao: string;
   valor: number;
-  dataRecebimento: string;
+  dataPagamento: string;
   categoria: string;
-  cliente?: string;
-  numeroNota?: string;
+  fornecedor?: string;
+  numeroNotaFiscal?: string;
   metodoPagamento: 'Dinheiro' | 'PIX' | 'Cartão Débito' | 'Cartão Crédito' | 'Transferência' | 'Boleto';
-  status: 'Recebido' | 'Pendente' | 'Cancelado';
+  status: 'Pago' | 'Pendente' | 'Cancelado';
+  dedutivel: boolean;
   observacoes?: string;
   createdAt: string;
 }
 
-interface ReceitaFormData {
+interface DespesaFormData {
   descricao: string;
   valor: string;
-  dataRecebimento: string;
+  dataPagamento: string;
   categoria: string;
-  cliente: string;
-  numeroNota: string;
+  fornecedor: string;
+  numeroNotaFiscal: string;
   metodoPagamento: string;
   status: string;
+  dedutivel: boolean;
   observacoes: string;
 }
 
 const categories = [
-  'Vendas de Produtos',
-  'Prestação de Serviços',
-  'Comissões',
-  'Royalties',
+  'Material de Escritório',
+  'Equipamentos',
+  'Software e Licenças',
+  'Internet/Telefone',
+  'Marketing/Publicidade',
+  'Combustível',
+  'Manutenção',
+  'Taxas/Impostos',
   'Consultoria',
-  'Licenciamento',
+  'Treinamentos',
+  'Aluguel',
+  'Energia Elétrica',
+  'Matéria-prima',
   'Outros',
 ];
 
@@ -50,30 +59,31 @@ function formatDate(dateStr: string) {
   return safeDateFormat(dateStr);
 }
 
-const ReceitasContent = memo(() => {
+const DespesasContent = memo(() => {
   const params = useParams();
   const router = useRouter();
   const companyId = params.companyId as string;
   
-  const [receitas, setReceitas] = useState<Receita[]>([]);
+  const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
+  const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [hasAccess, setHasAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [formData, setFormData] = useState<ReceitaFormData>({
+  const [formData, setFormData] = useState<DespesaFormData>({
     descricao: '',
     valor: '',
-    dataRecebimento: new Date().toISOString().slice(0, 10),
+    dataPagamento: new Date().toISOString().slice(0, 10),
     categoria: '',
-    cliente: '',
-    numeroNota: '',
+    fornecedor: '',
+    numeroNotaFiscal: '',
     metodoPagamento: 'PIX',
-    status: 'Recebido',
+    status: 'Pago',
+    dedutivel: true,
     observacoes: '',
   });
 
@@ -96,7 +106,7 @@ const ReceitasContent = memo(() => {
         setHasAccess(true);
       } else {
         // Usuário tentando acessar empresa de outro
-        router.push(`/mei/${userObj.companyId}/receitas`);
+        router.push(`/mei/${userObj.companyId}/despesas`);
       }
     };
 
@@ -105,26 +115,26 @@ const ReceitasContent = memo(() => {
     }
   }, [companyId, router]);
 
-  useAsyncOperation();
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
 
   // Função de filtro otimizada usando useCallback para evitar re-criações
-  const filterReceitas = useCallback((receita: Receita, searchTerm: string) => {
+  const filterDespesas = useCallback((despesa: Despesa, searchTerm: string) => {
     const searchTermSanitized = sanitizeInput(searchTerm);
     if (!searchTermSanitized) return true;
 
-    const searchFields = [receita.descricao, receita.cliente, receita.categoria];
+    const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
     return searchFields.some(field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase()));
   }, []);
 
   // Usar hook otimizado para filtros
-  const { filteredItems: filteredReceitas, debouncedSearchTerm } = useOptimizedFilter(
-    receitas,
+  useOptimizedFilter(
+    despesas,
     searchTerm,
-    filterReceitas
+    filterDespesas
   );
 
-  // Buscar receitas do backend - memoizado
-  const fetchReceitas = useCallback(async () => {
+  // Buscar despesas do backend
+  const fetchDespesas = useCallback(async () => {
     if (!hasAccess) return;
     
     try {
@@ -133,17 +143,17 @@ const ReceitasContent = memo(() => {
       
       // Se for admin, passar companyId como query parameter
       const queryParam = isAdmin ? `?companyId=${companyId}` : '';
-      
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setReceitas(data);
+        setDespesas(data);
       }
     } catch (error) {
-      console.error('Erro ao carregar receitas:', error);
+      console.error('Erro ao carregar despesas:', error);
     } finally {
       setLoading(false);
       setMetricsLoading(false);
@@ -152,36 +162,63 @@ const ReceitasContent = memo(() => {
 
   useEffect(() => {
     if (hasAccess) {
-      fetchReceitas();
+      fetchDespesas();
     }
-  }, [fetchReceitas, hasAccess]);
+  }, [fetchDespesas, hasAccess]);
+
+  // Filtragem de despesas usando validação segura
+  const filteredDespesas = despesas.filter(despesa => {
+    // Busca segura por texto
+    const searchTermSanitized = sanitizeInput(debouncedSearchTerm);
+    if (searchTermSanitized) {
+      const searchFields = [despesa.descricao, despesa.fornecedor, despesa.categoria];
+      const matchesSearch = searchFields.some(
+        field => field && field.toLowerCase().includes(searchTermSanitized.toLowerCase())
+      );
+      if (!matchesSearch) return false;
+    }
+
+    // Filtro por mês
+    if (selectedMonth) {
+      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
+      if (despesaMonth !== selectedMonth) return false;
+    }
+
+    return true;
+  });
+
+  // Se quiser usar o filtro otimizado, substitua 'filteredDespesas' por 'optimizedFilteredDespesas' nas partes relevantes do código.
 
   // Filtro adicional por mês usando useMemo para cache
-  const finalFilteredReceitas = useMemo(() => {
-    if (!selectedMonth) return filteredReceitas;
+  const finalFilteredDespesas = useMemo(() => {
+    if (!selectedMonth) return filteredDespesas;
 
-    return filteredReceitas.filter(receita => {
-      const receitaMonth = receita.dataRecebimento?.slice(0, 7);
-      return receitaMonth === selectedMonth;
+    return filteredDespesas.filter(despesa => {
+      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
+      return despesaMonth === selectedMonth;
     });
-  }, [filteredReceitas, selectedMonth]);
+  }, [filteredDespesas, selectedMonth]);
 
   // Cálculos de métricas memoizados para performance
   const metrics = useMemo(() => {
-    const totalReceitas = finalFilteredReceitas.reduce((sum, receita) => sum + receita.valor, 0);
-    const receitasRecebidas = finalFilteredReceitas
-      .filter(r => r.status === 'Recebido')
-      .reduce((sum, receita) => sum + receita.valor, 0);
-    const receitasPendentes = finalFilteredReceitas
-      .filter(r => r.status === 'Pendente')
-      .reduce((sum, receita) => sum + receita.valor, 0);
+    const totalDespesas = finalFilteredDespesas.reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasPagas = finalFilteredDespesas
+      .filter(d => d.status === 'Pago')
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasPendentes = finalFilteredDespesas
+      .filter(d => d.status === 'Pendente')
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
+    const despesasDedutiveis = finalFilteredDespesas
+      .filter(d => d.dedutivel)
+      .reduce((sum, despesa) => sum + despesa.valor, 0);
 
     return {
-      totalReceitas,
-      receitasRecebidas,
-      receitasPendentes,
+      totalDespesas,
+      despesasPagas,
+      despesasPendentes,
+      despesasDedutiveis,
     };
-  }, [finalFilteredReceitas]);
+  }, [finalFilteredDespesas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,52 +227,53 @@ const ReceitasContent = memo(() => {
       setSaving(true);
       const token = localStorage.getItem('authToken');
 
-      const receitaData = {
+      const despesaData = {
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
-        dataRecebimento: formData.dataRecebimento,
+        dataPagamento: formData.dataPagamento,
         categoria: formData.categoria,
-        cliente: formData.cliente,
-        numeroNota: formData.numeroNota,
+        fornecedor: formData.fornecedor,
+        numeroNotaFiscal: formData.numeroNotaFiscal,
         metodoPagamento: formData.metodoPagamento,
         status: formData.status,
+        dedutivel: formData.dedutivel,
         observacoes: formData.observacoes,
         // Se for admin, incluir companyId no body
         ...(isAdmin && { companyId }),
       };
 
       let response;
-      if (editingReceita) {
-        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${editingReceita.id}`, {
+      if (editingDespesa) {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${editingDespesa.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(receitaData),
+          body: JSON.stringify(despesaData),
         });
       } else {
         const queryParam = isAdmin ? `?companyId=${companyId}` : '';
-        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
+        response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(receitaData),
+          body: JSON.stringify(despesaData),
         });
       }
 
       if (response.ok) {
-        await fetchReceitas(); // Recarregar dados
+        await fetchDespesas(); // Recarregar dados
         resetForm();
       } else {
         const errorText = await response.text();
-        console.error('Erro ao salvar receita:', response.status, errorText);
-        alert(`Erro ao salvar receita: ${response.status} - ${errorText}`);
+        console.error('Erro ao salvar despesa:', response.status, errorText);
+        alert(`Erro ao salvar despesa: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('Erro ao salvar receita:', error);
+      console.error('Erro ao salvar despesa:', error);
     } finally {
       setSaving(false);
     }
@@ -245,58 +283,60 @@ const ReceitasContent = memo(() => {
     setFormData({
       descricao: '',
       valor: '',
-      dataRecebimento: new Date().toISOString().slice(0, 10),
+      dataPagamento: new Date().toISOString().slice(0, 10),
       categoria: '',
-      cliente: '',
-      numeroNota: '',
+      fornecedor: '',
+      numeroNotaFiscal: '',
       metodoPagamento: 'PIX',
-      status: 'Recebido',
+      status: 'Pago',
+      dedutivel: true,
       observacoes: '',
     });
-    setEditingReceita(null);
+    setEditingDespesa(null);
     setShowModal(false);
   };
 
-  const handleEdit = (receita: Receita) => {
+  const handleEdit = (despesa: Despesa) => {
     setFormData({
-      descricao: receita.descricao,
-      valor: receita.valor.toString(),
-      dataRecebimento: receita.dataRecebimento,
-      categoria: receita.categoria,
-      cliente: receita.cliente || '',
-      numeroNota: receita.numeroNota || '',
-      metodoPagamento: receita.metodoPagamento,
-      status: receita.status,
-      observacoes: receita.observacoes || '',
+      descricao: despesa.descricao,
+      valor: despesa.valor.toString(),
+      dataPagamento: despesa.dataPagamento,
+      categoria: despesa.categoria,
+      fornecedor: despesa.fornecedor || '',
+      numeroNotaFiscal: despesa.numeroNotaFiscal || '',
+      metodoPagamento: despesa.metodoPagamento,
+      status: despesa.status,
+      dedutivel: despesa.dedutivel,
+      observacoes: despesa.observacoes || '',
     });
-    setEditingReceita(receita);
+    setEditingDespesa(despesa);
     setShowModal(true);
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta receita?')) {
+    if (confirm('Tem certeza que deseja excluir esta despesa?')) {
       try {
         const token = localStorage.getItem('authToken');
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas/${id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (response.ok) {
-          await fetchReceitas(); // Recarregar dados
+          await fetchDespesas(); // Recarregar dados
         } else {
-          console.error('Erro ao excluir receita');
+          console.error('Erro ao excluir despesa');
         }
       } catch (error) {
-        console.error('Erro ao excluir receita:', error);
+        console.error('Erro ao excluir despesa:', error);
       }
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MeiSidebar currentPage="receitas" companyId={companyId} />
+      <MeiSidebar currentPage="despesas" companyId={companyId} />
 
       <div className="mei-content-wrapper">
         {/* Header Minimalista */}
@@ -304,15 +344,19 @@ const ReceitasContent = memo(() => {
           <div className="max-w-8xl mx-auto">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl font-light text-gray-900">Receitas</h1>
-                <p className="text-sm text-gray-500 mt-1">Controle financeiro de entradas</p>
+                <h1 className="text-2xl font-light text-gray-900">Despesas</h1>
+                <p className="text-sm text-gray-500 mt-1">Controle financeiro de saídas</p>
                 {isAdmin && (
                   <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>
                 )}
               </div>
 
               <div className="flex items-center gap-2">
-                <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
+                <button
+                  onClick={fetchDespesas}
+                  className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg"
+                  title="Atualizar"
+                >
                   <HiArrowPath className="w-4 h-4" />
                 </button>
                 <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors hover:bg-gray-100 rounded-lg">
@@ -323,88 +367,130 @@ const ReceitasContent = memo(() => {
                   className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
                 >
                   <HiPlus className="w-4 h-4" />
-                  Nova Receita
+                  Nova Despesa
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Controles de Filtro */}
-        <div className="bg-white border-b border-gray-100 px-8 py-4">
-          <div className="max-w-8xl mx-auto">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-6">
-                <select
-                  value={selectedMonth}
-                  onChange={e => setSelectedMonth(e.target.value)}
-                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
-                >
-                  <option value="">Todos os períodos</option>
-                  <option value="2024-09">Setembro 2024</option>
-                  <option value="2024-08">Agosto 2024</option>
-                  <option value="2024-07">Julho 2024</option>
-                </select>
-
-                <div className="relative">
-                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Buscar receitas..."
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 text-sm bg-gray-50 border-0 rounded-lg focus:outline-none focus:bg-white focus:ring-1 focus:ring-gray-200 w-72"
-                  />
-                </div>
-              </div>
-
-              <div className="text-sm text-gray-500">{finalFilteredReceitas.length} receitas encontradas</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Resumo Simplificado */}
-        <div className="bg-white border-b border-gray-100 px-8 py-6">
+        {/* Métricas */}
+        <div className="px-8 py-6">
           <div className="max-w-8xl mx-auto">
             {metricsLoading ? (
-              <MetricsSkeleton count={3} />
+              <MetricsSkeleton count={4} />
             ) : (
-              <div className="grid grid-cols-3 gap-12">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 rounded-full bg-green-500 shadow-sm"></div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">TOTAL</p>
-                    <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.totalReceitas)}</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Total de Despesas</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.totalDespesas)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-red-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">RECEBIDAS</p>
-                  <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.receitasRecebidas)}</p>
+
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Despesas Pagas</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasPagas)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">PENDENTES</p>
-                  <p className="text-2xl font-light text-gray-900">{safeCurrencyFormat(metrics.receitasPendentes)}</p>
+
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Despesas Pendentes</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasPendentes)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-amber-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl border border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Dedutíveis</p>
+                      <p className="text-2xl font-light text-gray-900 mt-1">
+                        {safeCurrencyFormat(metrics.despesasDedutiveis)}
+                      </p>
+                    </div>
+                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Tabela Principal */}
-        <div className="flex-1 px-8 py-6">
-          <div className="max-w-none mx-auto">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '500px' }}>
-                <table className="w-full min-w-[1000px]">
-                  <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
-                    <tr>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-80">
+        {/* Filtros */}
+        <div className="px-8 pb-6">
+          <div className="max-w-8xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Buscar despesas..."
+                      value={searchTerm}
+                      onChange={e => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="sm:w-48">
+                  <select
+                    value={selectedMonth}
+                    onChange={e => setSelectedMonth(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  >
+                    <option value="">Todos os meses</option>
+                    <option value="2024-12">Dezembro 2024</option>
+                    <option value="2024-11">Novembro 2024</option>
+                    <option value="2024-10">Outubro 2024</option>
+                    <option value="2024-09">Setembro 2024</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabela de Despesas */}
+        <div className="px-8 pb-8">
+          <div className="max-w-8xl mx-auto">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Descrição
                       </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
-                        Data
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                        Data / Método
                       </th>
-                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Valor
                       </th>
                       <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
@@ -449,15 +535,15 @@ const ReceitasContent = memo(() => {
                           </td>
                         </tr>
                       ))
-                    ) : finalFilteredReceitas.length === 0 ? (
+                    ) : finalFilteredDespesas.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-12 text-center">
                           <EmptyState
-                            title={debouncedSearchTerm ? 'Nenhuma receita encontrada' : 'Nenhuma receita cadastrada'}
+                            title={debouncedSearchTerm ? 'Nenhuma despesa encontrada' : 'Nenhuma despesa cadastrada'}
                             description={
                               debouncedSearchTerm
-                                ? `Não encontramos receitas que correspondem ao filtro "${debouncedSearchTerm}".`
-                                : 'Você ainda não cadastrou nenhuma receita. Comece adicionando sua primeira receita.'
+                                ? `Não encontramos despesas que correspondem ao filtro "${debouncedSearchTerm}".`
+                                : 'Você ainda não cadastrou nenhuma despesa. Comece adicionando sua primeira despesa.'
                             }
                             action={
                               !debouncedSearchTerm ? (
@@ -465,7 +551,7 @@ const ReceitasContent = memo(() => {
                                   onClick={() => setShowModal(true)}
                                   className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                 >
-                                  Adicionar Receita
+                                  Adicionar Despesa
                                 </button>
                               ) : undefined
                             }
@@ -482,44 +568,45 @@ const ReceitasContent = memo(() => {
                         </td>
                       </tr>
                     ) : (
-                      finalFilteredReceitas.map(receita => (
-                        <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
+                      finalFilteredDespesas.map(despesa => (
+                        <tr key={despesa.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
                           <td className="py-4 px-6">
                             <div>
-                              <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
+                              <div className="text-sm font-medium text-gray-900 mb-1">{despesa.descricao}</div>
                               <div className="text-xs text-gray-500">
-                                {receita.cliente && `${receita.cliente} • `}
-                                {receita.categoria}
+                                {despesa.fornecedor && `${despesa.fornecedor} • `}
+                                {despesa.categoria}
+                                {despesa.dedutivel && ' • Dedutível'}
                               </div>
                             </div>
                           </td>
                           <td className="py-4 px-6">
-                            <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
-                            <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
+                            <div className="text-sm text-gray-900">{formatDate(despesa.dataPagamento)}</div>
+                            <div className="text-xs text-gray-500">{despesa.metodoPagamento}</div>
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="text-sm font-mono font-medium text-gray-900">
-                              {safeCurrencyFormat(receita.valor)}
+                              {safeCurrencyFormat(despesa.valor)}
                             </div>
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-2">
                               <div
                                 className={`w-2 h-2 rounded-full ${
-                                  receita.status === 'Recebido'
+                                  despesa.status === 'Pago'
                                     ? 'bg-emerald-500'
-                                    : receita.status === 'Pendente'
+                                    : despesa.status === 'Pendente'
                                     ? 'bg-amber-500'
                                     : 'bg-red-500'
                                 }`}
                               ></div>
-                              <span className="text-sm text-gray-700">{receita.status}</span>
+                              <span className="text-sm text-gray-700">{despesa.status}</span>
                             </div>
                           </td>
                           <td className="py-4 px-6 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
-                                onClick={() => handleEdit(receita)}
+                                onClick={() => handleEdit(despesa)}
                                 className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
                                 title="Editar"
                               >
@@ -533,7 +620,7 @@ const ReceitasContent = memo(() => {
                                 </svg>
                               </button>
                               <button
-                                onClick={() => handleDelete(receita.id)}
+                                onClick={() => handleDelete(despesa.id)}
                                 className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                 title="Excluir"
                               >
@@ -559,7 +646,7 @@ const ReceitasContent = memo(() => {
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900">
-                  {editingReceita ? 'Editar Receita' : 'Nova Receita'}
+                  {editingDespesa ? 'Editar Despesa' : 'Nova Despesa'}
                 </h3>
                 <button onClick={resetForm} className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
                   <HiXMark className="w-5 h-5" />
@@ -575,7 +662,7 @@ const ReceitasContent = memo(() => {
                   value={formData.descricao}
                   onChange={e => setFormData({ ...formData, descricao: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                  placeholder="Digite a descrição da receita..."
+                  placeholder="Digite a descrição da despesa..."
                   required
                 />
               </div>
@@ -595,11 +682,11 @@ const ReceitasContent = memo(() => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Recebimento</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Data de Pagamento</label>
                   <input
                     type="date"
-                    value={formData.dataRecebimento}
-                    onChange={e => setFormData({ ...formData, dataRecebimento: e.target.value })}
+                    value={formData.dataPagamento}
+                    onChange={e => setFormData({ ...formData, dataPagamento: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   />
@@ -625,22 +712,22 @@ const ReceitasContent = memo(() => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fornecedor</label>
                   <input
                     type="text"
-                    value={formData.cliente}
-                    onChange={e => setFormData({ ...formData, cliente: e.target.value })}
+                    value={formData.fornecedor}
+                    onChange={e => setFormData({ ...formData, fornecedor: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                    placeholder="Nome do cliente (opcional)"
+                    placeholder="Nome do fornecedor (opcional)"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Número da Nota Fiscal</label>
                   <input
                     type="text"
-                    value={formData.numeroNota}
-                    onChange={e => setFormData({ ...formData, numeroNota: e.target.value })}
+                    value={formData.numeroNotaFiscal}
+                    onChange={e => setFormData({ ...formData, numeroNotaFiscal: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     placeholder="NF-001 (opcional)"
                   />
@@ -674,11 +761,23 @@ const ReceitasContent = memo(() => {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
                     required
                   >
-                    <option value="Recebido">Recebido</option>
+                    <option value="Pago">Pago</option>
                     <option value="Pendente">Pendente</option>
                     <option value="Cancelado">Cancelado</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.dedutivel}
+                    onChange={e => setFormData({ ...formData, dedutivel: e.target.checked })}
+                    className="rounded border-gray-300 text-gray-900 focus:ring-gray-200"
+                  />
+                  <span className="text-sm text-gray-700">Despesa dedutível</span>
+                </label>
               </div>
 
               <div>
@@ -705,7 +804,7 @@ const ReceitasContent = memo(() => {
                   disabled={saving}
                   className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50"
                 >
-                  {saving ? 'Salvando...' : editingReceita ? 'Atualizar' : 'Salvar'}
+                  {saving ? 'Salvando...' : editingDespesa ? 'Atualizar' : 'Salvar'}
                 </button>
               </div>
             </form>
@@ -716,13 +815,13 @@ const ReceitasContent = memo(() => {
   );
 });
 
-ReceitasContent.displayName = 'ReceitasContent';
+DespesasContent.displayName = 'DespesasContent';
 
-export default function ReceitasPage() {
+export default function DespesasPage() {
   return (
     <MeiProtection>
       <ErrorBoundary>
-        <ReceitasContent />
+        <DespesasContent />
       </ErrorBoundary>
     </MeiProtection>
   );
