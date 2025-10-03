@@ -1,6 +1,6 @@
-"use client";
-import { useState, useEffect } from "react";
-import { HiCheckCircle, HiArrowRight, HiCalendar, HiClock, HiSparkles } from "react-icons/hi2";
+'use client';
+import { useState, useEffect } from 'react';
+import { HiCheckCircle, HiArrowRight, HiCalendar, HiClock, HiSparkles } from 'react-icons/hi2';
 
 export default function PaymentSuccess() {
   const [user, setUser] = useState<{ companyId?: string; name?: string } | null>(null);
@@ -35,12 +35,8 @@ export default function PaymentSuccess() {
             <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center mx-auto mb-4">
               <HiCheckCircle className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-3xl font-bold mb-2">
-              🎉 Parabéns, {user?.name || 'Empresário'}!
-            </h1>
-            <p className="text-green-50 text-lg">
-              Seu pagamento foi confirmado e sua assinatura está ativa!
-            </p>
+            <h1 className="text-3xl font-bold mb-2">🎉 Parabéns, {user?.name || 'Empresário'}!</h1>
+            <p className="text-green-50 text-lg">Seu pagamento foi confirmado e sua assinatura está ativa!</p>
           </div>
 
           <div className="p-8 space-y-8">
@@ -51,13 +47,11 @@ export default function PaymentSuccess() {
                   <HiSparkles className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Bem-vindo à Dashboard MEI Completa
-                  </h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Bem-vindo à Dashboard MEI Completa</h3>
                   <p className="text-gray-700 leading-relaxed mb-4">
-                    Você agora tem acesso a uma plataforma profissional e completa para gestão do seu MEI. 
-                    Nossa dashboard oferece controle total de receitas, despesas, DAS, relatórios, 
-                    e muito mais - tudo em um só lugar, de forma simples e intuitiva.
+                    Você agora tem acesso a uma plataforma profissional e completa para gestão do seu MEI. Nossa
+                    dashboard oferece controle total de receitas, despesas, DAS, relatórios, e muito mais - tudo em um
+                    só lugar, de forma simples e intuitiva.
                   </p>
                   <ul className="space-y-2 text-sm text-gray-600">
                     <li className="flex items-center gap-2">
@@ -89,18 +83,16 @@ export default function PaymentSuccess() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Consultoria Gratuita Inclusa
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Consultoria Gratuita Inclusa</h3>
                     <span className="px-2 py-1 bg-purple-600 text-white text-xs font-semibold rounded-full">
                       GRÁTIS
                     </span>
                   </div>
                   <p className="text-gray-700 leading-relaxed mb-4">
-                    Como parte do seu plano, você tem direito a <strong>4 horas de consultoria personalizada</strong> por mês 
-                    com nossos especialistas em gestão MEI. Agende sua sessão e tire todas as suas dúvidas!
+                    Como parte do seu plano, você tem direito a <strong>4 horas de consultoria personalizada</strong>{' '}
+                    por mês com nossos especialistas em gestão MEI. Agende sua sessão e tire todas as suas dúvidas!
                   </p>
-                  
+
                   <div className="bg-white rounded-lg p-4 mb-4 border border-purple-200">
                     <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
                       <HiClock className="w-4 h-4 text-purple-600" />
@@ -109,13 +101,11 @@ export default function PaymentSuccess() {
                     <p className="text-sm text-gray-700 pl-6">
                       Das <strong>19h às 22h</strong>, de segunda a sexta-feira
                     </p>
-                    <p className="text-xs text-gray-500 pl-6 mt-1">
-                      * Vagas limitadas - apenas 1 MEI por dia
-                    </p>
+                    <p className="text-xs text-gray-500 pl-6 mt-1">* Vagas limitadas - apenas 1 MEI por dia</p>
                   </div>
 
                   <button
-                    onClick={() => window.location.href = `/mei/${user?.companyId}/calendario`}
+                    onClick={() => (window.location.href = `/mei/${user?.companyId}/calendario`)}
                     className="inline-flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
                   >
                     <HiCalendar className="w-4 h-4" />
@@ -136,10 +126,10 @@ export default function PaymentSuccess() {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Data da ativação:</span>
                   <span className="text-gray-900 font-medium">
-                    {new Date().toLocaleDateString('pt-BR', { 
-                      day: '2-digit', 
-                      month: 'long', 
-                      year: 'numeric' 
+                    {new Date().toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: 'long',
+                      year: 'numeric',
                     })}
                   </span>
                 </div>
@@ -165,7 +155,7 @@ export default function PaymentSuccess() {
                 <span>Acessar Minha Dashboard MEI</span>
                 <HiArrowRight className="w-5 h-5" />
               </button>
-              
+
               <p className="text-center text-sm text-gray-500">
                 Você receberá um email de confirmação com todos os detalhes em breve
               </p>
@@ -173,19 +163,17 @@ export default function PaymentSuccess() {
 
             {/* Suporte */}
             <div className="pt-6 border-t border-gray-200 text-center">
-              <p className="text-sm text-gray-600 mb-3">
-                Precisa de ajuda para começar?
-              </p>
+              <p className="text-sm text-gray-600 mb-3">Precisa de ajuda para começar?</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center text-sm">
-                <a 
-                  href="mailto:suporte@paimcontab.com" 
+                <a
+                  href="mailto:suporte@paimcontab.com"
                   className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
                 >
                   suporte@paimcontab.com
                 </a>
                 <span className="hidden sm:block text-gray-300">•</span>
-                <a 
-                  href="tel:+5511999999999" 
+                <a
+                  href="tel:+5511999999999"
                   className="text-blue-600 hover:text-blue-800 transition-colors font-medium"
                 >
                   (11) 99999-9999
@@ -197,9 +185,7 @@ export default function PaymentSuccess() {
 
         {/* Footer */}
         <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500">
-            © 2024 PaimContab. Todos os direitos reservados.
-          </p>
+          <p className="text-xs text-gray-500">© 2024 PaimContab. Todos os direitos reservados.</p>
         </div>
       </div>
     </div>
