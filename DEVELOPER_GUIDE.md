@@ -3,6 +3,7 @@
 ## 🚀 Quick Start
 
 ### Initial Setup
+
 ```bash
 # Clone and install
 git clone <repository>
@@ -23,6 +24,7 @@ npm run dev
 ```
 
 ### Environment Variables
+
 ```bash
 # Backend (.env)
 DATABASE_URL="postgresql://user:pass@localhost:5432/paimcontab"
@@ -58,6 +60,7 @@ PaimContab/
 ## 🔐 Authentication Flow
 
 ### Login
+
 ```javascript
 // POST /api/auth/login
 {
@@ -78,6 +81,7 @@ PaimContab/
 ```
 
 ### Using Token
+
 ```javascript
 // All authenticated requests
 headers: {
@@ -90,12 +94,14 @@ headers: {
 ## 🏢 User Roles & Permissions
 
 ### Customer (MEI User)
+
 - Access own company data only
 - CRUD operations on own receitas/despesas
 - Book consultations
 - Access: `/mei/[companyId]/*`
 
 ### Admin
+
 - Access all company data via `?companyId=X`
 - Manage users
 - View all consultations
@@ -106,6 +112,7 @@ headers: {
 ## 🛣️ Key Routes
 
 ### Frontend Routes
+
 ```
 /                           # Landing page
 /Login                      # Authentication
@@ -125,6 +132,7 @@ headers: {
 ```
 
 ### API Endpoints
+
 ```
 # Authentication
 POST   /api/auth/register
@@ -159,6 +167,7 @@ DELETE /api/admin/users/:id
 ## 💾 Database Models
 
 ### Key Models
+
 ```prisma
 User {
   id, email, password, name, role, isActive
@@ -191,24 +200,28 @@ ConsultationBooking {
 ## 🔧 Common Tasks
 
 ### Create Admin User
+
 ```bash
 cd backend
 node scripts/createAdmin.js
 ```
 
 ### Reset Database
+
 ```bash
 cd backend
 npx prisma migrate reset
 ```
 
 ### Add New Migration
+
 ```bash
 cd backend
 npx prisma migrate dev --name description_of_change
 ```
 
 ### Check Database
+
 ```bash
 cd backend
 npx prisma studio
@@ -219,6 +232,7 @@ npx prisma studio
 ## 🧪 Testing
 
 ### Test Authentication
+
 ```bash
 # Register
 curl -X POST http://localhost:4000/api/auth/register \
@@ -232,6 +246,7 @@ curl -X POST http://localhost:4000/api/auth/login \
 ```
 
 ### Test Protected Route
+
 ```bash
 curl -X GET http://localhost:4000/api/receitas \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
@@ -242,25 +257,33 @@ curl -X GET http://localhost:4000/api/receitas \
 ## 🐛 Troubleshooting
 
 ### JWT Secret Error
+
 ```
 Error: JWT_SECRET must be defined in environment variables
 ```
+
 **Fix:** Add `JWT_SECRET` to `.env` file
 
 ### Database Connection Error
+
 ```
 Error: Can't reach database server
 ```
-**Fix:** 
+
+**Fix:**
+
 1. Check PostgreSQL is running
 2. Verify DATABASE_URL in .env
 3. Run `npx prisma migrate dev`
 
 ### Port Already in Use
+
 ```
 Error: Port 4000 is already in use
 ```
+
 **Fix:** Change `PORT` in .env or kill process:
+
 ```bash
 # Windows
 netstat -ano | findstr :4000
@@ -276,6 +299,7 @@ kill -9 <PID>
 ## 📝 Code Conventions
 
 ### Backend
+
 - Use `const` and `let` (no `var`)
 - Async/await over promises
 - Try/catch for error handling
@@ -283,10 +307,11 @@ kill -9 <PID>
 - Validate input with middleware
 - Return consistent error format:
   ```javascript
-  res.status(400).json({ error: "Description" })
+  res.status(400).json({ error: 'Description' });
   ```
 
 ### Frontend
+
 - TypeScript for type safety
 - Use Next.js App Router
 - Client components: `'use client'`
@@ -315,6 +340,7 @@ kill -9 <PID>
 ## 📦 Dependencies
 
 ### Backend Key Packages
+
 - `express` - Web framework
 - `@prisma/client` - Database ORM
 - `jsonwebtoken` - JWT authentication
@@ -323,6 +349,7 @@ kill -9 <PID>
 - `validator` - Input validation
 
 ### Frontend Key Packages
+
 - `next` - React framework
 - `react` - UI library
 - `typescript` - Type safety
@@ -333,6 +360,7 @@ kill -9 <PID>
 ## 🆘 Getting Help
 
 ### Documentation Files
+
 - `README.md` - Project overview
 - `SECURITY_IMPROVEMENTS.md` - Security guide
 - `PROJECT_AUDIT.md` - Full audit report
@@ -340,6 +368,7 @@ kill -9 <PID>
 - `backend/.env.example` - Environment setup
 
 ### Useful Commands
+
 ```bash
 # Check logs
 npm run dev                    # Shows server logs
@@ -358,16 +387,19 @@ npm outdated                  # Check outdated packages
 ## 🎯 Next Steps for New Developers
 
 1. **Setup Environment**
+
    - Install Node.js, PostgreSQL
    - Clone repository
    - Configure .env files
 
 2. **Run Locally**
+
    - Start backend: `cd backend && npm run dev`
    - Start frontend: `cd frontend && npm run dev`
    - Create admin user with script
 
 3. **Understand Architecture**
+
    - Review `PROJECT_AUDIT.md`
    - Check API routes in `backend/src/routes/`
    - Explore pages in `frontend/src/app/`
@@ -380,4 +412,4 @@ npm outdated                  # Check outdated packages
 
 ---
 
-*Last Updated: October 3, 2025*
+_Last Updated: October 3, 2025_
