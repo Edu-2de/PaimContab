@@ -1,14 +1,3 @@
-/**
- * Sistema de Controle de Acesso por Empresa
- *
- * Gerencia permissões de acesso às empresas:
- * - MEI: Pode acessar apenas sua própria empresa
- * - Admin: Pode acessar qualquer empresa
- * - Validação de Company ID na URL vs Token JWT
- */
-
-import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-
 interface User {
   id: string;
   name: string;
