@@ -156,6 +156,21 @@ const ReceitasContent = memo(() => {
     }
   }, [fetchReceitas, hasAccess]);
 
+  // Recarregar dados quando a página recebe foco (voltou de outra aba/página)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && hasAccess) {
+        console.log('🔄 Página recebeu foco - recarregando receitas...');
+        fetchReceitas();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [fetchReceitas, hasAccess]);
+
   // Filtro adicional por mês usando useMemo para cache
   const finalFilteredReceitas = useMemo(() => {
     if (!selectedMonth) return filteredReceitas;
@@ -393,19 +408,31 @@ const ReceitasContent = memo(() => {
           <div className="max-w-none mx-auto">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="overflow-auto" style={{ maxHeight: 'calc(100vh - 350px)', minHeight: '500px' }}>
-                <table className="w-full min-w-[1000px]">
+                <table className="w-full min-w-[1400px]">
                   <thead className="bg-gray-50 border-b border-gray-200 sticky top-0">
                     <tr>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-80">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-56">
                         Descrição
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                        Cliente
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Categoria
+                      </th>
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                        Nº Nota
                       </th>
                       <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Data
                       </th>
-                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-36">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                        Método Pagamento
+                      </th>
+                      <th className="text-right py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
                         Valor
                       </th>
-                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-32">
+                      <th className="text-left py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-28">
                         Status
                       </th>
                       <th className="text-center py-4 px-6 text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
@@ -420,14 +447,32 @@ const ReceitasContent = memo(() => {
                         <tr key={`skeleton-${index}`} className="border-b border-gray-100">
                           <td className="py-4 px-6">
                             <div className="animate-pulse">
-                              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
                             </div>
                           </td>
                           <td className="py-4 px-6">
                             <div className="animate-pulse">
-                              <div className="h-4 bg-gray-200 rounded w-20 mb-1"></div>
-                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                              <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-16"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-20"></div>
+                            </div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="animate-pulse">
+                              <div className="h-4 bg-gray-200 rounded w-24"></div>
                             </div>
                           </td>
                           <td className="py-4 px-6 text-right">
@@ -449,7 +494,7 @@ const ReceitasContent = memo(() => {
                       ))
                     ) : finalFilteredReceitas.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="py-12 text-center">
+                        <td colSpan={9} className="py-12 text-center">
                           <EmptyState
                             title={debouncedSearchTerm ? 'Nenhuma receita encontrada' : 'Nenhuma receita cadastrada'}
                             description={
@@ -483,17 +528,22 @@ const ReceitasContent = memo(() => {
                       finalFilteredReceitas.map(receita => (
                         <tr key={receita.id} className="border-b border-gray-100 hover:bg-gray-25 transition-colors">
                           <td className="py-4 px-6">
-                            <div>
-                              <div className="text-sm font-medium text-gray-900 mb-1">{receita.descricao}</div>
-                              <div className="text-xs text-gray-500">
-                                {receita.cliente && `${receita.cliente} • `}
-                                {receita.categoria}
-                              </div>
-                            </div>
+                            <div className="text-sm font-medium text-gray-900">{receita.descricao}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-700">{receita.cliente || '—'}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-700">{receita.categoria}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-700">{receita.numeroNota || '—'}</div>
                           </td>
                           <td className="py-4 px-6">
                             <div className="text-sm text-gray-900">{formatDate(receita.dataRecebimento)}</div>
-                            <div className="text-xs text-gray-500">{receita.metodoPagamento}</div>
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="text-sm text-gray-700">{receita.metodoPagamento}</div>
                           </td>
                           <td className="py-4 px-6 text-right">
                             <div className="text-sm font-mono font-medium text-gray-900">
@@ -572,7 +622,7 @@ const ReceitasContent = memo(() => {
                   type="text"
                   value={formData.descricao}
                   onChange={e => setFormData({ ...formData, descricao: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                   placeholder="Digite a descrição da receita..."
                   required
                 />
@@ -586,7 +636,7 @@ const ReceitasContent = memo(() => {
                     step="0.01"
                     value={formData.valor}
                     onChange={e => setFormData({ ...formData, valor: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                     placeholder="0,00"
                     required
                   />
@@ -598,7 +648,7 @@ const ReceitasContent = memo(() => {
                     type="date"
                     value={formData.dataRecebimento}
                     onChange={e => setFormData({ ...formData, dataRecebimento: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                     required
                   />
                 </div>
@@ -609,7 +659,7 @@ const ReceitasContent = memo(() => {
                 <select
                   value={formData.categoria}
                   onChange={e => setFormData({ ...formData, categoria: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                   required
                 >
                   <option value="">Selecione uma categoria</option>
@@ -628,8 +678,8 @@ const ReceitasContent = memo(() => {
                     type="text"
                     value={formData.cliente}
                     onChange={e => setFormData({ ...formData, cliente: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
-                    placeholder="Nome do cliente (opcional)"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
+                    placeholder="Nome do cliente (opcional) "
                   />
                 </div>
 
@@ -639,7 +689,7 @@ const ReceitasContent = memo(() => {
                     type="text"
                     value={formData.numeroNota}
                     onChange={e => setFormData({ ...formData, numeroNota: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                     placeholder="NF-001 (opcional)"
                   />
                 </div>
@@ -651,7 +701,7 @@ const ReceitasContent = memo(() => {
                   <select
                     value={formData.metodoPagamento}
                     onChange={e => setFormData({ ...formData, metodoPagamento: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                     required
                   >
                     <option value="">Forma de pagamento</option>
@@ -669,7 +719,7 @@ const ReceitasContent = memo(() => {
                   <select
                     value={formData.status}
                     onChange={e => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                     required
                   >
                     <option value="Recebido">Recebido</option>
@@ -684,7 +734,7 @@ const ReceitasContent = memo(() => {
                 <textarea
                   value={formData.observacoes}
                   onChange={e => setFormData({ ...formData, observacoes: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-200 text-sm text-gray-400"
                   placeholder="Observações adicionais (opcional)"
                   rows={3}
                 />

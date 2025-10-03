@@ -20,10 +20,16 @@ body {
 }
 
 /* MEI Dashboard Layout */
+.mei-page-container {
+  background-color: #f9fafb; /* bg-gray-50 - fundo claro mas não totalmente branco */
+  min-height: 100vh;
+}
+
 .mei-content-wrapper {
   margin-left: var(--mei-sidebar-width);
   min-height: 100vh;
   transition: margin-left 0.3s ease;
+  background-color: transparent; /* herda do mei-page-container */
 }
 
 @media (max-width: 1024px) {

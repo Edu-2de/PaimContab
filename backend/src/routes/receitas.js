@@ -50,7 +50,24 @@ router.get('/receitas', async (req, res) => {
       });
     }
 
-    res.json(receitas);
+    // Mapear campos do schema (inglês) para o frontend (português)
+    const receitasMapeadas = receitas.map(r => ({
+      id: r.id,
+      descricao: r.description,
+      valor: r.value,
+      dataRecebimento: r.date,
+      categoria: r.category,
+      cliente: r.clientName,
+      numeroNota: r.invoiceNumber,
+      metodoPagamento: r.paymentMethod,
+      status: r.status,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      companyId: r.companyId,
+      company: r.company,
+    }));
+
+    res.json(receitasMapeadas);
   } catch (error) {
     console.error('Erro ao buscar receitas:', error);
     res.status(500).json({ error: error.message });
@@ -77,14 +94,41 @@ router.post('/receitas', async (req, res) => {
       }
     }
 
+    // Mapear campos do frontend (português) para o schema (inglês)
+    const dataStr = req.body.dataRecebimento || req.body.date;
+    const dataComHorario = dataStr.includes('T') ? dataStr : `${dataStr}T12:00:00.000Z`;
+
     const receita = await prisma.receita.create({
       data: {
-        ...req.body,
         companyId,
+        description: req.body.descricao || req.body.description,
+        value: parseFloat(req.body.valor || req.body.value),
+        date: new Date(dataComHorario), // Adiciona horário para evitar mudança de data
+        category: req.body.categoria || req.body.category,
+        clientName: req.body.cliente || req.body.clientName,
+        invoiceNumber: req.body.numeroNota || req.body.invoiceNumber,
+        paymentMethod: req.body.metodoPagamento || req.body.paymentMethod || 'PIX',
+        status: req.body.status || 'Recebido',
       },
     });
 
-    res.status(201).json(receita);
+    // Mapear resposta para português
+    const receitaMapeada = {
+      id: receita.id,
+      descricao: receita.description,
+      valor: receita.value,
+      dataRecebimento: receita.date,
+      categoria: receita.category,
+      cliente: receita.clientName,
+      numeroNota: receita.invoiceNumber,
+      metodoPagamento: receita.paymentMethod,
+      status: receita.status,
+      createdAt: receita.createdAt,
+      updatedAt: receita.updatedAt,
+      companyId: receita.companyId,
+    };
+
+    res.status(201).json(receitaMapeada);
   } catch (error) {
     console.error('Erro ao criar receita:', error);
     res.status(500).json({ error: error.message });
@@ -118,12 +162,50 @@ router.put('/receitas/:id', async (req, res) => {
       return res.status(403).json({ error: 'Sem permissão para editar esta receita' });
     }
 
+    // Processar data corretamente
+    let dateToUpdate = undefined;
+    if (req.body.dataRecebimento || req.body.date) {
+      const dataStr = req.body.dataRecebimento || req.body.date;
+      const dataComHorario = dataStr.includes('T') ? dataStr : `${dataStr}T12:00:00.000Z`;
+      dateToUpdate = new Date(dataComHorario);
+    }
+
     const receita = await prisma.receita.update({
       where: { id },
-      data: req.body,
+      data: {
+        description: req.body.descricao || req.body.description,
+        value:
+          req.body.valor !== undefined
+            ? parseFloat(req.body.valor)
+            : req.body.value !== undefined
+            ? parseFloat(req.body.value)
+            : undefined,
+        date: dateToUpdate,
+        category: req.body.categoria || req.body.category,
+        clientName: req.body.cliente || req.body.clientName,
+        invoiceNumber: req.body.numeroNota || req.body.invoiceNumber,
+        paymentMethod: req.body.metodoPagamento || req.body.paymentMethod,
+        status: req.body.status,
+      },
     });
 
-    res.json(receita);
+    // Mapear resposta para português
+    const receitaMapeada = {
+      id: receita.id,
+      descricao: receita.description,
+      valor: receita.value,
+      dataRecebimento: receita.date,
+      categoria: receita.category,
+      cliente: receita.clientName,
+      numeroNota: receita.invoiceNumber,
+      metodoPagamento: receita.paymentMethod,
+      status: receita.status,
+      createdAt: receita.createdAt,
+      updatedAt: receita.updatedAt,
+      companyId: receita.companyId,
+    };
+
+    res.json(receitaMapeada);
   } catch (error) {
     console.error('Erro ao atualizar receita:', error);
     res.status(500).json({ error: error.message });

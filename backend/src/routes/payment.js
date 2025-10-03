@@ -4,7 +4,8 @@ const paymentController = require('../controllers/paymentController');
 const authenticateToken = require('../middleware/authMiddleware');
 const requireAdmin = require('../middleware/adminMiddleware');
 
-router.use('/webhook', express.raw({ type: 'application/json' }));
+// express.raw() já está sendo aplicado no app.js para /api/payment/webhook
+// Não precisa aplicar aqui novamente
 
 router.get('/plans', paymentController.getPlans);
 

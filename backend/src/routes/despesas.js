@@ -50,7 +50,25 @@ router.get('/despesas', async (req, res) => {
       });
     }
 
-    res.json(despesas);
+    // Mapear campos do schema (inglês) para o frontend (português)
+    const despesasMapeadas = despesas.map(d => ({
+      id: d.id,
+      descricao: d.description,
+      valor: d.value,
+      dataPagamento: d.date,
+      categoria: d.category,
+      fornecedor: d.supplier,
+      numeroNota: d.invoiceNumber,
+      metodoPagamento: d.paymentMethod,
+      status: d.status,
+      dedutivel: d.isDeductible,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+      companyId: d.companyId,
+      company: d.company,
+    }));
+
+    res.json(despesasMapeadas);
   } catch (error) {
     console.error('Erro ao buscar despesas:', error);
     res.status(500).json({ error: error.message });
@@ -77,14 +95,48 @@ router.post('/despesas', async (req, res) => {
       }
     }
 
+    // Mapear campos do frontend (português) para o schema (inglês)
+    const dataStr = req.body.dataPagamento || req.body.date;
+    const dataComHorario = dataStr.includes('T') ? dataStr : `${dataStr}T12:00:00.000Z`;
+
     const despesa = await prisma.despesa.create({
       data: {
-        ...req.body,
         companyId,
+        description: req.body.descricao || req.body.description,
+        value: parseFloat(req.body.valor || req.body.value),
+        date: new Date(dataComHorario), // Adiciona horário para evitar mudança de data
+        category: req.body.categoria || req.body.category,
+        supplier: req.body.fornecedor || req.body.supplier,
+        invoiceNumber: req.body.numeroNota || req.body.invoiceNumber,
+        paymentMethod: req.body.metodoPagamento || req.body.paymentMethod || 'PIX',
+        status: req.body.status || 'Pago',
+        isDeductible:
+          req.body.dedutivel !== undefined
+            ? req.body.dedutivel
+            : req.body.isDeductible !== undefined
+            ? req.body.isDeductible
+            : true,
       },
     });
 
-    res.status(201).json(despesa);
+    // Mapear resposta para português
+    const despesaMapeada = {
+      id: despesa.id,
+      descricao: despesa.description,
+      valor: despesa.value,
+      dataPagamento: despesa.date,
+      categoria: despesa.category,
+      fornecedor: despesa.supplier,
+      numeroNota: despesa.invoiceNumber,
+      metodoPagamento: despesa.paymentMethod,
+      status: despesa.status,
+      dedutivel: despesa.isDeductible,
+      createdAt: despesa.createdAt,
+      updatedAt: despesa.updatedAt,
+      companyId: despesa.companyId,
+    };
+
+    res.status(201).json(despesaMapeada);
   } catch (error) {
     console.error('Erro ao criar despesa:', error);
     res.status(500).json({ error: error.message });
@@ -118,12 +170,52 @@ router.put('/despesas/:id', async (req, res) => {
       return res.status(403).json({ error: 'Sem permissão para editar esta despesa' });
     }
 
+    // Processar data corretamente
+    let dateToUpdate = undefined;
+    if (req.body.dataPagamento || req.body.date) {
+      const dataStr = req.body.dataPagamento || req.body.date;
+      const dataComHorario = dataStr.includes('T') ? dataStr : `${dataStr}T12:00:00.000Z`;
+      dateToUpdate = new Date(dataComHorario);
+    }
+
     const despesa = await prisma.despesa.update({
       where: { id },
-      data: req.body,
+      data: {
+        description: req.body.descricao || req.body.description,
+        value:
+          req.body.valor !== undefined
+            ? parseFloat(req.body.valor)
+            : req.body.value !== undefined
+            ? parseFloat(req.body.value)
+            : undefined,
+        date: dateToUpdate,
+        category: req.body.categoria || req.body.category,
+        supplier: req.body.fornecedor || req.body.supplier,
+        invoiceNumber: req.body.numeroNota || req.body.invoiceNumber,
+        paymentMethod: req.body.metodoPagamento || req.body.paymentMethod,
+        status: req.body.status,
+        isDeductible: req.body.dedutivel !== undefined ? req.body.dedutivel : req.body.isDeductible,
+      },
     });
 
-    res.json(despesa);
+    // Mapear resposta para português
+    const despesaMapeada = {
+      id: despesa.id,
+      descricao: despesa.description,
+      valor: despesa.value,
+      dataPagamento: despesa.date,
+      categoria: despesa.category,
+      fornecedor: despesa.supplier,
+      numeroNota: despesa.invoiceNumber,
+      metodoPagamento: despesa.paymentMethod,
+      status: despesa.status,
+      dedutivel: despesa.isDeductible,
+      createdAt: despesa.createdAt,
+      updatedAt: despesa.updatedAt,
+      companyId: despesa.companyId,
+    };
+
+    res.json(despesaMapeada);
   } catch (error) {
     console.error('Erro ao atualizar despesa:', error);
     res.status(500).json({ error: error.message });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import MeiProtection from '../../../../components/MeiProtection';
 import MeiSidebar from '../../../../components/MeiSidebar';
@@ -85,38 +85,7 @@ function MeiDashboardContent() {
   const [hasAccess, setHasAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  useEffect(() => {
-    const validateAccess = () => {
-      const userData = localStorage.getItem('user');
-      if (!userData) {
-        router.push('/Login');
-        return;
-      }
-
-      const userObj = JSON.parse(userData);
-
-      // Verificar se é admin ou se é o dono da empresa
-      if (userObj.role === 'admin') {
-        setIsAdmin(true);
-        setHasAccess(true);
-      } else if (userObj.companyId === companyId) {
-        setHasAccess(true);
-      } else {
-        // Usuário tentando acessar empresa de outro
-        router.push(`/mei/${userObj.companyId}/dashboard`);
-        return;
-      }
-
-      fetchCompanyData();
-      fetchDashboardData();
-    };
-
-    if (companyId) {
-      validateAccess();
-    }
-  }, [companyId, router]);
-
-  const fetchCompanyData = async () => {
+  const fetchCompanyData = useCallback(async () => {
     try {
       const token = localStorage.getItem('authToken');
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/company/${companyId}`, {
@@ -132,9 +101,9 @@ function MeiDashboardContent() {
     } catch (error) {
       console.error('Erro ao buscar dados da empresa:', error);
     }
-  };
+  }, [companyId]);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     if (!companyId) return;
 
     try {
@@ -209,7 +178,54 @@ function MeiDashboardContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [companyId]);
+
+  // Validar acesso e carregar dados iniciais
+  useEffect(() => {
+    const validateAccess = () => {
+      const userData = localStorage.getItem('user');
+      if (!userData) {
+        router.push('/Login');
+        return;
+      }
+
+      const userObj = JSON.parse(userData);
+
+      // Verificar se é admin ou se é o dono da empresa
+      if (userObj.role === 'admin') {
+        setIsAdmin(true);
+        setHasAccess(true);
+      } else if (userObj.companyId === companyId) {
+        setHasAccess(true);
+      } else {
+        // Usuário tentando acessar empresa de outro
+        router.push(`/mei/${userObj.companyId}/dashboard`);
+        return;
+      }
+
+      fetchCompanyData();
+      fetchDashboardData();
+    };
+
+    if (companyId) {
+      validateAccess();
+    }
+  }, [companyId, router, fetchCompanyData, fetchDashboardData]);
+
+  // Recarregar dados quando a página recebe foco (voltou de outra aba/página)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && hasAccess && companyId) {
+        console.log('🔄 Dashboard recebeu foco - recarregando dados...');
+        fetchDashboardData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [companyId, hasAccess, fetchDashboardData]);
 
   if (!hasAccess) {
     return (
@@ -233,9 +249,9 @@ function MeiDashboardContent() {
         {/* Header */}
         <div className="bg-white border-b border-gray-200 px-8 py-6">
           <div className="max-w-8xl mx-auto">
-            <h1 className="text-2xl font-light text-gray-900">Dashboard MEI</h1>
+            <h1 className="text-2xl font-light text-gray-800">Dashboard MEI</h1>
             {company && (
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-gray-600 mt-1">
                 {company.companyName} {company.cnpj && `• ${company.cnpj}`}
               </p>
             )}
@@ -247,8 +263,8 @@ function MeiDashboardContent() {
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-gray-900 mx-auto mb-4"></div>
-              <p className="text-gray-600">Carregando dados...</p>
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 border-t-gray-800 mx-auto mb-4"></div>
+              <p className="text-gray-700">Carregando dados...</p>
             </div>
           </div>
         ) : (
@@ -264,12 +280,12 @@ function MeiDashboardContent() {
                   onClick={() => router.push(`/mei/${companyId}/receitas`)}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Receitas</h3>
+                    <h3 className="text-sm font-medium text-gray-600">Receitas</h3>
                     <div className="p-2 bg-green-50 rounded-lg">
                       <HiArrowTrendingUp className="w-5 h-5 text-green-600" />
                     </div>
                   </div>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(metrics.totalReceita)}</p>
+                  <p className="text-2xl font-light text-gray-800">{formatCurrency(metrics.totalReceita)}</p>
                   {hoveredCard === 'receita' && (
                     <div className="flex items-center gap-1 text-xs text-green-600 mt-2">
                       <span>Ver detalhes</span>
@@ -286,12 +302,12 @@ function MeiDashboardContent() {
                   onClick={() => router.push(`/mei/${companyId}/despesas`)}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Despesas</h3>
+                    <h3 className="text-sm font-medium text-gray-600">Despesas</h3>
                     <div className="p-2 bg-red-50 rounded-lg">
                       <HiArrowTrendingDown className="w-5 h-5 text-red-600" />
                     </div>
                   </div>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(metrics.totalDespesa)}</p>
+                  <p className="text-2xl font-light text-gray-800">{formatCurrency(metrics.totalDespesa)}</p>
                   {hoveredCard === 'despesa' && (
                     <div className="flex items-center gap-1 text-xs text-red-600 mt-2">
                       <span>Ver detalhes</span>
@@ -303,7 +319,7 @@ function MeiDashboardContent() {
                 {/* Lucro Líquido */}
                 <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Lucro Líquido</h3>
+                    <h3 className="text-sm font-medium text-gray-600">Lucro Líquido</h3>
                     <div className={`p-2 rounded-lg ${metrics.lucroLiquido >= 0 ? 'bg-blue-50' : 'bg-orange-50'}`}>
                       {metrics.lucroLiquido >= 0 ? (
                         <HiPlus className="w-5 h-5 text-blue-600" />
@@ -327,13 +343,13 @@ function MeiDashboardContent() {
                   onClick={() => router.push(`/mei/${companyId}/das`)}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-medium text-gray-500">Próximo DAS</h3>
+                    <h3 className="text-sm font-medium text-gray-600">Próximo DAS</h3>
                     <div className="p-2 bg-purple-50 rounded-lg">
                       <HiExclamationTriangle className="w-5 h-5 text-purple-600" />
                     </div>
                   </div>
-                  <p className="text-2xl font-light text-gray-900">{formatCurrency(metrics.valorDAS)}</p>
-                  <p className="text-xs text-gray-500 mt-1">Vencimento: {formatDate(metrics.proximoDAS)}</p>
+                  <p className="text-2xl font-light text-gray-800">{formatCurrency(metrics.valorDAS)}</p>
+                  <p className="text-xs text-gray-600 mt-1">Vencimento: {formatDate(metrics.proximoDAS)}</p>
                   {hoveredCard === 'das' && (
                     <div className="flex items-center gap-1 text-xs text-purple-600 mt-2">
                       <span>Ver DAS</span>
@@ -346,7 +362,7 @@ function MeiDashboardContent() {
               {/* Limite de Faturamento */}
               <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-medium text-gray-700">Limite de Faturamento MEI</h3>
+                  <h3 className="text-sm font-medium text-gray-800">Limite de Faturamento MEI</h3>
                   {isNearLimit && (
                     <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
                       <HiExclamationTriangle className="w-3 h-3" />
@@ -356,8 +372,8 @@ function MeiDashboardContent() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Faturamento Atual</span>
-                    <span className="font-medium text-gray-900">{formatCurrency(metrics.faturamentoAtual)}</span>
+                    <span className="text-gray-700">Faturamento Atual</span>
+                    <span className="font-medium text-gray-800">{formatCurrency(metrics.faturamentoAtual)}</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                     <div
@@ -365,11 +381,11 @@ function MeiDashboardContent() {
                       style={{ width: `${Math.min(usagePercent, 100)}%` }}
                     ></div>
                   </div>
-                  <div className="flex justify-between text-xs text-gray-500">
+                  <div className="flex justify-between text-xs text-gray-600">
                     <span>R$ 0</span>
                     <span>{formatCurrency(metrics.limiteFaturamento)} (Limite Anual)</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-600 mt-2">
                     Você utilizou {usagePercent.toFixed(1)}% do limite anual de faturamento MEI
                   </p>
                 </div>
@@ -378,13 +394,13 @@ function MeiDashboardContent() {
               {/* Transações Recentes */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-700">Transações Recentes</h3>
+                  <h3 className="text-sm font-medium text-gray-800">Transações Recentes</h3>
                 </div>
                 <div className="divide-y divide-gray-200">
                   {recentTransactions.length === 0 ? (
-                    <div className="px-6 py-8 text-center text-gray-500">
-                      <p>Nenhuma transação registrada ainda</p>
-                      <p className="text-xs mt-1">Comece adicionando suas receitas e despesas</p>
+                    <div className="px-6 py-8 text-center text-gray-600">
+                      <p className="text-gray-700">Nenhuma transação registrada ainda</p>
+                      <p className="text-xs mt-1 text-gray-600">Comece adicionando suas receitas e despesas</p>
                     </div>
                   ) : (
                     recentTransactions.map(transaction => (
@@ -403,8 +419,8 @@ function MeiDashboardContent() {
                               )}
                             </div>
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{transaction.description}</p>
-                              <p className="text-xs text-gray-500">
+                              <p className="text-sm font-medium text-gray-800">{transaction.description}</p>
+                              <p className="text-xs text-gray-600">
                                 {transaction.category} • {formatDate(transaction.date)}
                               </p>
                             </div>

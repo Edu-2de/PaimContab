@@ -6,6 +6,7 @@ const requireAdmin = require('../middleware/adminMiddleware');
 
 router.post('/user/:userId', companyController.createCompany);
 router.get('/user/:userId', authenticateToken, companyController.getCompanyByUser);
+router.get('/:id', authenticateToken, companyController.getCompanyById);
 router.put('/:id', authenticateToken, companyController.updateCompany);
 router.delete('/:id', authenticateToken, companyController.deleteCompany);
 

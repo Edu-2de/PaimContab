@@ -157,15 +157,14 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
     // Caso contrário, usa o pathname para detecção exata
     if (!pathname) return false;
 
-    // Para dashboard, verifica se é exatamente /mei/dashboard
+    // Para dashboard, verifica se é /mei/{companyId}/dashboard
     if (itemKey === 'dashboard') {
-      return pathname === '/mei/dashboard';
+      return pathname.includes('/mei/') && pathname.endsWith('/dashboard');
     }
 
-    // Para outras páginas, verifica se o pathname começa com /mei/{itemKey}
-    // mas não é apenas uma substring (evita conflitos como "das" sendo encontrado em "dashboard")
-    const expectedPath = `/mei/${itemKey}`;
-    return pathname === expectedPath || pathname.startsWith(expectedPath + '/');
+    // Para outras páginas, verifica se o pathname contém /mei/{companyId}/{itemKey}
+    const expectedPattern = `/mei/${effectiveCompanyId}/${itemKey}`;
+    return pathname === expectedPattern || pathname.startsWith(expectedPattern + '/');
   };
 
   return (
