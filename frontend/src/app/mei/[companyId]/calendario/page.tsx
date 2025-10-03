@@ -40,13 +40,13 @@ export default function CalendarioPage() {
       const token = localStorage.getItem('token');
       const userStr = localStorage.getItem('user');
       const userObj = JSON.parse(userStr || '{}');
-      
+
       const queryParam = userObj.role === 'admin' ? `?companyId=${companyId}` : '';
-      
+
       const response = await fetch(`${BACKEND_URL}/api/consultations${queryParam}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -63,14 +63,11 @@ export default function CalendarioPage() {
   const fetchAvailableDates = useCallback(async (year: number, month: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(
-        `${BACKEND_URL}/api/consultations/available-dates?year=${year}&month=${month}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await fetch(`${BACKEND_URL}/api/consultations/available-dates?year=${year}&month=${month}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -79,7 +76,7 @@ export default function CalendarioPage() {
     } catch (error) {
       console.error('Erro ao buscar datas disponíveis:', error);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // Validar acesso
@@ -119,13 +116,13 @@ export default function CalendarioPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           consultationDate: selectedDate,
           startTime: selectedTime,
-          notes
-        })
+          notes,
+        }),
       });
 
       if (response.ok) {
@@ -156,8 +153,8 @@ export default function CalendarioPage() {
       const response = await fetch(`${BACKEND_URL}/api/consultations/${id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       if (response.ok) {
@@ -189,7 +186,7 @@ export default function CalendarioPage() {
     const startingDayOfWeek = firstDay.getDay();
 
     const days: (Date | null)[] = [];
-    
+
     // Preencher dias vazios antes do primeiro dia
     for (let i = 0; i < startingDayOfWeek; i++) {
       days.push(null);
@@ -238,24 +235,16 @@ export default function CalendarioPage() {
   return (
     <div className="flex h-screen bg-gray-50">
       <MeiSidebar companyId={companyId} />
-      
+
       <div className="flex-1 overflow-auto p-8">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Calendário de Consultorias</h1>
-          <p className="text-gray-600 mb-8">
-            Agende sua consultoria personalizada (19h às 22h)
-          </p>
+          <p className="text-gray-600 mb-8">Agende sua consultoria personalizada (19h às 22h)</p>
 
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">
-              {error}
-            </div>
-          )}
+          {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error}</div>}
 
           {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">
-              {success}
-            </div>
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800">{success}</div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -313,7 +302,11 @@ export default function CalendarioPage() {
                         transition-all text-sm font-medium
                         ${isBooked ? 'bg-red-100 border-red-300 text-red-800 cursor-not-allowed' : ''}
                         ${isPast && !isBooked ? 'bg-gray-50 border-gray-200 text-gray-400 cursor-not-allowed' : ''}
-                        ${!isBooked && !isPast && !isSelected ? 'bg-white border-gray-300 hover:border-purple-400 hover:bg-purple-50' : ''}
+                        ${
+                          !isBooked && !isPast && !isSelected
+                            ? 'bg-white border-gray-300 hover:border-purple-400 hover:bg-purple-50'
+                            : ''
+                        }
                         ${isSelected ? 'bg-purple-500 border-purple-600 text-white' : ''}
                       `}
                     >
@@ -346,9 +339,7 @@ export default function CalendarioPage() {
                   <h3 className="text-xl font-semibold mb-4">Agendar Consultoria</h3>
                   <form onSubmit={handleCreateBooking} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Data Selecionada
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Data Selecionada</label>
                       <input
                         type="text"
                         value={selectedDate ? formatDate(selectedDate) : ''}
@@ -358,12 +349,10 @@ export default function CalendarioPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Horário de Início
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Horário de Início</label>
                       <select
                         value={selectedTime}
-                        onChange={(e) => setSelectedTime(e.target.value)}
+                        onChange={e => setSelectedTime(e.target.value)}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       >
                         {availableTimes.map(time => (
@@ -378,12 +367,10 @@ export default function CalendarioPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Observações (opcional)
-                      </label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Observações (opcional)</label>
                       <textarea
                         value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
+                        onChange={e => setNotes(e.target.value)}
                         rows={3}
                         placeholder="Descreva os tópicos que gostaria de abordar na consultoria..."
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -415,11 +402,9 @@ export default function CalendarioPage() {
               {/* Lista de Agendamentos */}
               <div className="bg-white rounded-xl shadow-md p-6">
                 <h3 className="text-xl font-semibold mb-4">Seus Agendamentos</h3>
-                
+
                 {bookings.length === 0 ? (
-                  <p className="text-gray-500 text-center py-8">
-                    Nenhuma consultoria agendada ainda
-                  </p>
+                  <p className="text-gray-500 text-center py-8">Nenhuma consultoria agendada ainda</p>
                 ) : (
                   <div className="space-y-3">
                     {bookings.map(booking => (
@@ -433,24 +418,18 @@ export default function CalendarioPage() {
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <p className="font-semibold text-gray-800">
-                              {formatDate(booking.consultationDate)}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Horário: {booking.startTime} (4 horas)
-                            </p>
-                            {booking.notes && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                Obs: {booking.notes}
-                              </p>
-                            )}
-                            <p className={`text-xs mt-2 font-medium ${
-                              booking.status === 'cancelled' ? 'text-red-600' : 'text-green-600'
-                            }`}>
+                            <p className="font-semibold text-gray-800">{formatDate(booking.consultationDate)}</p>
+                            <p className="text-sm text-gray-600">Horário: {booking.startTime} (4 horas)</p>
+                            {booking.notes && <p className="text-sm text-gray-600 mt-1">Obs: {booking.notes}</p>}
+                            <p
+                              className={`text-xs mt-2 font-medium ${
+                                booking.status === 'cancelled' ? 'text-red-600' : 'text-green-600'
+                              }`}
+                            >
                               {booking.status === 'cancelled' ? 'Cancelado' : 'Agendado'}
                             </p>
                           </div>
-                          
+
                           {booking.status !== 'cancelled' && (
                             <button
                               onClick={() => handleCancelBooking(booking.id)}
