@@ -41,16 +41,18 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
   const pathname = usePathname();
 
   // Obter companyId do usuário se não for passado como prop
-  const effectiveCompanyId = companyId || (() => {
-    if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
-        return user.companyId;
+  const effectiveCompanyId =
+    companyId ||
+    (() => {
+      if (typeof window !== 'undefined') {
+        const userData = localStorage.getItem('user');
+        if (userData) {
+          const user = JSON.parse(userData);
+          return user.companyId;
+        }
       }
-    }
-    return null;
-  })();
+      return null;
+    })();
 
   const navigationItems = [
     {

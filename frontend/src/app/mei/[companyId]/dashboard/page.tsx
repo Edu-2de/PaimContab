@@ -94,7 +94,7 @@ function MeiDashboardContent() {
       }
 
       const userObj = JSON.parse(userData);
-      
+
       // Verificar se é admin ou se é o dono da empresa
       if (userObj.role === 'admin') {
         setIsAdmin(true);
@@ -147,21 +147,15 @@ function MeiDashboardContent() {
       const queryParam = userObj?.role === 'admin' ? `?companyId=${companyId}` : '';
 
       // Buscar receitas
-      const receitasResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const receitasResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const receitas = receitasResponse.ok ? await receitasResponse.json() : [];
 
       // Buscar despesas
-      const despesasResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const despesasResponse = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       const despesas = despesasResponse.ok ? await despesasResponse.json() : [];
 
       // Calcular métricas
@@ -245,9 +239,7 @@ function MeiDashboardContent() {
                 {company.companyName} {company.cnpj && `• ${company.cnpj}`}
               </p>
             )}
-            {isAdmin && (
-              <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>
-            )}
+            {isAdmin && <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>}
           </div>
         </div>
 
@@ -321,9 +313,7 @@ function MeiDashboardContent() {
                     </div>
                   </div>
                   <p
-                    className={`text-2xl font-light ${
-                      metrics.lucroLiquido >= 0 ? 'text-blue-600' : 'text-orange-600'
-                    }`}
+                    className={`text-2xl font-light ${metrics.lucroLiquido >= 0 ? 'text-blue-600' : 'text-orange-600'}`}
                   >
                     {formatCurrency(metrics.lucroLiquido)}
                   </p>
@@ -371,9 +361,7 @@ function MeiDashboardContent() {
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                     <div
-                      className={`h-full transition-all duration-500 ${
-                        isNearLimit ? 'bg-orange-500' : 'bg-blue-500'
-                      }`}
+                      className={`h-full transition-all duration-500 ${isNearLimit ? 'bg-orange-500' : 'bg-blue-500'}`}
                       style={{ width: `${Math.min(usagePercent, 100)}%` }}
                     ></div>
                   </div>
@@ -399,7 +387,7 @@ function MeiDashboardContent() {
                       <p className="text-xs mt-1">Comece adicionando suas receitas e despesas</p>
                     </div>
                   ) : (
-                    recentTransactions.map((transaction) => (
+                    recentTransactions.map(transaction => (
                       <div key={transaction.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">

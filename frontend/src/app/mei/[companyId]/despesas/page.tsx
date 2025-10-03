@@ -63,7 +63,7 @@ const DespesasContent = memo(() => {
   const params = useParams();
   const router = useRouter();
   const companyId = params.companyId as string;
-  
+
   const [despesas, setDespesas] = useState<Despesa[]>([]);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -97,7 +97,7 @@ const DespesasContent = memo(() => {
       }
 
       const userObj = JSON.parse(userData);
-      
+
       // Verificar se é admin ou se é o dono da empresa
       if (userObj.role === 'admin') {
         setIsAdmin(true);
@@ -127,20 +127,16 @@ const DespesasContent = memo(() => {
   }, []);
 
   // Usar hook otimizado para filtros
-  useOptimizedFilter(
-    despesas,
-    searchTerm,
-    filterDespesas
-  );
+  useOptimizedFilter(despesas, searchTerm, filterDespesas);
 
   // Buscar despesas do backend
   const fetchDespesas = useCallback(async () => {
     if (!hasAccess) return;
-    
+
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
       // Se for admin, passar companyId como query parameter
       const queryParam = isAdmin ? `?companyId=${companyId}` : '';
 
@@ -346,9 +342,7 @@ const DespesasContent = memo(() => {
               <div>
                 <h1 className="text-2xl font-light text-gray-900">Despesas</h1>
                 <p className="text-sm text-gray-500 mt-1">Controle financeiro de saídas</p>
-                {isAdmin && (
-                  <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>
-                )}
+                {isAdmin && <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>}
               </div>
 
               <div className="flex items-center gap-2">

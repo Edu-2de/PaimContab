@@ -54,7 +54,7 @@ const ReceitasContent = memo(() => {
   const params = useParams();
   const router = useRouter();
   const companyId = params.companyId as string;
-  
+
   const [receitas, setReceitas] = useState<Receita[]>([]);
   const [loading, setLoading] = useState(true);
   const [metricsLoading, setMetricsLoading] = useState(true);
@@ -87,7 +87,7 @@ const ReceitasContent = memo(() => {
       }
 
       const userObj = JSON.parse(userData);
-      
+
       // Verificar se é admin ou se é o dono da empresa
       if (userObj.role === 'admin') {
         setIsAdmin(true);
@@ -126,14 +126,14 @@ const ReceitasContent = memo(() => {
   // Buscar receitas do backend - memoizado
   const fetchReceitas = useCallback(async () => {
     if (!hasAccess) return;
-    
+
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
-      
+
       // Se for admin, passar companyId como query parameter
       const queryParam = isAdmin ? `?companyId=${companyId}` : '';
-      
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -306,9 +306,7 @@ const ReceitasContent = memo(() => {
               <div>
                 <h1 className="text-2xl font-light text-gray-900">Receitas</h1>
                 <p className="text-sm text-gray-500 mt-1">Controle financeiro de entradas</p>
-                {isAdmin && (
-                  <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>
-                )}
+                {isAdmin && <p className="text-xs text-blue-600 mt-1">👁️ Visualização administrativa</p>}
               </div>
 
               <div className="flex items-center gap-2">
