@@ -80,6 +80,7 @@ model Subscription {
   userId     String
   plan       Plan      @relation(fields: [planId], references: [id])
   planId     String
+  stripeSubscriptionId String? @unique  // ID da assinatura no Stripe para webhooks
   startDate  DateTime  @default(now())
   endDate    DateTime?
   isActive   Boolean   @default(true)

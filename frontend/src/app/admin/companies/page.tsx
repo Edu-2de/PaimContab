@@ -17,20 +17,24 @@ import {
 
 interface Company {
   id: string;
-  name: string;
+  companyName: string; // Campo correto do backend
+  legalName?: string;
   cnpj?: string;
-  email?: string;
-  phone?: string;
+  businessEmail?: string;
+  businessPhone?: string;
   address?: string;
   city?: string;
   state?: string;
   zipCode?: string;
-  plan?: string;
-  status: 'active' | 'inactive' | 'suspended';
+  businessType?: string;
+  businessSegment?: string;
+  isActive: boolean; // Campo correto do backend
   userId?: string;
   user?: {
+    id: string;
     name: string;
     email: string;
+    isActive: boolean;
   };
   createdAt: string;
   updatedAt: string;
@@ -109,15 +113,11 @@ function AdminCompaniesContent() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const badges = {
-      active: { color: 'bg-gray-800 text-white', text: 'Ativa' },
-      inactive: { color: 'bg-gray-300 text-gray-700', text: 'Inativa' },
-      suspended: { color: 'bg-gray-200 text-gray-600', text: 'Suspensa' },
-    };
-
-    const badge = badges[status as keyof typeof badges] || badges.inactive;
-    return <span className={`px-2 py-1 rounded-full text-xs font-medium ${badge.color}`}>{badge.text}</span>;
+  const getStatusBadge = (isActive: boolean) => {
+    if (isActive) {
+      return <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">Ativa</span>;
+    }
+    return <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-300 text-gray-700">Inativa</span>;
   };
 
   const formatDate = (dateString: string) => {
@@ -136,12 +136,15 @@ function AdminCompaniesContent() {
   const filteredCompanies = companies.filter(company => {
     const matchesSearch =
       !searchTerm ||
-      company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.cnpj?.includes(searchTerm) ||
-      company.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      company.businessEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       company.user?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = !filterStatus || company.status === filterStatus;
+    const matchesStatus =
+      !filterStatus ||
+      (filterStatus === 'active' && company.isActive) ||
+      (filterStatus === 'inactive' && !company.isActive);
 
     return matchesSearch && matchesStatus;
   });
@@ -270,8 +273,10 @@ function AdminCompaniesContent() {
                       <tr key={company.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div>
-                            <div className="text-sm font-medium text-gray-900">{company.name}</div>
-                            {company.email && <div className="text-sm text-gray-500">{company.email}</div>}
+                            <div className="text-sm font-medium text-gray-900">{company.companyName || '-'}</div>
+                            {company.businessEmail && (
+                              <div className="text-sm text-gray-500">{company.businessEmail}</div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -283,14 +288,14 @@ function AdminCompaniesContent() {
                             {company.user?.email && <div className="text-sm text-gray-500">{company.user.email}</div>}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(company.status)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(company.isActive)}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(company.createdAt)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end gap-2">
                             <Link
-                              href={`/admin/companies/${company.id}`}
+                              href={`/admin/companies/edit/${company.id}`}
                               className="text-gray-400 hover:text-gray-600 transition-colors"
                               title="Ver detalhes"
                             >

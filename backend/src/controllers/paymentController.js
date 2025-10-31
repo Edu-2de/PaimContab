@@ -262,11 +262,19 @@ exports.stripeWebhook = async (req, res) => {
           console.log('✅ Assinatura anterior desativada');
         }
 
+        // Buscar o ID da assinatura criada no Stripe
+        let stripeSubscriptionId = null;
+        if (session.subscription) {
+          stripeSubscriptionId = session.subscription;
+          console.log('✅ Stripe Subscription ID:', stripeSubscriptionId);
+        }
+
         // Criar nova assinatura
         console.log('📝 Criando nova assinatura...');
         console.log('📋 Dados:', {
           userId: user.id,
           planId: plan.id,
+          stripeSubscriptionId: stripeSubscriptionId,
           isActive: true,
           startDate: new Date().toISOString(),
         });
@@ -275,6 +283,7 @@ exports.stripeWebhook = async (req, res) => {
           data: {
             userId: user.id,
             planId: plan.id,
+            stripeSubscriptionId: stripeSubscriptionId,
             isActive: true,
             startDate: new Date(),
           },
@@ -285,7 +294,8 @@ exports.stripeWebhook = async (req, res) => {
         });
 
         console.log('✅ ===== ASSINATURA CRIADA COM SUCESSO =====');
-        console.log('✅ Subscription ID:', subscription.id);
+        console.log('✅ Subscription ID (DB):', subscription.id);
+        console.log('✅ Subscription ID (Stripe):', subscription.stripeSubscriptionId);
         console.log('✅ User:', subscription.user.name, '-', subscription.user.email);
         console.log('✅ Plan:', subscription.plan.name, '- R$', subscription.plan.price);
         console.log('✅ Status:', subscription.isActive ? 'ATIVA' : 'INATIVA');
@@ -303,16 +313,40 @@ exports.stripeWebhook = async (req, res) => {
 
     case 'invoice.payment_succeeded':
       const invoice = event.data.object;
-      console.log('💰 Payment succeeded:', invoice.id);
+      console.log('💰 ===== INVOICE PAYMENT SUCCEEDED =====');
+      console.log('💰 Invoice ID:', invoice.id);
+      console.log('💰 Subscription ID:', invoice.subscription);
+      console.log('💰 Amount Paid:', invoice.amount_paid / 100, 'BRL');
 
       try {
-        // Encontrar assinatura pelo customer
-        const customerId = invoice.customer;
-        const stripeCustomer = await stripe.customers.retrieve(customerId);
+        // Encontrar assinatura pelo stripeSubscriptionId
+        if (invoice.subscription) {
+          const subscription = await prisma.subscription.findFirst({
+            where: { stripeSubscriptionId: invoice.subscription },
+            include: { user: true, plan: true },
+          });
 
-        // Aqui você pode atualizar o status da assinatura se necessário
-        // Por exemplo, reativar se estava suspensa por falta de pagamento
-        console.log('✅ Pagamento processado para:', stripeCustomer.email);
+          if (subscription) {
+            // Reativar assinatura se estava inativa (por falta de pagamento)
+            if (!subscription.isActive) {
+              await prisma.subscription.update({
+                where: { id: subscription.id },
+                data: {
+                  isActive: true,
+                  endDate: null, // Remover data de término se havia
+                },
+              });
+              console.log('✅ Assinatura reativada após pagamento:', subscription.id);
+            } else {
+              console.log('✅ Pagamento recorrente processado para:', subscription.user.email);
+            }
+
+            // Notificar admins sobre renovação (opcional)
+            // await notifyAdmins(subscription.user, subscription.plan, subscription);
+          } else {
+            console.log('⚠️ Assinatura não encontrada no banco para:', invoice.subscription);
+          }
+        }
       } catch (error) {
         console.error('❌ Erro ao processar pagamento:', error);
       }
@@ -320,15 +354,41 @@ exports.stripeWebhook = async (req, res) => {
 
     case 'invoice.payment_failed':
       const failedInvoice = event.data.object;
-      console.log('❌ Payment failed:', failedInvoice.id);
+      console.log('❌ ===== INVOICE PAYMENT FAILED =====');
+      console.log('❌ Invoice ID:', failedInvoice.id);
+      console.log('❌ Subscription ID:', failedInvoice.subscription);
+      console.log('❌ Amount Due:', failedInvoice.amount_due / 100, 'BRL');
+      console.log('❌ Attempt Count:', failedInvoice.attempt_count);
 
       try {
-        // Aqui você pode suspender a assinatura ou enviar email de cobrança
-        const customerId = failedInvoice.customer;
-        const stripeCustomer = await stripe.customers.retrieve(customerId);
+        // Suspender assinatura após falha de pagamento
+        if (failedInvoice.subscription) {
+          const subscription = await prisma.subscription.findFirst({
+            where: { stripeSubscriptionId: failedInvoice.subscription },
+            include: { user: true, plan: true },
+          });
 
-        console.log('⚠️ Falha no pagamento para:', stripeCustomer.email);
-        // TODO: Implementar lógica de suspensão ou retry
+          if (subscription) {
+            // Desativar assinatura após 3 tentativas falhadas
+            if (failedInvoice.attempt_count >= 3) {
+              await prisma.subscription.update({
+                where: { id: subscription.id },
+                data: {
+                  isActive: false,
+                  endDate: new Date(), // Marcar data de término
+                },
+              });
+              console.log('❌ Assinatura suspensa após falha de pagamento:', subscription.id);
+
+              // TODO: Enviar email para o usuário sobre suspensão
+              console.log('📧 Email de suspensão deve ser enviado para:', subscription.user.email);
+            } else {
+              console.log('⚠️ Tentativa', failedInvoice.attempt_count, 'de 3 - Assinatura ainda ativa');
+            }
+          } else {
+            console.log('⚠️ Assinatura não encontrada no banco para:', failedInvoice.subscription);
+          }
+        }
       } catch (error) {
         console.error('❌ Erro ao processar falha de pagamento:', error);
       }
@@ -336,11 +396,32 @@ exports.stripeWebhook = async (req, res) => {
 
     case 'customer.subscription.updated':
       const updatedSubscription = event.data.object;
-      console.log('🔄 Subscription updated:', updatedSubscription.id);
+      console.log('🔄 ===== SUBSCRIPTION UPDATED =====');
+      console.log('🔄 Subscription ID:', updatedSubscription.id);
+      console.log('🔄 Status:', updatedSubscription.status);
+      console.log('🔄 Current Period End:', new Date(updatedSubscription.current_period_end * 1000));
 
       try {
-        // Atualizar status da assinatura no banco
-        // TODO: Implementar lógica para sincronizar com o banco local
+        // Sincronizar status da assinatura no banco
+        const subscription = await prisma.subscription.findFirst({
+          where: { stripeSubscriptionId: updatedSubscription.id },
+        });
+
+        if (subscription) {
+          const isActive = ['active', 'trialing'].includes(updatedSubscription.status);
+
+          await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              isActive: isActive,
+              endDate: !isActive ? new Date() : null,
+            },
+          });
+
+          console.log('✅ Assinatura sincronizada:', subscription.id, '- Status:', isActive ? 'ATIVA' : 'INATIVA');
+        } else {
+          console.log('⚠️ Assinatura não encontrada no banco para:', updatedSubscription.id);
+        }
       } catch (error) {
         console.error('❌ Erro ao atualizar assinatura:', error);
       }
@@ -348,13 +429,36 @@ exports.stripeWebhook = async (req, res) => {
 
     case 'customer.subscription.deleted':
       const deletedSubscription = event.data.object;
-      console.log('🗑️ Subscription deleted:', deletedSubscription.id);
+      console.log('🗑️ ===== SUBSCRIPTION DELETED =====');
+      console.log('🗑️ Subscription ID:', deletedSubscription.id);
+      console.log('🗑️ Canceled At:', new Date(deletedSubscription.canceled_at * 1000));
 
       try {
         // Desativar assinatura no banco
-        // TODO: Implementar lógica para desativar assinatura local
+        const subscription = await prisma.subscription.findFirst({
+          where: { stripeSubscriptionId: deletedSubscription.id },
+          include: { user: true },
+        });
+
+        if (subscription) {
+          await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: {
+              isActive: false,
+              endDate: new Date(),
+            },
+          });
+
+          console.log('✅ Assinatura cancelada no banco:', subscription.id);
+          console.log('✅ Usuário:', subscription.user.email);
+
+          // TODO: Enviar email de confirmação de cancelamento
+          console.log('📧 Email de cancelamento deve ser enviado para:', subscription.user.email);
+        } else {
+          console.log('⚠️ Assinatura não encontrada no banco para:', deletedSubscription.id);
+        }
       } catch (error) {
-        console.error('❌ Erro ao deletar assinatura:', error);
+        console.error('❌ Erro ao cancelar assinatura:', error);
       }
       break;
 
