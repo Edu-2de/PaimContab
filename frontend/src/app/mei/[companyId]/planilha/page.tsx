@@ -178,30 +178,47 @@ function MeiSpreadsheetContent() {
     };
   };
 
-  // Criar linha vazia
-  const createEmptyRow = (): SpreadsheetRow => ({
-    id: `new-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    data: new Date().toISOString().split('T')[0],
-    descricao: '',
-    categoria: '',
-    tipo: '',
-    valor: 0,
-    status: '',
-    isEditing: true,
-    isNew: true,
-  });
+  // Criar linha vazia com data baseada no mês selecionado
+  const createEmptyRow = useCallback((): SpreadsheetRow => {
+    const today = new Date();
+    const currentMonth = today.toISOString().substring(0, 7); // YYYY-MM
 
-  // Adicionar linhas vazias automaticamente - sempre manter pelo menos 1 linha vazia
-  const ensureEmptyRows = useCallback((currentRows: SpreadsheetRow[]) => {
-    const emptyRows = currentRows.filter(row => !row.descricao && !row.tipo && row.valor === 0);
-
-    // Se não tem nenhuma linha vazia, adicionar 1
-    if (emptyRows.length === 0) {
-      return [...currentRows, createEmptyRow()];
+    // Se o mês selecionado for o atual, usar data de hoje
+    // Senão, usar primeiro dia do mês selecionado
+    let rowDate: string;
+    if (selectedMonth === currentMonth) {
+      rowDate = today.toISOString().split('T')[0];
+    } else {
+      rowDate = `${selectedMonth}-01`;
     }
 
-    return currentRows;
-  }, []);
+    return {
+      id: `new-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      data: rowDate,
+      descricao: '',
+      categoria: '',
+      tipo: '',
+      valor: 0,
+      status: '',
+      isEditing: true,
+      isNew: true,
+    };
+  }, [selectedMonth]);
+
+  // Adicionar linhas vazias automaticamente - sempre manter pelo menos 1 linha vazia
+  const ensureEmptyRows = useCallback(
+    (currentRows: SpreadsheetRow[]) => {
+      const emptyRows = currentRows.filter(row => !row.descricao && !row.tipo && row.valor === 0);
+
+      // Se não tem nenhuma linha vazia, adicionar 1
+      if (emptyRows.length === 0) {
+        return [...currentRows, createEmptyRow()];
+      }
+
+      return currentRows;
+    },
+    [createEmptyRow]
+  );
 
   // Buscar dados do backend e gerar planilha
   const fetchSpreadsheetData = useCallback(async () => {
@@ -360,10 +377,17 @@ function MeiSpreadsheetContent() {
   }, [fetchSpreadsheetData, hasAccess]);
 
   const updateRow = (id: string, field: keyof SpreadsheetRow, value: string | number | boolean) => {
+    console.log('🔄 updateRow chamado:', { id, field, value });
+
     setRows(prevRows => {
       const updatedRows = prevRows.map(row => {
         if (row.id === id) {
           const updatedRow = { ...row, [field]: value };
+
+          console.log('📝 Linha sendo atualizada:', {
+            antes: row,
+            depois: updatedRow,
+          });
 
           // Auto-definir status padrão baseado no tipo
           if (field === 'tipo' && !updatedRow.status) {
@@ -441,6 +465,13 @@ function MeiSpreadsheetContent() {
           bodyData.companyId = companyId;
         }
 
+        console.log('💾 Salvando linha editada:', {
+          endpoint,
+          id: row.originalId,
+          bodyData,
+          row,
+        });
+
         const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/${endpoint}/${row.originalId}`, {
           method: 'PUT',
           headers: {
@@ -456,6 +487,9 @@ function MeiSpreadsheetContent() {
           alert(`Erro ao salvar: ${errorText}`);
           return;
         }
+
+        const responseData = await response.json();
+        console.log('✅ Resposta do servidor:', responseData);
       }
 
       // Desativar modo de edição
@@ -544,11 +578,13 @@ function MeiSpreadsheetContent() {
 
       for (const row of newRows) {
         let response;
-        const bodyData: Record<string, string | number> = {
+        const bodyData: Record<string, string | number | boolean | null> = {
           descricao: row.descricao,
           valor: row.valor,
-          categoria: row.categoria,
+          categoria: row.categoria || '',
           status: row.status,
+          numeroNota: row.numeroNota || null,
+          metodoPagamento: row.metodoPagamento || null,
         };
 
         // Se for admin, precisa enviar companyId
@@ -558,6 +594,8 @@ function MeiSpreadsheetContent() {
 
         if (row.tipo === 'receita') {
           bodyData.dataRecebimento = row.data;
+          bodyData.cliente = row.cliente || null;
+
           response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas`, {
             method: 'POST',
             headers: {
@@ -568,6 +606,9 @@ function MeiSpreadsheetContent() {
           });
         } else if (row.tipo === 'despesa') {
           bodyData.dataPagamento = row.data;
+          bodyData.fornecedor = row.fornecedor || null;
+          bodyData.dedutivel = row.dedutivel !== undefined ? row.dedutivel : true;
+
           response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas`, {
             method: 'POST',
             headers: {
@@ -708,7 +749,10 @@ function MeiSpreadsheetContent() {
                 )}
 
                 <button
-                  onClick={fetchSpreadsheetData}
+                  onClick={() => {
+                    console.log('🔄 Botão de atualizar clicado!');
+                    fetchSpreadsheetData();
+                  }}
                   className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   title="Atualizar dados"
                 >
@@ -1114,11 +1158,11 @@ function MeiSpreadsheetContent() {
 
                         {/* Ações */}
                         <td className="py-3 px-4">
-                          <div className="flex items-center justify-center gap-2">
+                          <div className="flex items-center justify-center gap-1.5">
                             {!row.isNew && !row.isEditing && (
                               <button
                                 onClick={() => updateRow(row.id, 'isEditing', true)}
-                                className="p-2 bg-gray-900 text-white hover:bg-gray-800 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+                                className="p-1.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded transition-colors"
                                 title="Editar"
                               >
                                 <svg
@@ -1140,10 +1184,10 @@ function MeiSpreadsheetContent() {
                               <button
                                 onClick={() => saveIndividualRow(row)}
                                 disabled={!isRowValid(row)}
-                                className={`p-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
+                                className={`p-1.5 rounded transition-colors ${
                                   isRowValid(row)
-                                    ? 'bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer'
-                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed opacity-50'
+                                    ? 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 cursor-pointer'
+                                    : 'text-gray-400 cursor-not-allowed'
                                 }`}
                                 title={isRowValid(row) ? 'Salvar' : 'Preencha todos os campos obrigatórios'}
                               >
@@ -1161,7 +1205,7 @@ function MeiSpreadsheetContent() {
                             {(row.descricao || row.tipo || row.valor > 0) && (
                               <button
                                 onClick={() => deleteRowWithConfirmation(row)}
-                                className="p-2 bg-red-600 text-white hover:bg-red-700 rounded-md transition-all duration-200 shadow-sm hover:shadow-md"
+                                className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
                                 title="Excluir"
                               >
                                 <svg
@@ -1169,9 +1213,13 @@ function MeiSpreadsheetContent() {
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
-                                  strokeWidth="2.5"
+                                  strokeWidth="2"
                                 >
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
                                 </svg>
                               </button>
                             )}

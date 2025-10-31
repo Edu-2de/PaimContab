@@ -186,3 +186,8 @@ model ConsultationBooking {
   
   @@unique([consultationDate]) // Apenas 1 MEI por dia
 }
+
+//Todo: Rent 
+model Rent{
+  id String @id @default(uuid())
+}

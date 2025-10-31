@@ -148,13 +148,18 @@ router.get('/company/:companyId/despesas', getDespesas);
 router.get('/company/:companyId/despesas/stats', getDespesasStats);
 router.get('/despesas/:id', getDespesaById);
 router.post('/company/:companyId/despesas', createDespesa);
-router.put('/despesas/:id', updateDespesa);
+// router.put('/despesas/:id', updateDespesa); // Removido: duplicado, usando implementação inline abaixo
 router.delete('/despesas/:id', deleteDespesa);
 
-// Rotas para admin gerenciar despesas
+// Rota PUT para editar despesas (admin ou owner)
 router.put('/despesas/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    console.log('📝 PUT /despesas/:id - Recebido:', {
+      id,
+      body: req.body,
+    });
 
     // Buscar despesa existente
     const existingDespesa = await prisma.despesa.findUnique({
@@ -170,32 +175,68 @@ router.put('/despesas/:id', async (req, res) => {
       return res.status(403).json({ error: 'Sem permissão para editar esta despesa' });
     }
 
+    // Construir objeto de atualização dinamicamente
+    const updateData = {};
+
     // Processar data corretamente
-    let dateToUpdate = undefined;
     if (req.body.dataPagamento || req.body.date) {
       const dataStr = req.body.dataPagamento || req.body.date;
       const dataComHorario = dataStr.includes('T') ? dataStr : `${dataStr}T12:00:00.000Z`;
-      dateToUpdate = new Date(dataComHorario);
+      updateData.date = new Date(dataComHorario);
     }
+
+    // Adicionar campos apenas se foram enviados (aceita strings vazias)
+    if (req.body.descricao !== undefined) {
+      updateData.description = req.body.descricao;
+    } else if (req.body.description !== undefined) {
+      updateData.description = req.body.description;
+    }
+
+    if (req.body.valor !== undefined) {
+      updateData.value = parseFloat(req.body.valor);
+    } else if (req.body.value !== undefined) {
+      updateData.value = parseFloat(req.body.value);
+    }
+
+    if (req.body.categoria !== undefined) {
+      updateData.category = req.body.categoria;
+    } else if (req.body.category !== undefined) {
+      updateData.category = req.body.category;
+    }
+
+    if (req.body.fornecedor !== undefined) {
+      updateData.supplier = req.body.fornecedor;
+    } else if (req.body.supplier !== undefined) {
+      updateData.supplier = req.body.supplier;
+    }
+
+    if (req.body.numeroNota !== undefined) {
+      updateData.invoiceNumber = req.body.numeroNota;
+    } else if (req.body.invoiceNumber !== undefined) {
+      updateData.invoiceNumber = req.body.invoiceNumber;
+    }
+
+    if (req.body.metodoPagamento !== undefined) {
+      updateData.paymentMethod = req.body.metodoPagamento;
+    } else if (req.body.paymentMethod !== undefined) {
+      updateData.paymentMethod = req.body.paymentMethod;
+    }
+
+    if (req.body.status !== undefined) {
+      updateData.status = req.body.status;
+    }
+
+    if (req.body.dedutivel !== undefined) {
+      updateData.isDeductible = req.body.dedutivel;
+    } else if (req.body.isDeductible !== undefined) {
+      updateData.isDeductible = req.body.isDeductible;
+    }
+
+    console.log('📝 Dados para atualizar:', updateData);
 
     const despesa = await prisma.despesa.update({
       where: { id },
-      data: {
-        description: req.body.descricao || req.body.description,
-        value:
-          req.body.valor !== undefined
-            ? parseFloat(req.body.valor)
-            : req.body.value !== undefined
-            ? parseFloat(req.body.value)
-            : undefined,
-        date: dateToUpdate,
-        category: req.body.categoria || req.body.category,
-        supplier: req.body.fornecedor || req.body.supplier,
-        invoiceNumber: req.body.numeroNota || req.body.invoiceNumber,
-        paymentMethod: req.body.metodoPagamento || req.body.paymentMethod,
-        status: req.body.status,
-        isDeductible: req.body.dedutivel !== undefined ? req.body.dedutivel : req.body.isDeductible,
-      },
+      data: updateData,
     });
 
     // Mapear resposta para português
@@ -215,9 +256,11 @@ router.put('/despesas/:id', async (req, res) => {
       companyId: despesa.companyId,
     };
 
+    console.log('✅ Despesa atualizada:', despesaMapeada);
+
     res.json(despesaMapeada);
   } catch (error) {
-    console.error('Erro ao atualizar despesa:', error);
+    console.error('❌ Erro ao atualizar despesa:', error);
     res.status(500).json({ error: error.message });
   }
 });

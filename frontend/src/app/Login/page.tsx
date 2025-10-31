@@ -64,11 +64,32 @@ export default function LoginRegisterPage() {
         if (!response.ok) {
           setError(data.message || 'Erro ao registrar.');
         } else {
-          if (data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
+          // Registro bem-sucedido - agora fazer login automático
+          console.log('✅ Registro concluído, fazendo login automático...');
+
+          // Fazer login automático
+          const loginResponse = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password: pass }),
+          });
+
+          const loginData = await loginResponse.json();
+
+          if (loginResponse.ok && loginData.token && loginData.user) {
+            // Salvar token e user no localStorage
+            localStorage.setItem('authToken', loginData.token);
+            localStorage.setItem('user', JSON.stringify(loginData.user));
+
+            console.log('✅ Login automático concluído!');
+
+            // Redirecionar para setup-company
             window.location.href = '/setup-company';
           } else {
-            setError('Erro: dados do usuário não retornados.');
+            // Se login automático falhar, mostrar mensagem mas não bloquear
+            console.warn('⚠️ Login automático falhou, mas registro foi concluído');
+            setError('Registro concluído! Por favor, faça login.');
+            setMode('login');
           }
         }
       } else {

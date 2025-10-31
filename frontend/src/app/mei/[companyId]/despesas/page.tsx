@@ -146,7 +146,12 @@ const DespesasContent = memo(() => {
 
       if (response.ok) {
         const data = await response.json();
-        setDespesas(data);
+        // Mapear numeroNota do backend para numeroNotaFiscal no frontend
+        const despesasMapeadas = data.map((d: Despesa & { numeroNota?: string }) => ({
+          ...d,
+          numeroNotaFiscal: d.numeroNota || d.numeroNotaFiscal, // Mapear campo do backend
+        }));
+        setDespesas(despesasMapeadas);
       }
     } catch (error) {
       console.error('Erro ao carregar despesas:', error);
@@ -244,7 +249,7 @@ const DespesasContent = memo(() => {
         dataPagamento: formData.dataPagamento,
         categoria: formData.categoria,
         fornecedor: formData.fornecedor,
-        numeroNotaFiscal: formData.numeroNotaFiscal,
+        numeroNota: formData.numeroNotaFiscal, // Mapeamento correto para o backend
         metodoPagamento: formData.metodoPagamento,
         status: formData.status,
         dedutivel: formData.dedutivel,
