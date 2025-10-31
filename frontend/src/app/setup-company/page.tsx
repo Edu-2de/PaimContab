@@ -1,11 +1,11 @@
-"use client";
-import { useState, useEffect } from "react";
-import { HiArrowRight, HiArrowLeft, HiCheckCircle, HiSparkles, HiPlay, HiExclamationTriangle } from "react-icons/hi2";
+'use client';
+import { useState, useEffect } from 'react';
+import { HiArrowRight, HiArrowLeft, HiCheckCircle, HiSparkles, HiPlay, HiExclamationTriangle } from 'react-icons/hi2';
 
 interface Question {
   id: string;
   title: string;
-  type: "text" | "select" | "multiselect" | "number" | "date";
+  type: 'text' | 'select' | 'multiselect' | 'number' | 'date';
   placeholder?: string;
   options?: string[];
   required: boolean;
@@ -13,83 +13,107 @@ interface Question {
 
 const questions: Question[] = [
   {
-    id: "companyName",
-    title: "Qual é o nome da sua empresa ou como você gostaria de chamá-la?",
-    type: "text",
-    placeholder: "Ex: João Silva Serviços",
+    id: 'companyName',
+    title: 'Qual é o nome da sua empresa ou como você gostaria de chamá-la?',
+    type: 'text',
+    placeholder: 'Ex: João Silva Serviços',
     required: true,
   },
   {
-    id: "businessSegment",
-    title: "Em qual segmento sua empresa atua?",
-    type: "select",
-    options: ["Comércio", "Serviços", "Indústria", "Tecnologia", "Saúde", "Educação", "Outros"],
+    id: 'businessSegment',
+    title: 'Em qual segmento sua empresa atua?',
+    type: 'select',
+    options: ['Comércio', 'Serviços', 'Indústria', 'Tecnologia', 'Saúde', 'Educação', 'Outros'],
     required: true,
   },
   {
-    id: "mainActivity",
-    title: "Qual é a principal atividade da sua empresa?",
-    type: "text",
-    placeholder: "Ex: Desenvolvimento de software, Consultoria, Vendas online...",
+    id: 'mainActivity',
+    title: 'Qual é a principal atividade da sua empresa?',
+    type: 'text',
+    placeholder: 'Ex: Desenvolvimento de software, Consultoria, Vendas online...',
     required: true,
   },
   {
-    id: "businessType",
-    title: "Qual é o tipo do seu negócio?",
-    type: "select",
-    options: ["MEI", "ME (Microempresa)", "EPP (Empresa de Pequeno Porte)", "Ainda não formalizei"],
+    id: 'businessType',
+    title: 'Qual é o tipo do seu negócio?',
+    type: 'select',
+    options: ['MEI', 'ME (Microempresa)', 'EPP (Empresa de Pequeno Porte)', 'Ainda não formalizei'],
     required: true,
   },
   {
-    id: "cnpj",
-    title: "Você já tem CNPJ?",
-    type: "text",
-    placeholder: "Digite seu CNPJ ou deixe em branco se não tiver",
+    id: 'cnpj',
+    title: 'Você já tem CNPJ?',
+    type: 'text',
+    placeholder: 'Digite seu CNPJ ou deixe em branco se não tiver',
     required: false,
   },
   {
-    id: "monthlyRevenue",
-    title: "Qual é aproximadamente seu faturamento mensal?",
-    type: "select",
+    id: 'monthlyRevenue',
+    title: 'Qual é aproximadamente seu faturamento mensal?',
+    type: 'select',
     options: [
-      "Até R$ 1.000",
-      "R$ 1.001 - R$ 3.000",
-      "R$ 3.001 - R$ 6.000",
-      "R$ 6.001 - R$ 10.000",
-      "Acima de R$ 10.000",
-      "Ainda não tenho faturamento",
+      'Até R$ 1.000',
+      'R$ 1.001 - R$ 3.000',
+      'R$ 3.001 - R$ 6.000',
+      'R$ 6.001 - R$ 10.000',
+      'Acima de R$ 10.000',
+      'Ainda não tenho faturamento',
     ],
     required: true,
   },
   {
-    id: "foundationDate",
-    title: "Quando sua empresa foi fundada (ou quando pretende fundar)?",
-    type: "date",
+    id: 'foundationDate',
+    title: 'Quando sua empresa foi fundada (ou quando pretende fundar)?',
+    type: 'date',
     required: false,
   },
   {
-    id: "city",
-    title: "Em qual cidade sua empresa está localizada?",
-    type: "text",
-    placeholder: "Ex: São Paulo",
+    id: 'city',
+    title: 'Em qual cidade sua empresa está localizada?',
+    type: 'text',
+    placeholder: 'Ex: São Paulo',
     required: true,
   },
   {
-    id: "state",
-    title: "Em qual estado?",
-    type: "select",
+    id: 'state',
+    title: 'Em qual estado?',
+    type: 'select',
     options: [
-      "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
-      "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
-      "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+      'AC',
+      'AL',
+      'AP',
+      'AM',
+      'BA',
+      'CE',
+      'DF',
+      'ES',
+      'GO',
+      'MA',
+      'MT',
+      'MS',
+      'MG',
+      'PA',
+      'PB',
+      'PR',
+      'PE',
+      'PI',
+      'RJ',
+      'RN',
+      'RS',
+      'RO',
+      'RR',
+      'SC',
+      'SP',
+      'SE',
+      'TO',
     ],
     required: true,
   },
   {
-    id: "employeeCount",
-    title: "Quantos funcionários sua empresa tem?",
-    type: "select",
-    options: ["Apenas eu", "2-5 funcionários", "6-10 funcionários", "Mais de 10 funcionários"],
+    id: 'employeeCount',
+    title: 'Quantos funcionários sua empresa tem?',
+    type: 'select',
+    options: ['Apenas eu', '2-5 funcionários', '6-10 funcionários', 'Mais de 10 funcionários'],
     required: true,
   },
 ];
@@ -100,8 +124,8 @@ export default function SetupEmpresa() {
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(false);
   const [showError, setShowError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  
+  const [errorMessage, setErrorMessage] = useState('');
+
   interface User {
     id: string;
     [key: string]: unknown;
@@ -110,22 +134,22 @@ export default function SetupEmpresa() {
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("user");
-      console.log("Usuário no localStorage:", stored);
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('user');
+      console.log('Usuário no localStorage:', stored);
 
-      if (stored && stored !== "undefined") {
+      if (stored && stored !== 'undefined') {
         try {
           const userData = JSON.parse(stored);
           setUser(userData);
         } catch (error) {
-          console.error("Erro ao fazer parse do usuário:", error);
-          localStorage.removeItem("user");
-          window.location.href = "/Login";
+          console.error('Erro ao fazer parse do usuário:', error);
+          localStorage.removeItem('user');
+          window.location.href = '/Login';
         }
       } else {
-        console.log("Nenhum usuário encontrado, redirecionando...");
-        window.location.href = "/Login";
+        console.log('Nenhum usuário encontrado, redirecionando...');
+        window.location.href = '/Login';
       }
     }
   }, []);
@@ -138,12 +162,12 @@ export default function SetupEmpresa() {
   useEffect(() => {
     if (currentQuestion && answers[currentQuestion.id]) {
       setShowError(false);
-      setErrorMessage("");
+      setErrorMessage('');
     }
   }, [answers, currentQuestion]);
 
   const handleAnswer = (value: unknown) => {
-    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
+    setAnswers(prev => ({ ...prev, [currentQuestion.id]: value }));
   };
 
   const startQuestions = () => {
@@ -162,19 +186,19 @@ export default function SetupEmpresa() {
     if (currentQuestion.required && !answers[currentQuestion.id]) {
       // Mostrar erro
       setShowError(true);
-      setErrorMessage("Esta pergunta é obrigatória!");
-      
+      setErrorMessage('Esta pergunta é obrigatória!');
+
       // Animação de shake no input
-      const element = document.querySelector(".question-input");
-      element?.classList.add("shake");
-      setTimeout(() => element?.classList.remove("shake"), 600);
-      
+      const element = document.querySelector('.question-input');
+      element?.classList.add('shake');
+      setTimeout(() => element?.classList.remove('shake'), 600);
+
       return;
     }
 
     // Limpar erros antes de continuar
     setShowError(false);
-    setErrorMessage("");
+    setErrorMessage('');
 
     setAnimating(true);
     setTimeout(() => {
@@ -190,8 +214,8 @@ export default function SetupEmpresa() {
   const prevStep = () => {
     if (currentStep > 0) {
       setShowError(false);
-      setErrorMessage("");
-      
+      setErrorMessage('');
+
       setAnimating(true);
       setTimeout(() => {
         setCurrentStep(currentStep - 1);
@@ -205,9 +229,13 @@ export default function SetupEmpresa() {
 
     setLoading(true);
     try {
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`/api/company/user/${user.id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           ...answers,
           monthlyRevenue: parseMonthlyRevenue(answers.monthlyRevenue as string),
@@ -216,35 +244,54 @@ export default function SetupEmpresa() {
       });
 
       if (response.ok) {
-        window.location.href = "/?section=plans";
+        const data = await response.json();
+        console.log('✅ Empresa cadastrada com sucesso:', data);
+
+        // Atualizar user no localStorage com o companyId
+        if (data.company && data.company.id) {
+          const updatedUser = {
+            ...user,
+            companyId: data.company.id,
+          };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          console.log('✅ User atualizado com companyId:', data.company.id);
+
+          // Redirecionar para o dashboard MEI
+          window.location.href = `/mei/${data.company.id}/dashboard`;
+        } else {
+          // Fallback: redirecionar para planos
+          window.location.href = '/?section=plans';
+        }
       } else {
-        alert("Erro ao salvar informações. Tente novamente.");
+        const errorData = await response.json();
+        console.error('❌ Erro ao salvar empresa:', errorData);
+        alert('Erro ao salvar informações. Tente novamente.');
       }
     } catch (error) {
-      console.error("Erro:", error);
-      alert("Erro de conexão. Tente novamente.");
+      console.error('❌ Erro de conexão:', error);
+      alert('Erro de conexão. Tente novamente.');
     }
     setLoading(false);
   };
 
   const parseMonthlyRevenue = (value: string) => {
     const revenueMap: Record<string, number> = {
-      "Até R$ 1.000": 1000,
-      "R$ 1.001 - R$ 3.000": 3000,
-      "R$ 3.001 - R$ 6.000": 6000,
-      "R$ 6.001 - R$ 10.000": 10000,
-      "Acima de R$ 10.000": 15000,
-      "Ainda não tenho faturamento": 0,
+      'Até R$ 1.000': 1000,
+      'R$ 1.001 - R$ 3.000': 3000,
+      'R$ 3.001 - R$ 6.000': 6000,
+      'R$ 6.001 - R$ 10.000': 10000,
+      'Acima de R$ 10.000': 15000,
+      'Ainda não tenho faturamento': 0,
     };
     return revenueMap[value] || 0;
   };
 
   const parseEmployeeCount = (value: string) => {
     const employeeMap: Record<string, number> = {
-      "Apenas eu": 0,
-      "2-5 funcionários": 3,
-      "6-10 funcionários": 8,
-      "Mais de 10 funcionários": 15,
+      'Apenas eu': 0,
+      '2-5 funcionários': 3,
+      '6-10 funcionários': 8,
+      'Mais de 10 funcionários': 15,
     };
     return employeeMap[value] || 0;
   };
@@ -255,53 +302,51 @@ export default function SetupEmpresa() {
 
     const rawValue = answers[currentQuestion.id];
     const value =
-      typeof rawValue === "string" || typeof rawValue === "number" || Array.isArray(rawValue) || rawValue === undefined
+      typeof rawValue === 'string' || typeof rawValue === 'number' || Array.isArray(rawValue) || rawValue === undefined
         ? rawValue
-        : "";
+        : '';
 
     const inputClassName = `question-input w-full px-6 py-5 text-xl border rounded-xl focus:outline-none transition-all bg-white text-slate-800 placeholder-slate-400 shadow-sm ${
-      showError 
-        ? "border-red-400 focus:border-red-500 bg-red-50" 
-        : "border-slate-200 focus:border-slate-400"
+      showError ? 'border-red-400 focus:border-red-500 bg-red-50' : 'border-slate-200 focus:border-slate-400'
     }`;
 
     switch (currentQuestion.type) {
-      case "text":
+      case 'text':
         return (
           <input
             type="text"
             value={value}
-            onChange={(e) => handleAnswer(e.target.value)}
+            onChange={e => handleAnswer(e.target.value)}
             placeholder={currentQuestion.placeholder}
             className={inputClassName}
             autoFocus
           />
         );
 
-      case "number":
+      case 'number':
         return (
           <input
             type="number"
             value={value}
-            onChange={(e) => handleAnswer(Number(e.target.value))}
+            onChange={e => handleAnswer(Number(e.target.value))}
             placeholder={currentQuestion.placeholder}
             className={inputClassName}
             autoFocus
           />
         );
 
-      case "date":
+      case 'date':
         return (
           <input
             type="date"
             value={value}
-            onChange={(e) => handleAnswer(e.target.value)}
+            onChange={e => handleAnswer(e.target.value)}
             className={inputClassName}
             autoFocus
           />
         );
 
-      case "select":
+      case 'select':
         return (
           <div className="question-input space-y-3">
             {currentQuestion.options?.map((option, index) => (
@@ -310,17 +355,15 @@ export default function SetupEmpresa() {
                 onClick={() => handleAnswer(option)}
                 className={`w-full p-5 text-left rounded-xl border transition-all duration-300 transform hover:scale-[1.02] ${
                   value === option
-                    ? "border-slate-600 bg-slate-50 text-slate-900 shadow-md"
+                    ? 'border-slate-600 bg-slate-50 text-slate-900 shadow-md'
                     : showError
-                    ? "border-red-200 bg-white hover:border-red-300 hover:shadow-sm text-slate-700"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm text-slate-700"
+                    ? 'border-red-200 bg-white hover:border-red-300 hover:shadow-sm text-slate-700'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm text-slate-700'
                 }`}
               >
                 <div className="flex items-center justify-between">
                   <span className="text-lg font-medium">{option}</span>
-                  {value === option && (
-                    <HiCheckCircle className="w-6 h-6 text-slate-600 animate-pulse" />
-                  )}
+                  {value === option && <HiCheckCircle className="w-6 h-6 text-slate-600 animate-pulse" />}
                 </div>
               </button>
             ))}
@@ -345,7 +388,7 @@ export default function SetupEmpresa() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center p-4">
         <div
           className={`max-w-lg w-full transition-all duration-700 ${
-            animating ? "opacity-0 transform scale-95" : "opacity-100 transform scale-100"
+            animating ? 'opacity-0 transform scale-95' : 'opacity-100 transform scale-100'
           }`}
         >
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
@@ -355,14 +398,12 @@ export default function SetupEmpresa() {
             </div>
 
             {/* Título */}
-            <h1 className="text-2xl font-bold text-slate-900 mb-4">
-              Vamos nos conhecer melhor!
-            </h1>
+            <h1 className="text-2xl font-bold text-slate-900 mb-4">Vamos nos conhecer melhor!</h1>
 
             {/* Descrição */}
             <p className="text-slate-600 leading-relaxed mb-8">
-              Agora vamos conhecer um pouco mais da sua empresa. Antes de continuarmos, 
-              responda algumas perguntas rápidas para personalizarmos sua experiência.
+              Agora vamos conhecer um pouco mais da sua empresa. Antes de continuarmos, responda algumas perguntas
+              rápidas para personalizarmos sua experiência.
             </p>
 
             {/* Botão */}
@@ -375,9 +416,7 @@ export default function SetupEmpresa() {
             </button>
 
             {/* Indicador de perguntas */}
-            <p className="text-sm text-slate-400 mt-6">
-              {questions.length} perguntas • ~2 minutos
-            </p>
+            <p className="text-sm text-slate-400 mt-6">{questions.length} perguntas • ~2 minutos</p>
           </div>
         </div>
       </div>
@@ -422,9 +461,7 @@ export default function SetupEmpresa() {
       <div className="max-w-2xl mx-auto px-4 py-16">
         <div
           className={`transition-all duration-500 ${
-            animating 
-              ? "opacity-0 transform translate-y-12 scale-95" 
-              : "opacity-100 transform translate-y-0 scale-100"
+            animating ? 'opacity-0 transform translate-y-12 scale-95' : 'opacity-100 transform translate-y-0 scale-100'
           }`}
         >
           {/* Pergunta */}
@@ -459,8 +496,8 @@ export default function SetupEmpresa() {
               disabled={currentStep === 0}
               className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
                 currentStep === 0
-                  ? "text-slate-300 cursor-not-allowed"
-                  : "text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                  ? 'text-slate-300 cursor-not-allowed'
+                  : 'text-slate-600 hover:text-slate-800 hover:bg-slate-100'
               }`}
             >
               <HiArrowLeft className="w-5 h-5" />
@@ -476,7 +513,7 @@ export default function SetupEmpresa() {
                 <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
               ) : (
                 <>
-                  {currentStep === questions.length - 1 ? "Finalizar" : "Próximo"}
+                  {currentStep === questions.length - 1 ? 'Finalizar' : 'Próximo'}
                   <HiArrowRight className="w-5 h-5" />
                 </>
               )}
@@ -496,11 +533,25 @@ export default function SetupEmpresa() {
         .shake {
           animation: shake 0.6s ease-in-out;
         }
-        
+
         @keyframes shake {
-          0%, 100% { transform: translateX(0); }
-          10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
-          20%, 40%, 60%, 80% { transform: translateX(8px); }
+          0%,
+          100% {
+            transform: translateX(0);
+          }
+          10%,
+          30%,
+          50%,
+          70%,
+          90% {
+            transform: translateX(-8px);
+          }
+          20%,
+          40%,
+          60%,
+          80% {
+            transform: translateX(8px);
+          }
         }
       `}</style>
     </div>
