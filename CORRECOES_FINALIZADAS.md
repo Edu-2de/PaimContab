@@ -2,11 +2,67 @@
 
 ## 📋 Data Inicial: 31/10/2025
 
-## 📋 Última Atualização: 11/11/2025
+## 📋 Última Atualização: 11/11/2025 - 18h
 
 ---
 
-## 🔥 NOVO - 11/11/2025
+## 🔥 NOVO - 11/11/2025 - 18h
+
+### ✨ Melhorias de UX: Visualização Admin + Bloqueio de Calendário
+
+**Objetivos:**
+1. Tornar mais visível quando admin está visualizando dashboard de outro usuário
+2. Bloquear acesso ao calendário para usuários sem plano adequado (apenas Profissional e Premium)
+
+**Implementações:**
+
+#### 1. Barra Administrativa Redesenhada
+
+**Antes:** Barra pequena, azul simples, não fixa
+**Depois:** Barra grande, gradiente, fixa no topo, sempre visível
+
+**Características:**
+- ✅ Posição fixa no topo (`fixed top-0`)
+- ✅ Gradiente azul destacado (`from-blue-600 to-blue-700`)
+- ✅ Borda inferior grossa (`border-b-4 border-blue-800`)
+- ✅ Ícone com backdrop blur e fundo semi-transparente
+- ✅ Texto em duas linhas: "MODO ADMINISTRADOR" + "Visualizando: [Nome]"
+- ✅ Botão branco destacado com hover effect
+- ✅ Não some ao rolar a página
+- ✅ Espaçamento automático do conteúdo (`pt-20`)
+
+**Arquivo:** `frontend/src/components/MeiProtection.tsx`
+
+#### 2. Bloqueio de Calendário por Plano
+
+**Regra de Negócio:**
+- ❌ Plano Essencial: SEM acesso ao calendário
+- ✅ Plano Profissional: COM acesso
+- ✅ Plano Premium: COM acesso
+- ✅ Admin: SEMPRE tem acesso
+
+**Visual do Item Bloqueado:**
+- Esmaecido (50% opacidade)
+- Ícone de cadeado vermelho sobreposto
+- Cursor `not-allowed`
+- Não clicável (renderiza `<div>` ao invés de `<Link>`)
+- Tooltip ao hover explicando planos necessários
+
+**Funcionalidades:**
+- ✅ Verificação automática de plano via API
+- ✅ Cache do resultado em state
+- ✅ Admin bypassa verificação
+- ✅ Feedback visual imediato
+
+**Arquivo:** `frontend/src/components/MeiSidebar.tsx`
+
+**Documentação completa:** `MELHORIAS_UX_ADMIN_CALENDARIO.md`
+
+**Status:** ✅ IMPLEMENTADO E TESTADO
+
+---
+
+## 🔥 NOVO - 11/11/2025 - 16h
 
 ### ✅ Correção: Admin Dashboard MEI - Erro 404
 

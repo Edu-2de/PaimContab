@@ -198,12 +198,8 @@ function MeiProtectionComponent({ children }: MeiProtectionProps) {
                 </svg>
               </div>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-wider text-blue-200">
-                  Modo Administrador
-                </div>
-                <div className="text-base font-bold">
-                  Visualizando: {decodeURIComponent(targetUserName)}
-                </div>
+                <div className="text-xs font-semibold uppercase tracking-wider text-blue-200">Modo Administrador</div>
+                <div className="text-base font-bold">Visualizando: {decodeURIComponent(targetUserName)}</div>
               </div>
             </div>
             <button
@@ -215,9 +211,7 @@ function MeiProtectionComponent({ children }: MeiProtectionProps) {
           </div>
         </div>
       )}
-      <div className={isAdminView && targetUserName ? 'pt-20' : ''}>
-        {children}
-      </div>
+      <div className={isAdminView && targetUserName ? 'pt-20' : ''}>{children}</div>
     </div>
   );
 }
