@@ -326,18 +326,22 @@ O sistema está configurado para:
 ### ✅ Correção Adicional: Planos no Admin Dashboard
 
 #### 🐛 Problemas:
+
 1. Valor do plano mostrava "R$ NaN"
 2. Status mostrava "Inativo" para planos ativos
 
 #### ✅ Solução:
+
 **Arquivo:** `backend/src/controllers/adminController.js`
 
 **Mudanças:**
+
 1. `getAllUsers()`: Agora popula `amount` com `plan.price`
 2. `getUserDetails()`: Formata subscriptions com valores corretos
 3. Status baseado em `isActive` boolean correto
 
 **Resultado:**
+
 - ✅ Valores corretos: R$ 19,00 / R$ 39,00 / R$ 69,00
 - ✅ Status correto: Ativo (verde) / Cancelado (vermelho) / Sem Plano (cinza)
 

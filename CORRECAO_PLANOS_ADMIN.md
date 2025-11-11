@@ -3,9 +3,11 @@
 ## 🐛 Problemas Encontrados:
 
 ### 1. Valor do Plano: "R$ NaN"
+
 **Causa:** O campo `amount` não estava sendo populado corretamente. A subscription não tinha o valor, apenas a referência ao plano.
 
 ### 2. Status "Inativo" para planos ativos
+
 **Causa:** A lógica estava verificando apenas se a subscription existe, não se `isActive === true`.
 
 ---
@@ -15,12 +17,14 @@
 ### 1. Controller `getAllUsers` (adminController.js)
 
 **ANTES:**
+
 ```javascript
 currentSubscription: user.subscriptions[0] || null,
 planStatus: user.subscriptions[0]?.isActive ? 'active' : 'no_plan',
 ```
 
 **DEPOIS:**
+
 ```javascript
 // Determinar status do plano baseado na assinatura mais recente
 let planStatus = 'no_plan';
@@ -52,6 +56,7 @@ if (latestSubscription) {
 ### 2. Controller `getUserDetails` (adminController.js)
 
 **ANTES:**
+
 ```javascript
 const userResponse = {
   ...user,
@@ -61,6 +66,7 @@ const userResponse = {
 ```
 
 **DEPOIS:**
+
 ```javascript
 // Formatar subscriptions com preço do plano
 const formattedSubscriptions = user.subscriptions.map(sub => ({
@@ -92,11 +98,13 @@ const userResponse = {
 ## 🎯 Resultados:
 
 ### ✅ Valor do Plano Correto:
+
 - **Essencial:** R$ 19,00
 - **Profissional:** R$ 39,00
 - **Premium:** R$ 69,00
 
 ### ✅ Status Correto:
+
 - **Ativo:** Badge verde - `isActive: true`
 - **Cancelado:** Badge vermelho - `isActive: false`
 - **Sem Plano:** Badge cinza - sem subscription
@@ -106,15 +114,18 @@ const userResponse = {
 ## 🧪 Como Testar:
 
 1. **Abrir Admin Dashboard:**
+
    ```
    http://localhost:3000/admin/dashboard
    ```
 
 2. **Verificar lista de usuários:**
+
    - ✅ Coluna "Plano" mostra valor correto (ex: R$ 19,00)
    - ✅ Badge de status correto (Ativo/Cancelado/Sem Plano)
 
 3. **Ver detalhes do usuário:**
+
    - Clicar no ícone do olho 👁️
    - ✅ "Histórico de Assinaturas" mostra valores corretos
    - ✅ Status de cada assinatura correto
@@ -129,6 +140,7 @@ const userResponse = {
 ## 📊 Estrutura de Dados Retornada:
 
 ### User List (getAllUsers):
+
 ```javascript
 {
   id: "uuid",
@@ -152,6 +164,7 @@ const userResponse = {
 ```
 
 ### User Details (getUserDetails):
+
 ```javascript
 {
   id: "uuid",
@@ -182,25 +195,37 @@ const userResponse = {
 ## 🔍 Verificar no Frontend:
 
 ### Dashboard (/admin/dashboard):
+
 ```typescript
 // Deve mostrar corretamente:
-{formatCurrency(user.currentSubscription.amount)} 
+{
+  formatCurrency(user.currentSubscription.amount);
+}
 // → R$ 69,00 (ao invés de R$ NaN)
 
-{getPlanStatusBadge(user.planStatus)}
+{
+  getPlanStatusBadge(user.planStatus);
+}
 // → Badge verde "Ativo" (ao invés de "Inativo")
 ```
 
 ### Lista de Usuários (/admin/users):
+
 ```typescript
 // Deve mostrar corretamente:
-{user.currentSubscription.plan.name}
+{
+  user.currentSubscription.plan.name;
+}
 // → "Premium"
 
-{formatCurrency(user.currentSubscription.amount)}
+{
+  formatCurrency(user.currentSubscription.amount);
+}
 // → R$ 69,00
 
-{getPlanStatusBadge(user.currentSubscription.status)}
+{
+  getPlanStatusBadge(user.currentSubscription.status);
+}
 // → Badge verde "Ativo"
 ```
 
@@ -209,12 +234,14 @@ const userResponse = {
 ## 📝 Logs de Sucesso:
 
 ### Ao carregar usuários:
+
 ```
 👥 Buscando todos os usuários...
 ✅ 10 usuários encontrados
 ```
 
 ### Ao ver detalhes:
+
 ```
 🔍 Buscando detalhes do usuário: [userId]
 ✅ Detalhes do usuário carregados: João Silva
@@ -234,6 +261,7 @@ const userResponse = {
 
 **Data:** 31/10/2025  
 **Arquivos modificados:**
+
 - `backend/src/controllers/adminController.js`
 
 **Teste agora acessando o admin dashboard!** 🎉
