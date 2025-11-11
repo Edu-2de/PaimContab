@@ -8,139 +8,78 @@ const prisma = new PrismaClient();
 // Middleware de autenticação para todas as rotas de admin
 router.use(adminMiddleware);
 
-// GET /api/admin/reports - Obter estatísticas do sistema
-router.get('/', async (req, res) => {
+// GET /api/admin/reports/overview - Relatório geral do sistema
+router.get('/overview', async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
-
-    // Calcular período baseado no parâmetro
-    const now = new Date();
-    let startDate;
-
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'quarter':
-        startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), 1);
-        break;
-      default: // month
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-    }
-
-    // Buscar estatísticas reais do banco de dados
-    const [totalUsers, totalCompanies, activeUsers, newUsersThisMonth] = await Promise.all([
+    const [
+      totalUsers,
+      activeUsers,
+      totalCompanies,
+      totalSubscriptions,
+      activeSubscriptions,
+      totalReceitas,
+      totalDespesas,
+      totalPlans,
+    ] = await Promise.all([
       prisma.user.count(),
-      prisma.company.count(),
       prisma.user.count({ where: { isActive: true } }),
-      prisma.user.count({
-        where: {
-          createdAt: {
-            gte: new Date(now.getFullYear(), now.getMonth(), 1),
-          },
-        },
-      }),
+      prisma.company.count(),
+      prisma.subscription.count(),
+      prisma.subscription.count({ where: { isActive: true } }),
+      prisma.receita.count(),
+      prisma.despesa.count(),
+      prisma.plan.count(),
     ]);
 
-    // Como não temos assinaturas reais ainda, vou usar dados simulados
-    // Em um cenário real, você faria queries para o modelo Subscription
-    const mockStats = {
-      totalUsers,
-      totalCompanies,
-      totalSubscriptions: 45,
-      totalRevenue: 15750.8,
-      monthlyRevenue: 3250.9,
-      activeUsers,
-      newUsersThisMonth,
-      subscriptionsByStatus: {
-        active: 32,
-        inactive: 8,
-        pending: 3,
-        cancelled: 2,
-      },
-    };
-
-    res.json(mockStats);
-  } catch (error) {
-    console.error('Erro ao buscar estatísticas:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-// GET /api/admin/reports/users - Relatório detalhado de usuários
-router.get('/users', async (req, res) => {
-  try {
-    const { period = 'month', format = 'json' } = req.query;
-
-    // Buscar usuários com informações de empresa
-    const users = await prisma.user.findMany({
-      include: {
-        company: {
-          select: {
-            name: true,
-            cnpj: true,
-            status: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+    // Receita total do sistema
+    const receitas = await prisma.receita.findMany({
+      select: { value: true },
     });
+    const receitaTotal = receitas.reduce((sum, r) => sum + r.value, 0);
 
-    if (format === 'csv') {
-      // Gerar CSV
-      const csvHeader = 'ID,Nome,Email,Ativo,Empresa,CNPJ,Data Criação\n';
-      const csvData = users
-        .map(
-          user =>
-            `${user.id},${user.name},${user.email},${user.isActive ? 'Sim' : 'Não'},${user.company?.name || 'N/A'},${
-              user.company?.cnpj || 'N/A'
-            },${user.createdAt.toISOString().split('T')[0]}`
-        )
-        .join('\n');
+    // Despesa total do sistema
+    const despesas = await prisma.despesa.findMany({
+      select: { value: true },
+    });
+    const despesaTotal = despesas.reduce((sum, d) => sum + d.value, 0);
 
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename="relatorio-usuarios.csv"');
-      res.send(csvHeader + csvData);
-    } else {
-      res.json(users);
-    }
-  } catch (error) {
-    console.error('Erro ao gerar relatório de usuários:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
+    // Receita mensal de assinaturas
+    const activeSubs = await prisma.subscription.findMany({
+      where: { isActive: true },
+      include: { plan: true },
+    });
+    const monthlyRevenue = activeSubs.reduce((sum, sub) => sum + sub.plan.price, 0);
 
-// GET /api/admin/reports/financial - Relatório financeiro
-router.get('/financial', async (req, res) => {
-  try {
-    const { period = 'month' } = req.query;
-
-    // Mock data para relatório financeiro
-    // Em um cenário real, você faria queries para transações/pagamentos
-    const financialData = {
-      period,
-      totalRevenue: 15750.8,
-      monthlyRecurring: 12500.9,
-      oneTimePayments: 3249.9,
-      refunds: 250.0,
-      netRevenue: 15500.8,
-      revenueByPlan: {
-        basic: 5250.3,
-        premium: 8750.5,
-        enterprise: 1750.0,
+    res.json({
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+        inactive: totalUsers - activeUsers,
       },
-      monthlyGrowth: 12.5,
-      conversionRate: 3.2,
-      churnRate: 2.1,
-    };
-
-    res.json(financialData);
+      companies: {
+        total: totalCompanies,
+      },
+      subscriptions: {
+        total: totalSubscriptions,
+        active: activeSubscriptions,
+        inactive: totalSubscriptions - activeSubscriptions,
+        monthlyRevenue,
+      },
+      finances: {
+        totalReceitas: receitaTotal,
+        totalDespesas: despesaTotal,
+        lucro: receitaTotal - despesaTotal,
+      },
+      plans: {
+        total: totalPlans,
+      },
+      transactions: {
+        totalReceitas,
+        totalDespesas,
+      },
+    });
   } catch (error) {
-    console.error('Erro ao gerar relatório financeiro:', error);
+    console.error('Erro ao gerar relatório geral:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -148,68 +87,168 @@ router.get('/financial', async (req, res) => {
 // GET /api/admin/reports/subscriptions - Relatório de assinaturas
 router.get('/subscriptions', async (req, res) => {
   try {
-    const { period = 'month' } = req.query;
+    const { startDate, endDate } = req.query;
 
-    // Mock data para relatório de assinaturas
-    const subscriptionData = {
-      period,
-      total: 45,
-      active: 32,
-      inactive: 8,
-      pending: 3,
-      cancelled: 2,
-      renewals: 28,
-      newSubscriptions: 7,
-      churnedSubscriptions: 2,
-      revenueImpact: {
-        newRevenue: 420.3,
-        lostRevenue: 119.8,
-        netRevenue: 300.5,
-      },
-      planDistribution: {
-        basic: 20,
-        premium: 18,
-        enterprise: 7,
-      },
-    };
+    const where = {};
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) where.createdAt.gte = new Date(startDate);
+      if (endDate) where.createdAt.lte = new Date(endDate);
+    }
 
-    res.json(subscriptionData);
+    const subscriptions = await prisma.subscription.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        plan: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Agrupar por plano
+    const byPlan = await prisma.subscription.groupBy({
+      by: ['planId'],
+      where: { ...where, isActive: true },
+      _count: true,
+    });
+
+    const plansData = await Promise.all(
+      byPlan.map(async item => {
+        const plan = await prisma.plan.findUnique({
+          where: { id: item.planId },
+        });
+        return {
+          planId: item.planId,
+          planName: plan?.name || 'Desconhecido',
+          count: item._count,
+          price: plan?.price || 0,
+          revenue: (plan?.price || 0) * item._count,
+        };
+      })
+    );
+
+    // Estatísticas
+    const totalActive = subscriptions.filter(s => s.isActive).length;
+    const totalInactive = subscriptions.filter(s => !s.isActive).length;
+    const totalRevenue = plansData.reduce((sum, p) => sum + p.revenue, 0);
+
+    res.json({
+      summary: {
+        total: subscriptions.length,
+        active: totalActive,
+        inactive: totalInactive,
+        totalRevenue,
+      },
+      byPlan: plansData,
+      subscriptions: subscriptions.map(sub => ({
+        id: sub.id,
+        userName: sub.user.name,
+        userEmail: sub.user.email,
+        planName: sub.plan.name,
+        planPrice: sub.plan.price,
+        status: sub.isActive ? 'active' : 'inactive',
+        startDate: sub.startDate,
+        endDate: sub.endDate,
+        createdAt: sub.createdAt,
+      })),
+    });
   } catch (error) {
     console.error('Erro ao gerar relatório de assinaturas:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
 
-// GET /api/admin/reports/export - Exportar relatórios
-router.get('/export', async (req, res) => {
+// GET /api/admin/reports/finances - Relatório financeiro
+router.get('/finances', async (req, res) => {
   try {
-    const { type, format = 'csv' } = req.query;
+    const { startDate, endDate } = req.query;
 
-    switch (type) {
-      case 'users':
-        // Redirecionar para relatório de usuários com formato CSV
-        return res.redirect(`/api/admin/reports/users?format=${format}`);
-
-      case 'financial':
-        const financialData = await fetch(`${req.protocol}://${req.get('host')}/api/admin/reports/financial`);
-        const financial = await financialData.json();
-
-        if (format === 'csv') {
-          const csvData = `Período,Receita Total,Receita Recorrente,Pagamentos Únicos,Reembolsos,Receita Líquida\n${financial.period},${financial.totalRevenue},${financial.monthlyRecurring},${financial.oneTimePayments},${financial.refunds},${financial.netRevenue}`;
-
-          res.setHeader('Content-Type', 'text/csv');
-          res.setHeader('Content-Disposition', 'attachment; filename="relatorio-financeiro.csv"');
-          res.send(csvData);
-        } else {
-          res.json(financial);
-        }
-        break;
-
-      default:
-        res.status(400).json({ error: 'Tipo de relatório inválido' });
+    const where = {};
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) where.date.gte = new Date(startDate);
+      if (endDate) where.date.lte = new Date(endDate);
     }
+
+    const [receitas, despesas] = await Promise.all([
+      prisma.receita.findMany({
+        where,
+        include: {
+          company: {
+            select: {
+              companyName: true,
+              cnpj: true,
+            },
+          },
+        },
+        orderBy: {
+          date: 'desc',
+        },
+      }),
+      prisma.despesa.findMany({
+        where,
+        include: {
+          company: {
+            select: {
+              companyName: true,
+              cnpj: true,
+            },
+          },
+        },
+        orderBy: {
+          date: 'desc',
+        },
+      }),
+    ]);
+
+    const totalReceitas = receitas.reduce((sum, r) => sum + r.value, 0);
+    const totalDespesas = despesas.reduce((sum, d) => sum + d.value, 0);
+
+    // Agrupar receitas por categoria
+    const receitasByCategory = receitas.reduce((acc, r) => {
+      const cat = r.category || 'Outros';
+      if (!acc[cat]) acc[cat] = { count: 0, total: 0 };
+      acc[cat].count++;
+      acc[cat].total += r.value;
+      return acc;
+    }, {});
+
+    // Agrupar despesas por categoria
+    const despesasByCategory = despesas.reduce((acc, d) => {
+      const cat = d.category || 'Outros';
+      if (!acc[cat]) acc[cat] = { count: 0, total: 0 };
+      acc[cat].count++;
+      acc[cat].total += d.value;
+      return acc;
+    }, {});
+
+    res.json({
+      summary: {
+        totalReceitas,
+        totalDespesas,
+        lucro: totalReceitas - totalDespesas,
+        receitasCount: receitas.length,
+        despesasCount: despesas.length,
+      },
+      receitasByCategory: Object.entries(receitasByCategory).map(([category, data]) => ({
+        category,
+        ...data,
+      })),
+      despesasByCategory: Object.entries(despesasByCategory).map(([category, data]) => ({
+        category,
+        ...data,
+      })),
+    });
   } catch (error) {
-    console.error('Erro ao exportar relatório:', error);
+    console.error('Erro ao gerar relatório financeiro:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });

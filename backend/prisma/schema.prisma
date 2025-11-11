@@ -84,8 +84,23 @@ model Subscription {
   startDate  DateTime  @default(now())
   endDate    DateTime?
   isActive   Boolean   @default(true)
+  discount   Discount? // Desconto aplicado (opcional)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+model Discount {
+  id             String       @id @default(uuid())
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId String       @unique
+  percentage     Float        // Porcentagem do desconto (0-100)
+  startDate      DateTime     @default(now())
+  endDate        DateTime?    // Data de término do desconto (null = sem prazo)
+  reason         String?      // Motivo do desconto
+  createdBy      String       // ID do admin que criou
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 
