@@ -143,7 +143,7 @@ const ReceitasContent = memo(() => {
       // Se for admin, passar companyId como query parameter
       const queryParam = adminMode ? `?companyId=${companyId}` : '';
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`;
-      
+
       console.log('🔄 Buscando receitas:', { url, adminMode, companyId });
 
       const response = await fetch(url, {

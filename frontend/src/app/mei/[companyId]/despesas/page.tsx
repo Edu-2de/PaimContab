@@ -149,7 +149,7 @@ const DespesasContent = memo(() => {
       // Se for admin, passar companyId como query parameter
       const queryParam = adminMode ? `?companyId=${companyId}` : '';
       const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`;
-      
+
       console.log('🔄 Buscando despesas:', { url, adminMode, companyId });
 
       const response = await fetch(url, {
