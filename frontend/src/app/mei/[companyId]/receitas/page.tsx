@@ -125,7 +125,10 @@ const ReceitasContent = memo(() => {
 
   // Buscar receitas do backend - memoizado
   const fetchReceitas = useCallback(async () => {
-    if (!hasAccess || !companyId) return;
+    if (!hasAccess || !companyId) {
+      console.log('⚠️ fetchReceitas bloqueado:', { hasAccess, companyId });
+      return;
+    }
 
     try {
       setLoading(true);
@@ -139,17 +142,26 @@ const ReceitasContent = memo(() => {
 
       // Se for admin, passar companyId como query parameter
       const queryParam = adminMode ? `?companyId=${companyId}` : '';
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`;
+      
+      console.log('🔄 Buscando receitas:', { url, adminMode, companyId });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log('📡 Resposta receitas:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Receitas carregadas:', data.length);
         setReceitas(data);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro ao carregar receitas:', response.status, errorText);
       }
     } catch (error) {
-      console.error('Erro ao carregar receitas:', error);
+      console.error('❌ Erro ao carregar receitas:', error);
     } finally {
       setLoading(false);
       setMetricsLoading(false);

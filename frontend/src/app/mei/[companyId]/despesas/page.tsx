@@ -131,7 +131,10 @@ const DespesasContent = memo(() => {
 
   // Buscar despesas do backend
   const fetchDespesas = useCallback(async () => {
-    if (!hasAccess || !companyId) return;
+    if (!hasAccess || !companyId) {
+      console.log('⚠️ fetchDespesas bloqueado:', { hasAccess, companyId });
+      return;
+    }
 
     try {
       setLoading(true);
@@ -145,22 +148,31 @@ const DespesasContent = memo(() => {
 
       // Se for admin, passar companyId como query parameter
       const queryParam = adminMode ? `?companyId=${companyId}` : '';
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`;
+      
+      console.log('🔄 Buscando despesas:', { url, adminMode, companyId });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log('📡 Resposta despesas:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Despesas carregadas:', data.length);
         // Mapear numeroNota do backend para numeroNotaFiscal no frontend
         const despesasMapeadas = data.map((d: Despesa & { numeroNota?: string }) => ({
           ...d,
           numeroNotaFiscal: d.numeroNota || d.numeroNotaFiscal, // Mapear campo do backend
         }));
         setDespesas(despesasMapeadas);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro ao carregar despesas:', response.status, errorText);
       }
     } catch (error) {
-      console.error('Erro ao carregar despesas:', error);
+      console.error('❌ Erro ao carregar despesas:', error);
     } finally {
       setLoading(false);
       setMetricsLoading(false);
