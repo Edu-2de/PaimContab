@@ -127,10 +127,41 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
       }
     }
 
-    setCompany({
-      name: 'Minha Empresa MEI',
-      cnpj: '12.345.678/0001-90',
-    });
+    // Buscar dados da empresa do banco de dados
+    const fetchCompanyData = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token || !effectiveCompanyId) return;
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/company/${effectiveCompanyId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const companyData = await response.json();
+          setCompany({
+            name: companyData.companyName || 'Minha Empresa MEI',
+            cnpj: companyData.cnpj || undefined,
+          });
+        } else {
+          // Fallback para dados padrão se a requisição falhar
+          setCompany({
+            name: 'Minha Empresa MEI',
+            cnpj: undefined,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados da empresa:', error);
+        setCompany({
+          name: 'Minha Empresa MEI',
+          cnpj: undefined,
+        });
+      }
+    };
+
+    fetchCompanyData();
 
     // Verificar assinatura e acesso ao calendário
     const checkCalendarAccess = async () => {
@@ -178,7 +209,7 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
     };
 
     checkCalendarAccess();
-  }, []);
+  }, [effectiveCompanyId]);
 
   const handleToggle = () => {
     setIsCollapsed(!isCollapsed);
@@ -266,28 +297,21 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
                   onMouseEnter={() => setHoveredItem(item.key)}
                   onMouseLeave={() => setHoveredItem(null)}
                   className={`
-                    group flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 relative cursor-not-allowed opacity-50
+                    group flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 relative cursor-not-allowed opacity-60
                     ${isCollapsed ? 'justify-center' : ''}
                     text-gray-400
                   `}
-                  title={isCollapsed ? `${item.name} - Apenas para planos Profissional e Premium` : undefined}
+                  title={
+                    isCollapsed
+                      ? `${item.name} - Necessário plano Profissional ou Premium`
+                      : 'Necessário plano mais avançado para esta ação'
+                  }
                 >
-                  <div className="relative">
-                    <Icon className="w-5 h-5 flex-shrink-0 text-gray-500" />
-                    <HiLockClosed className="w-3 h-3 absolute -bottom-1 -right-1 text-red-400 bg-gray-800 rounded-full" />
-                  </div>
+                  <Icon className="w-5 h-5 flex-shrink-0 text-gray-500" />
                   {!isCollapsed && (
-                    <div className="flex items-center justify-between flex-1">
+                    <div className="flex items-center justify-between flex-1 overflow-hidden">
                       <span className="text-sm font-medium truncate text-gray-500">{item.name}</span>
-                      <HiLockClosed className="w-4 h-4 text-red-400 flex-shrink-0" />
-                    </div>
-                  )}
-                  {!isCollapsed && hoveredItem === item.key && (
-                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg whitespace-nowrap z-50 shadow-lg border border-gray-700">
-                      <div className="font-semibold mb-1">🔒 Recurso Bloqueado</div>
-                      <div>Disponível nos planos:</div>
-                      <div className="text-yellow-400">• Profissional</div>
-                      <div className="text-yellow-400">• Premium</div>
+                      <HiLockClosed className="w-4 h-4 text-red-400 flex-shrink-0 ml-2" />
                     </div>
                   )}
                 </div>
