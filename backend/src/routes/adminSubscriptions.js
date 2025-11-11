@@ -335,4 +335,153 @@ router.get('/stats/overview', async (req, res) => {
   }
 });
 
+// POST /api/admin/subscriptions/:id/discount - Aplicar desconto
+router.post('/:id/discount', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { percentage, endDate, reason } = req.body;
+    const adminId = req.user.id; // ID do admin logado
+
+    if (!percentage || percentage < 0 || percentage > 100) {
+      return res.status(400).json({ error: 'Porcentagem inválida (0-100)' });
+    }
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+      include: { discount: true },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    // Se já tem desconto, deletar o antigo
+    if (subscription.discount) {
+      await prisma.discount.delete({
+        where: { id: subscription.discount.id },
+      });
+    }
+
+    // Criar novo desconto
+    const discount = await prisma.discount.create({
+      data: {
+        subscriptionId: id,
+        percentage: parseFloat(percentage),
+        endDate: endDate ? new Date(endDate) : null,
+        reason: reason || null,
+        createdBy: adminId,
+        isActive: true,
+      },
+    });
+
+    res.json({
+      message: 'Desconto aplicado com sucesso',
+      discount,
+    });
+  } catch (error) {
+    console.error('Erro ao aplicar desconto:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// DELETE /api/admin/subscriptions/:id/discount - Remover desconto
+router.delete('/:id/discount', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+      include: { discount: true },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    if (!subscription.discount) {
+      return res.status(404).json({ error: 'Assinatura não possui desconto' });
+    }
+
+    await prisma.discount.delete({
+      where: { id: subscription.discount.id },
+    });
+
+    res.json({ message: 'Desconto removido com sucesso' });
+  } catch (error) {
+    console.error('Erro ao remover desconto:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/admin/subscriptions/export - Exportar para Excel
+router.get('/export', async (req, res) => {
+  try {
+    const { search, status } = req.query;
+
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { plan: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (status) {
+      where.isActive = status === 'active';
+    }
+
+    const subscriptions = await prisma.subscription.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        discount: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Formatar dados para CSV
+    const csvData = subscriptions.map(sub => {
+      const basePrice = sub.plan.price;
+      const discountPercentage = sub.discount?.isActive ? sub.discount.percentage : 0;
+      const finalPrice = basePrice * (1 - discountPercentage / 100);
+
+      return {
+        ID: sub.id,
+        Usuario: sub.user.name,
+        Email: sub.user.email,
+        Plano: sub.plan.name,
+        'Preco Original': basePrice.toFixed(2),
+        'Desconto (%)': discountPercentage.toFixed(2),
+        'Preco Final': finalPrice.toFixed(2),
+        Status: sub.isActive ? 'Ativa' : 'Inativa',
+        'Data Inicio': new Date(sub.startDate).toLocaleDateString('pt-BR'),
+        'Data Fim': sub.endDate ? new Date(sub.endDate).toLocaleDateString('pt-BR') : 'N/A',
+        'Criado Em': new Date(sub.createdAt).toLocaleDateString('pt-BR'),
+      };
+    });
+
+    res.json({ data: csvData });
+  } catch (error) {
+    console.error('Erro ao exportar assinaturas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 module.exports = router;
