@@ -7,6 +7,7 @@ const siteName = 'PaimContab';
 export default function LoginRegisterPage() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -55,6 +56,8 @@ export default function LoginRegisterPage() {
           setLoading(false);
           return;
         }
+
+        setLoadingMessage('Criando sua conta...');
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -63,13 +66,42 @@ export default function LoginRegisterPage() {
         const data = await response.json();
         if (!response.ok) {
           setError(data.message || 'Erro ao registrar.');
-        } else {
-          if (data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
+          setLoading(false);
+          return;
+        }
+
+        // Registro bem-sucedido - agora fazer login automático
+        console.log('✅ Registro concluído, fazendo login automático...');
+        setLoadingMessage('Fazendo login automático...');
+
+        // Fazer login automático
+        const loginResponse = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pass }),
+        });
+
+        const loginData = await loginResponse.json();
+
+        if (loginResponse.ok && loginData.token && loginData.user) {
+          // Salvar token e user no localStorage
+          localStorage.setItem('authToken', loginData.token);
+          localStorage.setItem('user', JSON.stringify(loginData.user));
+
+          console.log('✅ Login automático concluído!');
+          setLoadingMessage('Redirecionando para cadastro de empresa...');
+
+          // Pequeno delay para mostrar mensagem
+          setTimeout(() => {
+            // Redirecionar para setup-company
             window.location.href = '/setup-company';
-          } else {
-            setError('Erro: dados do usuário não retornados.');
-          }
+          }, 500);
+        } else {
+          // Se login automático falhar, mostrar mensagem mas não bloquear
+          console.warn('⚠️ Login automático falhou, mas registro foi concluído');
+          setError('Registro concluído! Por favor, faça login.');
+          setMode('login');
+          setLoading(false);
         }
       } else {
         const response = await fetch('/api/auth/login', {
@@ -119,6 +151,17 @@ export default function LoginRegisterPage() {
       className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f7fafc] via-[#e3e8ee] to-[#cbd5e1] relative"
       style={{ fontFamily: 'Inter, sans-serif' }}
     >
+      {/* Loading Overlay */}
+      {loading && loadingMessage && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-8 max-w-md mx-4 text-center shadow-2xl">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900 mx-auto mb-4"></div>
+            <p className="text-xl font-semibold text-gray-900 mb-2">{loadingMessage}</p>
+            <p className="text-sm text-gray-500">Por favor, aguarde...</p>
+          </div>
+        </div>
+      )}
+
       {/* X só na versão desktop */}
       <button
         onClick={handleBack}

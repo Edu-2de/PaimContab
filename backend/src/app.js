@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
+const userRoutes = require('./routes/user');
 const paymentRoutes = require('./routes/payment');
 const companyRoutes = require('./routes/company');
 const adminCompaniesRoutes = require('./routes/adminCompanies');
@@ -16,9 +17,16 @@ const consultationsRoutes = require('./routes/consultations');
 
 const app = express();
 app.use(cors());
+
+// ⚠️ IMPORTANTE: Webhook do Stripe precisa receber body RAW
+// Aplicar express.raw() ANTES de express.json() apenas para a rota do webhook
+app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
+
+// Aplicar express.json() para todas as outras rotas
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/admin/companies', adminCompaniesRoutes);
 app.use('/api/admin/subscriptions', adminSubscriptionsRoutes);

@@ -80,6 +80,7 @@ model Subscription {
   userId     String
   plan       Plan      @relation(fields: [planId], references: [id])
   planId     String
+  stripeSubscriptionId String? @unique  // ID da assinatura no Stripe para webhooks
   startDate  DateTime  @default(now())
   endDate    DateTime?
   isActive   Boolean   @default(true)
@@ -185,4 +186,9 @@ model ConsultationBooking {
   updatedAt       DateTime @updatedAt
   
   @@unique([consultationDate]) // Apenas 1 MEI por dia
+}
+
+//Todo: Rent 
+model Rent{
+  id String @id @default(uuid())
 }

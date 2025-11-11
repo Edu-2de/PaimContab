@@ -24,6 +24,7 @@ router.get('/available-dates', authMiddleware, async (req, res) => {
           gte: startDate,
           lte: endDate,
         },
+        status: { not: 'cancelled' },
       },
       select: {
         consultationDate: true,
@@ -48,27 +49,86 @@ router.post('/', authMiddleware, validateConsultation, async (req, res) => {
     const { consultationDate, startTime, notes } = req.body;
     const userId = req.user.userId;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { company: true },
-    });
-
-    if (!user || !user.company) {
-      return res.status(404).json({ error: 'User or company not found' });
+    // Validar horário de início (máximo 21:00)
+    const startHour = parseInt(startTime.split(':')[0]);
+    if (startHour < 19 || startHour > 21) {
+      return res.status(400).json({ error: 'Horário de início deve ser entre 19:00 e 21:00' });
     }
 
-    const dateObj = new Date(consultationDate);
-    const existingBooking = await prisma.consultationBooking.findFirst({
-      where: {
-        consultationDate: {
-          gte: new Date(dateObj.setHours(0, 0, 0, 0)),
-          lt: new Date(dateObj.setHours(23, 59, 59, 999)),
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        company: true,
+        subscriptions: {
+          where: { isActive: true },
+          include: { plan: true },
         },
       },
     });
 
+    if (!user || !user.company) {
+      return res.status(404).json({ error: 'Usuário ou empresa não encontrada' });
+    }
+
+    // Verificar se o usuário tem plano Premium ativo
+    const hasPremiumPlan = user.subscriptions.some(
+      sub => sub.isActive && (sub.plan.id === 'premium' || sub.plan.name === 'Premium')
+    );
+
+    if (!hasPremiumPlan) {
+      return res.status(403).json({
+        error: 'Apenas usuários com plano Premium podem agendar consultorias',
+      });
+    }
+
+    // Verificar limite mensal (2 consultorias por mês)
+    const consultationDateObj = new Date(consultationDate);
+    const startOfMonth = new Date(consultationDateObj.getFullYear(), consultationDateObj.getMonth(), 1);
+    const endOfMonth = new Date(consultationDateObj.getFullYear(), consultationDateObj.getMonth() + 1, 0, 23, 59, 59);
+
+    const monthlyBookings = await prisma.consultationBooking.count({
+      where: {
+        companyId: user.company.id,
+        consultationDate: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+        status: { not: 'cancelled' },
+      },
+    });
+
+    if (monthlyBookings >= 2) {
+      return res.status(409).json({
+        error: 'Você já atingiu o limite de 2 consultorias por mês',
+      });
+    }
+
+    // Verificar se a data já está reservada (independente do horário)
+    const dateObj = new Date(consultationDate);
+    const startOfDay = new Date(dateObj);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(dateObj);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingBooking = await prisma.consultationBooking.findFirst({
+      where: {
+        consultationDate: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        status: { not: 'cancelled' },
+      },
+    });
+
     if (existingBooking) {
-      return res.status(409).json({ error: 'This date is already booked' });
+      console.log('❌ Data já reservada:', {
+        data: dateObj.toISOString().split('T')[0],
+        empresaExistente: existingBooking.companyName,
+        horarioExistente: existingBooking.startTime,
+      });
+      return res.status(409).json({
+        error: 'Esta data já está reservada por outra empresa. Apenas 1 consultoria por dia é permitida.',
+      });
     }
 
     const booking = await prisma.consultationBooking.create({
@@ -76,6 +136,7 @@ router.post('/', authMiddleware, validateConsultation, async (req, res) => {
         companyId: user.company.id,
         consultationDate: new Date(consultationDate),
         startTime,
+        duration: 2, // 2 horas
         companyName: user.company.companyName,
         userName: user.name,
         userEmail: user.email,
@@ -90,10 +151,10 @@ router.post('/', authMiddleware, validateConsultation, async (req, res) => {
     console.error('Error creating booking:', error.message);
 
     if (error.code === 'P2002') {
-      return res.status(409).json({ error: 'This date is already booked' });
+      return res.status(409).json({ error: 'Esta data já está reservada' });
     }
 
-    res.status(500).json({ error: 'Error creating booking' });
+    res.status(500).json({ error: 'Erro ao criar agendamento' });
   }
 });
 
@@ -159,22 +220,134 @@ async function sendEmailToAdmins(booking) {
     const adminEmails = admins.map(admin => admin.email);
 
     if (adminEmails.length === 0) {
-      console.log('No admins found to send email');
+      console.log('⚠️ Nenhum admin encontrado para enviar email');
       return;
     }
 
-    console.log('Email would be sent to admins:', adminEmails);
-    console.log('Booking details:', {
-      company: booking.companyName,
-      user: booking.userName,
-      date: booking.consultationDate,
-      time: booking.startTime,
-      email: booking.userEmail,
+    console.log('📧 Preparando email para admins:', adminEmails);
+
+    // Configurar nodemailer
+    const nodemailer = require('nodemailer');
+
+    // Criar transporter com as credenciais do .env
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+      port: parseInt(process.env.EMAIL_PORT || '587'),
+      secure: process.env.EMAIL_SECURE === 'true', // true para porta 465, false para outras
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
     });
 
-    // TODO: Implement actual email sending with nodemailer
+    // Verificar se as credenciais de email estão configuradas
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.log('⚠️ Credenciais de email não configuradas no .env');
+      console.log('📋 Detalhes do agendamento que seria enviado:');
+      console.log('   Empresa:', booking.companyName);
+      console.log('   Usuário:', booking.userName);
+      console.log('   Email:', booking.userEmail);
+      console.log('   Data:', new Date(booking.consultationDate).toLocaleDateString('pt-BR'));
+      console.log('   Horário:', booking.startTime);
+      console.log('   Observações:', booking.notes || 'Nenhuma');
+      return;
+    }
+
+    // Formatar data
+    const dataFormatada = new Date(booking.consultationDate).toLocaleDateString('pt-BR', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    // HTML do email
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+          .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+          .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+          .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }
+          .info-row { display: flex; padding: 10px 0; border-bottom: 1px solid #eee; }
+          .info-label { font-weight: bold; color: #667eea; min-width: 120px; }
+          .info-value { color: #333; }
+          .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
+          h1 { margin: 0; font-size: 24px; }
+          h2 { color: #667eea; margin-top: 0; }
+        </style>
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <h1>🗓️ Nova Consultoria Agendada</h1>
+          </div>
+          <div class="content">
+            <h2>Um cliente Premium agendou uma consultoria!</h2>
+            <p>Os detalhes do agendamento estão abaixo:</p>
+            
+            <div class="info-box">
+              <div class="info-row">
+                <div class="info-label">📅 Data:</div>
+                <div class="info-value">${dataFormatada}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">🕐 Horário:</div>
+                <div class="info-value">${booking.startTime} (2 horas de duração)</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">🏢 Empresa:</div>
+                <div class="info-value">${booking.companyName}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">👤 Usuário:</div>
+                <div class="info-value">${booking.userName}</div>
+              </div>
+              <div class="info-row">
+                <div class="info-label">📧 Email:</div>
+                <div class="info-value">${booking.userEmail}</div>
+              </div>
+              ${
+                booking.notes
+                  ? `
+              <div class="info-row">
+                <div class="info-label">📝 Observações:</div>
+                <div class="info-value">${booking.notes}</div>
+              </div>
+              `
+                  : ''
+              }
+            </div>
+            
+            <p style="color: #666; font-size: 14px; margin-top: 20px;">
+              Entre em contato com o cliente para confirmar os detalhes e preparar a consultoria.
+            </p>
+          </div>
+          <div class="footer">
+            <p>PaimContab - Sistema de Gestão MEI</p>
+            <p>Este é um email automático, não responda.</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Enviar email para todos os admins
+    const mailOptions = {
+      from: `"PaimContab - Agendamentos" <${process.env.EMAIL_USER}>`,
+      to: adminEmails.join(', '),
+      subject: `🗓️ Nova Consultoria Agendada - ${booking.companyName}`,
+      html: emailHtml,
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log('✅ Email enviado com sucesso para admins:', adminEmails);
   } catch (error) {
-    console.error('Error sending email to admins:', error.message);
+    console.error('❌ Erro ao enviar email para admins:', error.message);
+    // Não propagar o erro para não bloquear o agendamento
   }
 }
 

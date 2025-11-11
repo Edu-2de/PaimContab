@@ -14,7 +14,7 @@ exports.createCompany = async (req, res) => {
       foundationDate,
       city,
       state,
-      employeeCount
+      employeeCount,
     } = req.body;
 
     console.log('Dados recebidos:', {
@@ -28,12 +28,12 @@ exports.createCompany = async (req, res) => {
       foundationDate,
       city,
       state,
-      employeeCount
+      employeeCount,
     });
 
     // Verificar se o usuário existe
     const user = await prisma.user.findUnique({
-      where: { id: userId }
+      where: { id: userId },
     });
 
     if (!user) {
@@ -42,7 +42,7 @@ exports.createCompany = async (req, res) => {
 
     // Verificar se já existe empresa para este usuário
     const existingCompany = await prisma.company.findUnique({
-      where: { userId }
+      where: { userId },
     });
 
     // Converter foundationDate para DateTime ISO se fornecido
@@ -67,13 +67,13 @@ exports.createCompany = async (req, res) => {
       businessSegment: businessSegment || null,
       mainActivity: mainActivity || null,
       businessType: businessType || null,
-      cnpj: (cnpj && cnpj.trim() !== '') ? cnpj : null,
+      cnpj: cnpj && cnpj.trim() !== '' ? cnpj : null,
       monthlyRevenue: monthlyRevenue ? parseFloat(monthlyRevenue) : null,
       foundationDate: foundationDateISO,
       city: city || null,
       state: state || null,
       employeeCount: employeeCount ? parseInt(employeeCount) : 0,
-      userId
+      userId,
     };
 
     let company;
@@ -84,28 +84,27 @@ exports.createCompany = async (req, res) => {
         where: { userId },
         data: {
           ...companyData,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
       console.log('Empresa atualizada:', company);
     } else {
       // Criar nova empresa
       company = await prisma.company.create({
-        data: companyData
+        data: companyData,
       });
       console.log('Empresa criada:', company);
     }
 
     res.status(200).json({
       message: 'Empresa salva com sucesso',
-      company
+      company,
     });
-
   } catch (error) {
     console.error('Erro ao salvar empresa:', error);
     res.status(500).json({
       message: 'Erro interno do servidor',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -115,7 +114,7 @@ exports.getCompanyByUser = async (req, res) => {
     const { userId } = req.params;
 
     const company = await prisma.company.findUnique({
-      where: { userId }
+      where: { userId },
     });
 
     if (!company) {
@@ -123,12 +122,33 @@ exports.getCompanyByUser = async (req, res) => {
     }
 
     res.json(company);
-
   } catch (error) {
     console.error('Erro ao buscar empresa:', error);
     res.status(500).json({
       message: 'Erro interno do servidor',
-      error: error.message
+      error: error.message,
+    });
+  }
+};
+
+exports.getCompanyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const company = await prisma.company.findUnique({
+      where: { id },
+    });
+
+    if (!company) {
+      return res.status(404).json({ message: 'Empresa não encontrada' });
+    }
+
+    res.json(company);
+  } catch (error) {
+    console.error('Erro ao buscar empresa por ID:', error);
+    res.status(500).json({
+      message: 'Erro interno do servidor',
+      error: error.message,
     });
   }
 };
@@ -139,7 +159,7 @@ exports.updateCompany = async (req, res) => {
 
   try {
     const company = await prisma.company.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!company) {
@@ -148,7 +168,7 @@ exports.updateCompany = async (req, res) => {
 
     const updatedCompany = await prisma.company.update({
       where: { id },
-      data: updateData
+      data: updateData,
     });
 
     res.json(updatedCompany);
@@ -163,7 +183,7 @@ exports.deleteCompany = async (req, res) => {
 
   try {
     const company = await prisma.company.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!company) {
@@ -171,7 +191,7 @@ exports.deleteCompany = async (req, res) => {
     }
 
     await prisma.company.delete({
-      where: { id }
+      where: { id },
     });
 
     res.json({ message: 'Empresa deletada com sucesso' });
@@ -192,7 +212,7 @@ exports.getAllCompanies = async (req, res) => {
       where.OR = [
         { companyName: { contains: search, mode: 'insensitive' } },
         { legalName: { contains: search, mode: 'insensitive' } },
-        { cnpj: { contains: search, mode: 'insensitive' } }
+        { cnpj: { contains: search, mode: 'insensitive' } },
       ];
     }
 
@@ -207,12 +227,12 @@ exports.getAllCompanies = async (req, res) => {
         take: parseInt(limit),
         include: {
           user: {
-            select: { id: true, name: true, email: true, isActive: true }
-          }
+            select: { id: true, name: true, email: true, isActive: true },
+          },
         },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
       }),
-      prisma.company.count({ where })
+      prisma.company.count({ where }),
     ]);
 
     res.json({
@@ -221,8 +241,8 @@ exports.getAllCompanies = async (req, res) => {
         currentPage: parseInt(page),
         totalPages: Math.ceil(total / parseInt(limit)),
         totalItems: total,
-        itemsPerPage: parseInt(limit)
-      }
+        itemsPerPage: parseInt(limit),
+      },
     });
   } catch (error) {
     console.error('Erro ao listar empresas:', error);
@@ -235,19 +255,19 @@ exports.getCompaniesBySegment = async (req, res) => {
     const segments = await prisma.company.groupBy({
       by: ['businessSegment'],
       _count: {
-        businessSegment: true
+        businessSegment: true,
       },
       where: {
         businessSegment: {
-          not: null
+          not: null,
         },
-        isActive: true
+        isActive: true,
       },
       orderBy: {
         _count: {
-          businessSegment: 'desc'
-        }
-      }
+          businessSegment: 'desc',
+        },
+      },
     });
 
     res.json(segments);
@@ -259,30 +279,24 @@ exports.getCompaniesBySegment = async (req, res) => {
 
 exports.getCompaniesStats = async (req, res) => {
   try {
-    const [
-      totalCompanies,
-      activeCompanies,
-      companiesByType,
-      averageRevenue,
-      recentCompanies
-    ] = await Promise.all([
+    const [totalCompanies, activeCompanies, companiesByType, averageRevenue, recentCompanies] = await Promise.all([
       prisma.company.count(),
       prisma.company.count({ where: { isActive: true } }),
       prisma.company.groupBy({
         by: ['businessType'],
-        _count: { businessType: true }
+        _count: { businessType: true },
       }),
       prisma.company.aggregate({
         _avg: { monthlyRevenue: true },
-        where: { monthlyRevenue: { not: null } }
+        where: { monthlyRevenue: { not: null } },
       }),
       prisma.company.count({
         where: {
           createdAt: {
-            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-          }
-        }
-      })
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+          },
+        },
+      }),
     ]);
 
     res.json({
@@ -291,7 +305,7 @@ exports.getCompaniesStats = async (req, res) => {
       inactiveCompanies: totalCompanies - activeCompanies,
       companiesByType,
       averageMonthlyRevenue: averageRevenue._avg.monthlyRevenue || 0,
-      recentCompanies
+      recentCompanies,
     });
   } catch (error) {
     console.error('Erro ao buscar estatísticas:', error);
@@ -314,13 +328,13 @@ exports.validateCNPJ = async (req, res) => {
     }
 
     const existingCompany = await prisma.company.findUnique({
-      where: { cnpj: cleanCNPJ }
+      where: { cnpj: cleanCNPJ },
     });
 
     if (existingCompany) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         message: 'CNPJ já cadastrado',
-        companyId: existingCompany.id 
+        companyId: existingCompany.id,
       });
     }
 
@@ -336,7 +350,7 @@ exports.toggleCompanyStatus = async (req, res) => {
 
   try {
     const company = await prisma.company.findUnique({
-      where: { id }
+      where: { id },
     });
 
     if (!company) {
@@ -345,12 +359,12 @@ exports.toggleCompanyStatus = async (req, res) => {
 
     const updatedCompany = await prisma.company.update({
       where: { id },
-      data: { isActive: !company.isActive }
+      data: { isActive: !company.isActive },
     });
 
     res.json({
       message: `Empresa ${updatedCompany.isActive ? 'ativada' : 'desativada'} com sucesso`,
-      company: updatedCompany
+      company: updatedCompany,
     });
   } catch (error) {
     console.error('Erro ao alterar status da empresa:', error);
@@ -374,16 +388,16 @@ exports.searchCompanies = async (req, res) => {
           { cnpj: { contains: query.replace(/[^\d]/g, ''), mode: 'insensitive' } },
           { businessSegment: { contains: query, mode: 'insensitive' } },
           { user: { name: { contains: query, mode: 'insensitive' } } },
-          { user: { email: { contains: query, mode: 'insensitive' } } }
-        ]
+          { user: { email: { contains: query, mode: 'insensitive' } } },
+        ],
       },
       include: {
         user: {
-          select: { id: true, name: true, email: true }
-        }
+          select: { id: true, name: true, email: true },
+        },
       },
       take: 20,
-      orderBy: { companyName: 'asc' }
+      orderBy: { companyName: 'asc' },
     });
 
     res.json(companies);
@@ -403,14 +417,14 @@ exports.bulkUpdateCompanies = async (req, res) => {
 
     const updatedCompanies = await prisma.company.updateMany({
       where: {
-        id: { in: companyIds }
+        id: { in: companyIds },
       },
-      data: updateData
+      data: updateData,
     });
 
     res.json({
       message: `${updatedCompanies.count} empresas atualizadas com sucesso`,
-      count: updatedCompanies.count
+      count: updatedCompanies.count,
     });
   } catch (error) {
     console.error('Erro ao atualizar empresas em lote:', error);
