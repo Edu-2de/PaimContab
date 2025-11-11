@@ -115,7 +115,7 @@ export default function SubscriptionDetailsPage() {
     try {
       setApplyingDiscount(true);
       setError('');
-      
+
       const response = await apiClient.post(`${API_BASE}/admin/subscriptions/${id}/discount`, {
         percentage: parseFloat(discountForm.percentage),
         endDate: discountForm.endDate || null,
@@ -144,7 +144,7 @@ export default function SubscriptionDetailsPage() {
     try {
       setError('');
       const response = await apiClient.delete(`${API_BASE}/admin/subscriptions/${id}/discount`);
-      
+
       if (response.success) {
         setSuccessMessage('Desconto removido com sucesso!');
         await loadSubscription();
@@ -169,7 +169,7 @@ export default function SubscriptionDetailsPage() {
     try {
       setChangingPlan(true);
       setError('');
-      
+
       const response = await apiClient.patch(`${API_BASE}/admin/subscriptions/${id}/plan`, {
         planId: selectedPlanId,
       });
@@ -195,7 +195,7 @@ export default function SubscriptionDetailsPage() {
     try {
       setError('');
       const response = await apiClient.patch(`${API_BASE}/admin/subscriptions/${id}/cancel`);
-      
+
       if (response.success) {
         setSuccessMessage('Assinatura cancelada com sucesso!');
         await loadSubscription();
@@ -215,7 +215,7 @@ export default function SubscriptionDetailsPage() {
     try {
       setError('');
       const response = await apiClient.patch(`${API_BASE}/admin/subscriptions/${id}/reactivate`);
-      
+
       if (response.success) {
         setSuccessMessage('Assinatura reativada com sucesso!');
         await loadSubscription();
@@ -227,7 +227,8 @@ export default function SubscriptionDetailsPage() {
       console.error('Erro ao reativar assinatura:', err);
       setError('Erro ao reativar assinatura');
     }
-  };  const formatCurrency = (value: number) => {
+  };
+  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',

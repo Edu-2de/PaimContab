@@ -113,6 +113,7 @@ router.get('/:id', async (req, res) => {
           },
         },
         plan: true,
+        discount: true, // Incluir desconto
       },
     });
 
@@ -120,14 +121,22 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Assinatura não encontrada' });
     }
 
+    // Calcular preço com desconto
+    const basePrice = subscription.plan.price;
+    const discountPercentage = subscription.discount?.isActive ? subscription.discount.percentage : 0;
+    const finalPrice = basePrice * (1 - discountPercentage / 100);
+
     const formattedSubscription = {
       id: subscription.id,
       userId: subscription.userId,
       planId: subscription.planId,
       status: subscription.isActive ? 'active' : 'inactive',
+      isActive: subscription.isActive,
       startDate: subscription.startDate,
       endDate: subscription.endDate,
-      amount: subscription.plan.price,
+      amount: finalPrice, // Preço com desconto
+      originalAmount: basePrice, // Preço original
+      discount: subscription.discount, // Informações do desconto
       stripeSubscriptionId: subscription.stripeSubscriptionId,
       user: subscription.user,
       plan: {
