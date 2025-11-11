@@ -62,7 +62,8 @@ const ReceitasContent = memo(() => {
   const [showModal, setShowModal] = useState(false);
   const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(''); // Vazio = todos os períodos
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [hasAccess, setHasAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState<ReceitaFormData>({
@@ -189,15 +190,40 @@ const ReceitasContent = memo(() => {
     };
   }, [fetchReceitas, hasAccess]);
 
-  // Filtro adicional por mês usando useMemo para cache
+  // Filtro adicional por mês/ano usando useMemo para cache
   const finalFilteredReceitas = useMemo(() => {
-    if (!selectedMonth) return filteredReceitas;
+    let filtered = filteredReceitas;
 
-    return filteredReceitas.filter(receita => {
-      const receitaMonth = receita.dataRecebimento?.slice(0, 7);
-      return receitaMonth === selectedMonth;
-    });
-  }, [filteredReceitas, selectedMonth]);
+    // Filtrar por ano
+    if (selectedYear) {
+      filtered = filtered.filter(receita => {
+        const receitaYear = receita.dataRecebimento?.slice(0, 4);
+        return receitaYear === selectedYear;
+      });
+    }
+
+    // Filtrar por mês (se selecionado)
+    if (selectedMonth) {
+      filtered = filtered.filter(receita => {
+        const receitaMonth = receita.dataRecebimento?.slice(5, 7);
+        return receitaMonth === selectedMonth;
+      });
+    }
+
+    return filtered;
+  }, [filteredReceitas, selectedMonth, selectedYear]);
+
+  // Gerar lista de anos disponíveis (últimos 5 anos)
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, i) => currentYear - i);
+  }, []);
+
+  // Nomes dos meses
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
 
   // Cálculos de métricas memoizados para performance
   const metrics = useMemo(() => {
@@ -373,14 +399,28 @@ const ReceitasContent = memo(() => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <select
+                  value={selectedYear}
+                  onChange={e => setSelectedYear(e.target.value)}
+                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
+                >
+                  {availableYears.map(year => (
+                    <option key={year} value={year.toString()}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+
+                <select
                   value={selectedMonth}
                   onChange={e => setSelectedMonth(e.target.value)}
                   className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
                 >
-                  <option value="">Todos os períodos</option>
-                  <option value="2024-09">Setembro 2024</option>
-                  <option value="2024-08">Agosto 2024</option>
-                  <option value="2024-07">Julho 2024</option>
+                  <option value="">Todos os meses</option>
+                  {monthNames.map((month, index) => (
+                    <option key={index} value={(index + 1).toString().padStart(2, '0')}>
+                      {month}
+                    </option>
+                  ))}
                 </select>
 
                 <div className="relative">
