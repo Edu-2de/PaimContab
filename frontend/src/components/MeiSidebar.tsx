@@ -142,8 +142,12 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
 
         const userObj = JSON.parse(userData);
 
-        // Admin sempre tem acesso
-        if (userObj.role === 'admin') {
+        // Verificar se está em modo admin (via URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminView = urlParams.get('adminView') === 'true';
+
+        // Admin sempre tem acesso (tanto como admin normal quanto em adminView)
+        if (userObj.role === 'admin' || adminView) {
           setHasCalendarAccess(true);
           return;
         }

@@ -178,7 +178,7 @@ function MeiProtectionComponent({ children }: MeiProtectionProps) {
   return (
     <div>
       {isAdminView && targetUserName && (
-        <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4 shadow-lg z-[100] border-b-4 border-blue-800">
+        <div className="fixed top-0 left-60 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4 shadow-lg z-[100] border-b-4 border-blue-800">
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">

@@ -125,14 +125,20 @@ const ReceitasContent = memo(() => {
 
   // Buscar receitas do backend - memoizado
   const fetchReceitas = useCallback(async () => {
-    if (!hasAccess) return;
+    if (!hasAccess || !companyId) return;
 
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
+      const userData = localStorage.getItem('user');
+
+      if (!userData) return;
+
+      const userObj = JSON.parse(userData);
+      const adminMode = userObj.role === 'admin';
 
       // Se for admin, passar companyId como query parameter
-      const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+      const queryParam = adminMode ? `?companyId=${companyId}` : '';
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -148,7 +154,7 @@ const ReceitasContent = memo(() => {
       setLoading(false);
       setMetricsLoading(false);
     }
-  }, [companyId, isAdmin, hasAccess]);
+  }, [companyId, hasAccess]);
 
   useEffect(() => {
     if (hasAccess) {
