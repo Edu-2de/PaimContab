@@ -17,6 +17,7 @@ interface UserWithCompany {
   name: string;
   email: string;
   company?: {
+    id: string;
     name: string;
     cnpj?: string;
   };
@@ -167,10 +168,14 @@ export default function AdminMeiDashboardPage() {
     }
   };
 
-  const openUserMeiDashboard = (userId: string, userName: string) => {
+  const openUserMeiDashboard = (userId: string, userName: string, companyId?: string) => {
     // Abre o dashboard MEI do usuário em uma nova aba
     // O sistema de proteção detectará que é um admin acessando
-    const url = `/mei/dashboard?adminView=true&userId=${userId}&userName=${encodeURIComponent(userName)}`;
+    if (!companyId) {
+      alert('Este usuário não possui empresa cadastrada.');
+      return;
+    }
+    const url = `/mei/${companyId}/dashboard?adminView=true&userId=${userId}&userName=${encodeURIComponent(userName)}`;
     window.open(url, '_blank');
   };
 
@@ -287,8 +292,14 @@ export default function AdminMeiDashboardPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <button
-                                onClick={() => openUserMeiDashboard(user.id, user.name)}
-                                className="inline-flex items-center gap-1 px-3 py-1 bg-black text-white text-sm rounded hover:bg-gray-800 transition-colors"
+                                onClick={() => openUserMeiDashboard(user.id, user.name, user.company?.id)}
+                                disabled={!user.company}
+                                className={`inline-flex items-center gap-1 px-3 py-1 text-sm rounded transition-colors ${
+                                  user.company
+                                    ? 'bg-black text-white hover:bg-gray-800'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                                title={!user.company ? 'Usuário sem empresa cadastrada' : ''}
                               >
                                 <HiEye className="w-4 h-4" />
                                 Ver Dashboard
@@ -362,8 +373,14 @@ export default function AdminMeiDashboardPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-center">
                               <button
-                                onClick={() => openUserMeiDashboard(user.id, user.name)}
-                                className="inline-flex items-center gap-1 px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                                onClick={() => openUserMeiDashboard(user.id, user.name, user.company?.id)}
+                                disabled={!user.company}
+                                className={`inline-flex items-center gap-1 px-3 py-1 text-sm rounded transition-colors ${
+                                  user.company
+                                    ? 'bg-gray-500 text-white hover:bg-gray-600'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                                title={!user.company ? 'Usuário sem empresa cadastrada' : ''}
                               >
                                 <HiEye className="w-4 h-4" />
                                 Ver Dashboard

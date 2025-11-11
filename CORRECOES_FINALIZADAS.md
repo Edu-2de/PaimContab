@@ -1,6 +1,61 @@
 # ✅ CORREÇÕES REALIZADAS - Admin & Stripe
 
-## 📋 Data: 31/10/2025
+## 📋 Data Inicial: 31/10/2025
+## 📋 Última Atualização: 11/11/2025
+
+---
+
+## 🔥 NOVO - 11/11/2025
+
+### ✅ Correção: Admin Dashboard MEI - Erro 404
+
+**Problema:**
+- Admin tentava abrir dashboard MEI de usuários e recebia erro 404
+- URL gerada: `/mei/dashboard?adminView=true&userId=...`
+- URL correta: `/mei/{companyId}/dashboard?adminView=true&userId=...`
+
+**Causa:**
+- Faltava passar o `companyId` na URL ao abrir dashboard de outros usuários
+- Estrutura de rotas Next.js exige: `/mei/[companyId]/dashboard`
+
+**Solução Implementada:**
+
+1. **Interface atualizada** - Adicionado `id` no objeto `company`:
+```typescript
+interface UserWithCompany {
+  company?: {
+    id: string;  // ← Novo campo
+    name: string;
+    cnpj?: string;
+  };
+}
+```
+
+2. **Função `openUserMeiDashboard` corrigida**:
+```typescript
+const openUserMeiDashboard = (userId: string, userName: string, companyId?: string) => {
+  if (!companyId) {
+    alert('Este usuário não possui empresa cadastrada.');
+    return;
+  }
+  const url = `/mei/${companyId}/dashboard?adminView=true&userId=${userId}&userName=${encodeURIComponent(userName)}`;
+  window.open(url, '_blank');
+};
+```
+
+3. **Botões melhorados**:
+   - Desabilitados quando usuário não tem empresa
+   - Estilo cinza quando disabled
+   - Tooltip explicativo
+   - Passam `user.company?.id` como argumento
+
+**Arquivo modificado:**
+- `frontend/src/app/admin/mei-dashboards/page.tsx`
+
+**Documentação completa:**
+- Ver `CORRECAO_ADMIN_DASHBOARD_MEI.md`
+
+**Status:** ✅ CORRIGIDO
 
 ---
 
