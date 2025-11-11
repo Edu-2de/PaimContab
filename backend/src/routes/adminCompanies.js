@@ -58,6 +58,59 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/admin/companies/export - Exportar empresas
+router.get('/export', async (req, res) => {
+  try {
+    const { search, status } = req.query;
+
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { cnpj: { contains: search } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    const companies = await prisma.company.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Formatar dados para Excel
+    const exportData = companies.map(company => ({
+      ID: company.id,
+      Nome: company.name || '',
+      CNPJ: company.cnpj || '',
+      Email: company.email || '',
+      Telefone: company.phone || '',
+      Endereco: company.address || '',
+      Cidade: company.city || '',
+      Estado: company.state || '',
+      CEP: company.zipCode || '',
+      Status: company.status || '',
+      Usuario: company.user?.name || '',
+      'Email Usuario': company.user?.email || '',
+      'Criado Em': new Date(company.createdAt).toLocaleDateString('pt-BR'),
+    }));
+
+    res.json({ data: exportData });
+  } catch (error) {
+    console.error('Erro ao exportar empresas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // GET /api/admin/companies/:id - Buscar empresa por ID
 router.get('/:id', async (req, res) => {
   try {

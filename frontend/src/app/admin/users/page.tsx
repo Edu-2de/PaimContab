@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminProtection from '@/components/AdminProtection';
+import ExportButton from '@/components/ExportButton';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -16,6 +17,8 @@ import {
   HiChevronRight,
   HiEllipsisVertical,
 } from 'react-icons/hi2';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 interface Company {
   companyName: string;
@@ -240,6 +243,11 @@ function UsersPageContent() {
               <p className="text-slate-600 mt-1 font-medium">Gerencie todos os usuários do sistema</p>
             </div>
             <div className="flex items-center gap-3">
+              <ExportButton
+                endpoint={`${API_BASE}/admin/users/export${search ? `?search=${search}` : ''}`}
+                filename="usuarios"
+                label="Exportar Excel"
+              />
               <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium">
                 <HiUserPlus className="w-4 h-4" />
                 Novo Usuário

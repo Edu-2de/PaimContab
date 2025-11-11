@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 import AdminProtection from '../../../components/AdminProtection';
+import ExportButton from '../../../components/ExportButton';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -14,6 +15,8 @@ import {
   HiChevronRight,
   HiUserGroup,
 } from 'react-icons/hi2';
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
 interface Company {
   id: string;
@@ -175,10 +178,19 @@ function AdminCompaniesContent() {
               <h1 className="text-2xl font-bold text-gray-900">Gerenciar Empresas</h1>
               <p className="text-gray-600 mt-1">Visualize e gerencie todas as empresas do sistema</p>
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
-              <HiPlus className="w-4 h-4" />
-              Nova Empresa
-            </button>
+            <div className="flex gap-2">
+              <ExportButton
+                endpoint={`${API_BASE}/admin/companies/export${filterStatus ? `?status=${filterStatus}` : ''}${
+                  searchTerm ? `${filterStatus ? '&' : '?'}search=${searchTerm}` : ''
+                }`}
+                filename="empresas"
+                label="Exportar Excel"
+              />
+              <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
+                <HiPlus className="w-4 h-4" />
+                Nova Empresa
+              </button>
+            </div>
           </div>
         </div>
 

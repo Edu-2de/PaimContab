@@ -44,25 +44,46 @@ function AdminReportsContent() {
   const fetchStats = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/reports?period=${selectedPeriod}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-          },
-        }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/reports/overview`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
-      if (!response.ok) throw new Error('Erro ao carregar estatísticas');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Erro na resposta:', errorText);
+        throw new Error('Erro ao carregar relatórios');
+      }
 
       const data = await response.json();
-      setStats(data);
+
+      // Transformar os dados da API para o formato esperado
+      const transformedStats: DashboardStats = {
+        totalUsers: data.users?.total || 0,
+        totalCompanies: data.companies?.total || 0,
+        totalSubscriptions: data.subscriptions?.total || 0,
+        totalRevenue: data.finances?.totalReceitas || 0,
+        monthlyRevenue: data.subscriptions?.monthlyRevenue || 0,
+        activeUsers: data.users?.active || 0,
+        newUsersThisMonth: 0, // Não temos esse dado na API ainda
+        subscriptionsByStatus: {
+          active: data.subscriptions?.active || 0,
+          inactive: data.subscriptions?.inactive || 0,
+          pending: 0,
+          cancelled: 0,
+        },
+      };
+
+      setStats(transformedStats);
     } catch (error) {
       console.error('Erro:', error);
+      setStats(null);
     } finally {
       setLoading(false);
     }
-  }, [selectedPeriod]);
+  }, []);
 
   useEffect(() => {
     fetchStats();

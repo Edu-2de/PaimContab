@@ -589,6 +589,66 @@ const getUserSubscriptionStatus = async (req, res) => {
   }
 };
 
+// Controller function to export users
+const exportUsers = async (req, res) => {
+  try {
+    const { search = '' } = req.query;
+
+    console.log('📤 Exportando usuários...');
+
+    // Build search condition
+    const searchCondition = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    // Get all users without pagination for export
+    const users = await prisma.user.findMany({
+      where: searchCondition,
+      include: {
+        Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Format users data for Excel
+    const exportData = users.map(user => {
+      const latestSubscription = user.subscriptions[0];
+
+      return {
+        ID: user.id,
+        Nome: user.name,
+        Email: user.email,
+        Tipo: user.role === 'admin' ? 'Administrador' : user.role === 'mei' ? 'MEI' : 'Usuário',
+        Status: user.isActive ? 'Ativo' : 'Inativo',
+        Empresa: user.Company?.companyName || 'Sem empresa',
+        CNPJ: user.Company?.cnpj || '',
+        Plano: latestSubscription?.plan?.name || 'Sem plano',
+        'Assinatura Ativa': latestSubscription?.isActive ? 'Sim' : 'Não',
+        'Cadastrado Em': new Date(user.createdAt).toLocaleDateString('pt-BR'),
+      };
+    });
+
+    console.log(`✅ ${exportData.length} usuários exportados`);
+    res.json({ data: exportData });
+  } catch (error) {
+    console.error('💥 Erro ao exportar usuários:', error);
+    res.status(500).json({
+      message: 'Erro ao exportar usuários',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getDashboard,
   getAllUsers,
@@ -598,4 +658,5 @@ module.exports = {
   updateUserCompany,
   deleteUser,
   getUserSubscriptionStatus,
+  exportUsers,
 };
