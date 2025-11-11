@@ -11,6 +11,7 @@
 ### ✨ Melhorias de UX: Visualização Admin + Bloqueio de Calendário
 
 **Objetivos:**
+
 1. Tornar mais visível quando admin está visualizando dashboard de outro usuário
 2. Bloquear acesso ao calendário para usuários sem plano adequado (apenas Profissional e Premium)
 
@@ -22,6 +23,7 @@
 **Depois:** Barra grande, gradiente, fixa no topo, sempre visível
 
 **Características:**
+
 - ✅ Posição fixa no topo (`fixed top-0`)
 - ✅ Gradiente azul destacado (`from-blue-600 to-blue-700`)
 - ✅ Borda inferior grossa (`border-b-4 border-blue-800`)
@@ -36,12 +38,14 @@
 #### 2. Bloqueio de Calendário por Plano
 
 **Regra de Negócio:**
+
 - ❌ Plano Essencial: SEM acesso ao calendário
 - ✅ Plano Profissional: COM acesso
 - ✅ Plano Premium: COM acesso
 - ✅ Admin: SEMPRE tem acesso
 
 **Visual do Item Bloqueado:**
+
 - Esmaecido (50% opacidade)
 - Ícone de cadeado vermelho sobreposto
 - Cursor `not-allowed`
@@ -49,6 +53,7 @@
 - Tooltip ao hover explicando planos necessários
 
 **Funcionalidades:**
+
 - ✅ Verificação automática de plano via API
 - ✅ Cache do resultado em state
 - ✅ Admin bypassa verificação

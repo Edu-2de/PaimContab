@@ -16,6 +16,7 @@
 ### ❌ Problema Anterior:
 
 A barra de aviso era pequena e pouco visível:
+
 - Apenas 2-3 linhas de altura
 - Cor azul simples sem destaque
 - Não estava fixa (sumia ao rolar a página)
@@ -26,27 +27,32 @@ A barra de aviso era pequena e pouco visível:
 **Nova barra com características:**
 
 1. **Posicionamento:**
+
    - `fixed top-0 left-0 right-0` - Fixa no topo da tela
    - `z-[100]` - Sempre visível acima de outros elementos
    - Não some ao rolar a página
 
 2. **Visual Destacado:**
+
    - Gradiente azul: `from-blue-600 to-blue-700`
    - Borda inferior grossa: `border-b-4 border-blue-800`
    - Sombra: `shadow-lg`
    - Padding maior: `py-4` (antes era `py-2`)
 
 3. **Ícone Melhorado:**
+
    - Fundo semi-transparente: `bg-white/20`
    - Backdrop blur: `backdrop-blur-sm`
    - Ícone maior: `w-6 h-6` (antes `w-5 h-5`)
    - Stroke mais grosso: `strokeWidth="2.5"`
 
 4. **Texto em Duas Linhas:**
+
    - Linha 1: "MODO ADMINISTRADOR" (uppercase, pequeno, azul claro)
    - Linha 2: "Visualizando: [Nome]" (grande, bold, branco)
 
 5. **Botão Melhorado:**
+
    - Fundo branco com texto azul (alto contraste)
    - Sombra e hover effect
    - Texto mais descritivo: "← Voltar ao Painel"
@@ -58,28 +64,24 @@ A barra de aviso era pequena e pouco visível:
 ### 🎨 Código da Nova Barra:
 
 ```tsx
-{isAdminView && targetUserName && (
-  <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4 shadow-lg z-[100] border-b-4 border-blue-800">
-    <div className="max-w-7xl mx-auto flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
-          {/* Ícone de olho */}
-        </div>
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-wider text-blue-200">
-            Modo Administrador
-          </div>
-          <div className="text-base font-bold">
-            Visualizando: {decodeURIComponent(targetUserName)}
+{
+  isAdminView && targetUserName && (
+    <div className="fixed top-0 left-0 right-0 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-4 shadow-lg z-[100] border-b-4 border-blue-800">
+      <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">{/* Ícone de olho */}</div>
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-wider text-blue-200">Modo Administrador</div>
+            <div className="text-base font-bold">Visualizando: {decodeURIComponent(targetUserName)}</div>
           </div>
         </div>
+        <button className="px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-all duration-200 shadow-md hover:shadow-lg">
+          ← Voltar ao Painel
+        </button>
       </div>
-      <button className="px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-50 transition-all duration-200 shadow-md hover:shadow-lg">
-        ← Voltar ao Painel
-      </button>
     </div>
-  </div>
-)}
+  );
+}
 ```
 
 ### 📁 Arquivo Modificado:
@@ -93,6 +95,7 @@ A barra de aviso era pequena e pouco visível:
 ### 📋 Regra de Negócio:
 
 **Acesso ao Calendário:**
+
 - ✅ **Plano Essencial**: NÃO tem acesso
 - ✅ **Plano Profissional**: TEM acesso
 - ✅ **Plano Premium**: TEM acesso
@@ -107,7 +110,7 @@ Novo hook que busca dados da assinatura e verifica plano:
 ```typescript
 const checkCalendarAccess = async () => {
   const userObj = JSON.parse(userData);
-  
+
   // Admin sempre tem acesso
   if (userObj.role === 'admin') {
     setHasCalendarAccess(true);
@@ -121,12 +124,11 @@ const checkCalendarAccess = async () => {
 
   if (response.ok) {
     const subscriptionData = await response.json();
-    
+
     // Verificar se plano é Profissional ou Premium
     const planName = subscriptionData?.plan?.name?.toLowerCase() || '';
-    const hasAccess = subscriptionData?.isActive && 
-                    (planName.includes('profissional') || planName.includes('premium'));
-    
+    const hasAccess = subscriptionData?.isActive && (planName.includes('profissional') || planName.includes('premium'));
+
     setHasCalendarAccess(hasAccess);
   }
 };
@@ -137,6 +139,7 @@ const checkCalendarAccess = async () => {
 Quando `!hasCalendarAccess`:
 
 **Características:**
+
 - Renderiza `<div>` ao invés de `<Link>` (não clicável)
 - `cursor-not-allowed` - Cursor de bloqueio
 - `opacity-50` - Visual esmaecido
@@ -144,6 +147,7 @@ Quando `!hasCalendarAccess`:
 - Segundo cadeado no final da linha (quando expandido)
 
 **Ícones:**
+
 ```tsx
 <div className="relative">
   <HiOutlineCalendar className="w-5 h-5" />
@@ -166,11 +170,11 @@ Quando hover sobre item bloqueado (menu expandido):
 
 #### 4. **Estados Visuais**
 
-| Estado | Link | Cursor | Opacidade | Ícone | Cor |
-|--------|------|--------|-----------|-------|-----|
-| **Desbloqueado Ativo** | ✅ | pointer | 100% | Calendário | Branco (fundo branco) |
-| **Desbloqueado Inativo** | ✅ | pointer | 100% | Calendário | Cinza claro |
-| **Bloqueado** | ❌ | not-allowed | 50% | Calendário + Cadeado | Cinza escuro |
+| Estado                   | Link | Cursor      | Opacidade | Ícone                | Cor                   |
+| ------------------------ | ---- | ----------- | --------- | -------------------- | --------------------- |
+| **Desbloqueado Ativo**   | ✅   | pointer     | 100%      | Calendário           | Branco (fundo branco) |
+| **Desbloqueado Inativo** | ✅   | pointer     | 100%      | Calendário           | Cinza claro           |
+| **Bloqueado**            | ❌   | not-allowed | 50%       | Calendário + Cadeado | Cinza escuro          |
 
 ### 📁 Arquivo Modificado:
 
@@ -232,26 +236,29 @@ Quando hover sobre item bloqueado (menu expandido):
 
 ### Planos e Permissões:
 
-| Recurso | Essencial | Profissional | Premium | Admin |
-|---------|-----------|--------------|---------|-------|
-| Dashboard | ✅ | ✅ | ✅ | ✅ |
-| Receitas | ✅ | ✅ | ✅ | ✅ |
-| Despesas | ✅ | ✅ | ✅ | ✅ |
-| Planilha | ✅ | ✅ | ✅ | ✅ |
-| **Calendário** | ❌ | ✅ | ✅ | ✅ |
-| DAS | ✅ | ✅ | ✅ | ✅ |
+| Recurso        | Essencial | Profissional | Premium | Admin |
+| -------------- | --------- | ------------ | ------- | ----- |
+| Dashboard      | ✅        | ✅           | ✅      | ✅    |
+| Receitas       | ✅        | ✅           | ✅      | ✅    |
+| Despesas       | ✅        | ✅           | ✅      | ✅    |
+| Planilha       | ✅        | ✅           | ✅      | ✅    |
+| **Calendário** | ❌        | ✅           | ✅      | ✅    |
+| DAS            | ✅        | ✅           | ✅      | ✅    |
 
 ### UX Improvements:
 
 1. **Clareza Visual:**
+
    - Admin sempre sabe que está visualizando dados de outro usuário
    - Impossível confundir com acesso normal
 
 2. **Feedback Imediato:**
+
    - Usuário vê instantaneamente que calendário está bloqueado
    - Tooltip explica exatamente quais planos têm acesso
 
 3. **Prevenção de Erro:**
+
    - Item não é clicável quando bloqueado
    - Evita frustração de tentar acessar e receber erro
 
@@ -264,6 +271,7 @@ Quando hover sobre item bloqueado (menu expandido):
 ## 🎨 Screenshots (Descrição)
 
 ### Barra Administrativa:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │ [👁️]  MODO ADMINISTRADOR              [← Voltar ao Painel] │
@@ -273,6 +281,7 @@ Quando hover sobre item bloqueado (menu expandido):
 ```
 
 ### Menu Lateral - Item Bloqueado:
+
 ```
 ┌──────────────────┐
 │ 📊 Dashboard     │
@@ -285,6 +294,7 @@ Quando hover sobre item bloqueado (menu expandido):
 ```
 
 ### Tooltip ao Hover:
+
 ```
 ┌───────────────────────────┐
 │ 🔒 Recurso Bloqueado      │
@@ -319,21 +329,25 @@ Quando hover sobre item bloqueado (menu expandido):
 ## 📝 Observações Técnicas
 
 ### Performance:
+
 - Verificação de plano ocorre apenas 1 vez ao montar componente
 - Resultado é cacheado em state
 - Não há re-verificação a cada render
 
 ### Segurança:
+
 - Bloqueio é apenas visual (UX)
 - Backend DEVE validar permissões nas rotas de calendário
 - Não confiar apenas no frontend
 
 ### Manutenção:
+
 - Nomes de planos verificados em lowercase
 - Usa `includes()` para flexibilidade
 - Fácil adicionar novos planos à lista
 
 ### Acessibilidade:
+
 - Cursor indica claramente estado bloqueado
 - Tooltip fornece informação em hover
 - Cores contrastantes na barra admin
@@ -343,28 +357,31 @@ Quando hover sobre item bloqueado (menu expandido):
 ## 🚀 Próximos Passos Sugeridos
 
 1. **Backend - Validação de Rota:**
+
    ```javascript
    // middleware/checkCalendarAccess.js
    const checkCalendarAccess = async (req, res, next) => {
      if (req.user.role === 'admin') return next();
-     
+
      const subscription = await getSubscription(req.user.id);
      const planName = subscription?.plan?.name?.toLowerCase() || '';
-     
+
      if (!planName.includes('profissional') && !planName.includes('premium')) {
        return res.status(403).json({ error: 'Plano necessário: Profissional ou Premium' });
      }
-     
+
      next();
    };
    ```
 
 2. **Página de Upgrade:**
+
    - Criar página `/upgrade` com comparação de planos
    - Destacar calendário como recurso premium
    - Link direto no tooltip?
 
 3. **Analytics:**
+
    - Rastrear quantos usuários tentam clicar no calendário bloqueado
    - Medir conversão para upgrade
 
@@ -377,6 +394,7 @@ Quando hover sobre item bloqueado (menu expandido):
 ## 📄 Arquivos Modificados
 
 1. `frontend/src/components/MeiProtection.tsx`
+
    - Barra administrativa redesenhada
    - Posicionamento fixo
    - Espaçamento condicional do conteúdo
@@ -398,4 +416,3 @@ Quando hover sobre item bloqueado (menu expandido):
 - TypeScript validado
 - Visual funcionando conforme esperado
 - Pronto para uso em produção
-

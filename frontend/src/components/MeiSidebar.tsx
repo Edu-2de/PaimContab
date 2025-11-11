@@ -137,11 +137,11 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
       try {
         const token = localStorage.getItem('authToken');
         const userData = localStorage.getItem('user');
-        
+
         if (!token || !userData) return;
 
         const userObj = JSON.parse(userData);
-        
+
         // Admin sempre tem acesso
         if (userObj.role === 'admin') {
           setHasCalendarAccess(true);
@@ -160,9 +160,9 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
 
           // Apenas planos Profissional e Premium têm acesso ao calendário
           const planName = subscriptionData?.plan?.name?.toLowerCase() || '';
-          const hasAccess = subscriptionData?.isActive && 
-                          (planName.includes('profissional') || planName.includes('premium'));
-          
+          const hasAccess =
+            subscriptionData?.isActive && (planName.includes('profissional') || planName.includes('premium'));
+
           setHasCalendarAccess(hasAccess);
         } else {
           setHasCalendarAccess(false);
