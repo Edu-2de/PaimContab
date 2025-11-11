@@ -804,21 +804,28 @@ function MeiSpreadsheetContent() {
                 <div className="flex items-center gap-3">
                   <label className="text-sm font-medium text-gray-700">Período:</label>
                   <select
+                    value={selectedYear}
+                    onChange={e => setSelectedYear(e.target.value)}
+                    className="text-sm border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 cursor-pointer rounded-lg px-3 py-2"
+                  >
+                    {availableYears.map(year => (
+                      <option key={year} value={year.toString()}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
                     value={selectedMonth}
                     onChange={e => setSelectedMonth(e.target.value)}
                     className="text-sm border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 cursor-pointer rounded-lg px-3 py-2"
                   >
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const date = new Date();
-                      date.setMonth(date.getMonth() - i);
-                      const value = date.toISOString().slice(0, 7);
-                      const label = date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' });
-                      return (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      );
-                    })}
+                    <option value="">Ano todo</option>
+                    {monthNames.map((month, index) => (
+                      <option key={index} value={(index + 1).toString().padStart(2, '0')}>
+                        {month}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
