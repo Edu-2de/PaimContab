@@ -210,6 +210,12 @@ const ReceitasContent = memo(() => {
     try {
       setSaving(true);
       const token = localStorage.getItem('authToken');
+      const userData = localStorage.getItem('user');
+
+      if (!userData) return;
+
+      const userObj = JSON.parse(userData);
+      const adminMode = userObj.role === 'admin';
 
       const receitaData = {
         descricao: formData.descricao,
@@ -222,7 +228,7 @@ const ReceitasContent = memo(() => {
         status: formData.status,
         observacoes: formData.observacoes,
         // Se for admin, incluir companyId no body
-        ...(isAdmin && { companyId }),
+        ...(adminMode && { companyId }),
       };
 
       let response;
@@ -236,7 +242,7 @@ const ReceitasContent = memo(() => {
           body: JSON.stringify(receitaData),
         });
       } else {
-        const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+        const queryParam = adminMode ? `?companyId=${companyId}` : '';
         response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/receitas${queryParam}`, {
           method: 'POST',
           headers: {
