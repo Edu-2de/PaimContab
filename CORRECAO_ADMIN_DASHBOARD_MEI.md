@@ -32,7 +32,7 @@ interface UserWithCompany {
   name: string;
   email: string;
   company?: {
-    id: string;          // ← ADICIONADO
+    id: string; // ← ADICIONADO
     name: string;
     cnpj?: string;
   };
@@ -43,6 +43,7 @@ interface UserWithCompany {
 ### 2. Função `openUserMeiDashboard` Corrigida
 
 **ANTES:**
+
 ```typescript
 const openUserMeiDashboard = (userId: string, userName: string) => {
   const url = `/mei/dashboard?adminView=true&userId=${userId}&userName=${encodeURIComponent(userName)}`;
@@ -51,6 +52,7 @@ const openUserMeiDashboard = (userId: string, userName: string) => {
 ```
 
 **DEPOIS:**
+
 ```typescript
 const openUserMeiDashboard = (userId: string, userName: string, companyId?: string) => {
   if (!companyId) {
@@ -63,6 +65,7 @@ const openUserMeiDashboard = (userId: string, userName: string, companyId?: stri
 ```
 
 **Mudanças:**
+
 - Adicionado parâmetro `companyId`
 - Validação: se não houver `companyId`, exibe alerta e não abre
 - URL corrigida: `/mei/${companyId}/dashboard` em vez de `/mei/dashboard`
@@ -70,14 +73,13 @@ const openUserMeiDashboard = (userId: string, userName: string, companyId?: stri
 ### 3. Botões "Ver Dashboard" Atualizados
 
 **Usuários com Plano Ativo:**
+
 ```typescript
 <button
   onClick={() => openUserMeiDashboard(user.id, user.name, user.company?.id)}
   disabled={!user.company}
   className={`inline-flex items-center gap-1 px-3 py-1 text-sm rounded transition-colors ${
-    user.company
-      ? 'bg-black text-white hover:bg-gray-800'
-      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+    user.company ? 'bg-black text-white hover:bg-gray-800' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
   }`}
   title={!user.company ? 'Usuário sem empresa cadastrada' : ''}
 >
@@ -87,14 +89,13 @@ const openUserMeiDashboard = (userId: string, userName: string, companyId?: stri
 ```
 
 **Usuários sem Plano Ativo:**
+
 ```typescript
 <button
   onClick={() => openUserMeiDashboard(user.id, user.name, user.company?.id)}
   disabled={!user.company}
   className={`inline-flex items-center gap-1 px-3 py-1 text-sm rounded transition-colors ${
-    user.company
-      ? 'bg-gray-500 text-white hover:bg-gray-600'
-      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+    user.company ? 'bg-gray-500 text-white hover:bg-gray-600' : 'bg-gray-300 text-gray-500 cursor-not-allowed'
   }`}
   title={!user.company ? 'Usuário sem empresa cadastrada' : ''}
 >
@@ -104,6 +105,7 @@ const openUserMeiDashboard = (userId: string, userName: string, companyId?: stri
 ```
 
 **Melhorias:**
+
 - Botões desabilitados se usuário não tiver empresa
 - Estilo visual diferenciado (cinza) quando desabilitado
 - Tooltip explicativo ao passar o mouse
