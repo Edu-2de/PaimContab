@@ -70,34 +70,40 @@ export default function SubscriptionDetailsPage() {
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [changingPlan, setChangingPlan] = useState(false);
 
-  useEffect(() => {
-    loadSubscription();
-    loadPlans();
-  }, [id]);
-
-  const loadSubscription = async () => {
+  const loadSubscription = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/admin/subscriptions/${id}`);
-      setSubscription(response.data);
-      setSelectedPlanId(response.data.planId);
-      setError('');
-    } catch (err: any) {
+      const response = await apiClient.get(`${API_BASE}/admin/subscriptions/${id}`);
+      if (response.success && response.data) {
+        setSubscription(response.data as Subscription);
+        setSelectedPlanId((response.data as Subscription).planId);
+        setError('');
+      } else {
+        setError(response.error || 'Erro ao carregar assinatura');
+      }
+    } catch (err) {
       console.error('Erro ao carregar assinatura:', err);
-      setError(err.response?.data?.error || 'Erro ao carregar assinatura');
+      setError('Erro ao carregar assinatura');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
-  const loadPlans = async () => {
+  const loadPlans = useCallback(async () => {
     try {
-      const response = await api.get('/plans');
-      setPlans(response.data);
+      const response = await apiClient.get(`${API_BASE}/plans`);
+      if (response.success && response.data) {
+        setPlans(response.data as Plan[]);
+      }
     } catch (err) {
       console.error('Erro ao carregar planos:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSubscription();
+    loadPlans();
+  }, [loadSubscription, loadPlans]);
 
   const handleApplyDiscount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,21 +115,24 @@ export default function SubscriptionDetailsPage() {
     try {
       setApplyingDiscount(true);
       setError('');
-
-      await api.post(`/admin/subscriptions/${id}/discount`, {
+      
+      const response = await apiClient.post(`${API_BASE}/admin/subscriptions/${id}/discount`, {
         percentage: parseFloat(discountForm.percentage),
         endDate: discountForm.endDate || null,
         reason: discountForm.reason || null,
       });
 
-      setSuccessMessage('Desconto aplicado com sucesso!');
-      setDiscountForm({ percentage: '', endDate: '', reason: '' });
-      await loadSubscription();
-
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err: any) {
+      if (response.success) {
+        setSuccessMessage('Desconto aplicado com sucesso!');
+        setDiscountForm({ percentage: '', endDate: '', reason: '' });
+        await loadSubscription();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.error || 'Erro ao aplicar desconto');
+      }
+    } catch (err) {
       console.error('Erro ao aplicar desconto:', err);
-      setError(err.response?.data?.error || 'Erro ao aplicar desconto');
+      setError('Erro ao aplicar desconto');
     } finally {
       setApplyingDiscount(false);
     }
@@ -134,13 +143,18 @@ export default function SubscriptionDetailsPage() {
 
     try {
       setError('');
-      await api.delete(`/admin/subscriptions/${id}/discount`);
-      setSuccessMessage('Desconto removido com sucesso!');
-      await loadSubscription();
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err: any) {
+      const response = await apiClient.delete(`${API_BASE}/admin/subscriptions/${id}/discount`);
+      
+      if (response.success) {
+        setSuccessMessage('Desconto removido com sucesso!');
+        await loadSubscription();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.error || 'Erro ao remover desconto');
+      }
+    } catch (err) {
       console.error('Erro ao remover desconto:', err);
-      setError(err.response?.data?.error || 'Erro ao remover desconto');
+      setError('Erro ao remover desconto');
     }
   };
 
@@ -155,17 +169,21 @@ export default function SubscriptionDetailsPage() {
     try {
       setChangingPlan(true);
       setError('');
-
-      await api.patch(`/admin/subscriptions/${id}/plan`, {
+      
+      const response = await apiClient.patch(`${API_BASE}/admin/subscriptions/${id}/plan`, {
         planId: selectedPlanId,
       });
 
-      setSuccessMessage('Plano alterado com sucesso!');
-      await loadSubscription();
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err: any) {
+      if (response.success) {
+        setSuccessMessage('Plano alterado com sucesso!');
+        await loadSubscription();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.error || 'Erro ao alterar plano');
+      }
+    } catch (err) {
       console.error('Erro ao alterar plano:', err);
-      setError(err.response?.data?.error || 'Erro ao alterar plano');
+      setError('Erro ao alterar plano');
     } finally {
       setChangingPlan(false);
     }
@@ -176,13 +194,18 @@ export default function SubscriptionDetailsPage() {
 
     try {
       setError('');
-      await api.patch(`/admin/subscriptions/${id}/cancel`);
-      setSuccessMessage('Assinatura cancelada com sucesso!');
-      await loadSubscription();
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err: any) {
+      const response = await apiClient.patch(`${API_BASE}/admin/subscriptions/${id}/cancel`);
+      
+      if (response.success) {
+        setSuccessMessage('Assinatura cancelada com sucesso!');
+        await loadSubscription();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.error || 'Erro ao cancelar assinatura');
+      }
+    } catch (err) {
       console.error('Erro ao cancelar assinatura:', err);
-      setError(err.response?.data?.error || 'Erro ao cancelar assinatura');
+      setError('Erro ao cancelar assinatura');
     }
   };
 
@@ -191,17 +214,20 @@ export default function SubscriptionDetailsPage() {
 
     try {
       setError('');
-      await api.patch(`/admin/subscriptions/${id}/reactivate`);
-      setSuccessMessage('Assinatura reativada com sucesso!');
-      await loadSubscription();
-      setTimeout(() => setSuccessMessage(''), 3000);
-    } catch (err: any) {
+      const response = await apiClient.patch(`${API_BASE}/admin/subscriptions/${id}/reactivate`);
+      
+      if (response.success) {
+        setSuccessMessage('Assinatura reativada com sucesso!');
+        await loadSubscription();
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        setError(response.error || 'Erro ao reativar assinatura');
+      }
+    } catch (err) {
       console.error('Erro ao reativar assinatura:', err);
-      setError(err.response?.data?.error || 'Erro ao reativar assinatura');
+      setError('Erro ao reativar assinatura');
     }
-  };
-
-  const formatCurrency = (value: number) => {
+  };  const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
