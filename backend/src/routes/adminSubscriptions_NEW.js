@@ -285,12 +285,7 @@ router.post('/', async (req, res) => {
 // GET /api/admin/subscriptions/stats/overview - Estatísticas
 router.get('/stats/overview', async (req, res) => {
   try {
-    const [
-      totalSubscriptions,
-      activeSubscriptions,
-      inactiveSubscriptions,
-      activeSubs,
-    ] = await Promise.all([
+    const [totalSubscriptions, activeSubscriptions, inactiveSubscriptions, activeSubs] = await Promise.all([
       prisma.subscription.count(),
       prisma.subscription.count({ where: { isActive: true } }),
       prisma.subscription.count({ where: { isActive: false } }),
