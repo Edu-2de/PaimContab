@@ -96,6 +96,77 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/admin/subscriptions/export - Exportar para Excel (DEVE VIR ANTES DE /:id)
+router.get('/export', async (req, res) => {
+  try {
+    const { search, status } = req.query;
+
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { plan: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (status) {
+      where.isActive = status === 'active';
+    }
+
+    const subscriptions = await prisma.subscription.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        discount: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Formatar dados para Excel
+    const exportData = subscriptions.map(sub => {
+      const basePrice = sub.plan.price;
+      const discountPercentage = sub.discount?.isActive ? sub.discount.percentage : 0;
+      const finalPrice = basePrice * (1 - discountPercentage / 100);
+
+      return {
+        ID: sub.id,
+        Usuario: sub.user.name,
+        Email: sub.user.email,
+        Plano: sub.plan.name,
+        'Preco Original': `R$ ${basePrice.toFixed(2)}`,
+        'Desconto (%)': discountPercentage > 0 ? `${discountPercentage.toFixed(0)}%` : 'Sem desconto',
+        'Preco Final': `R$ ${finalPrice.toFixed(2)}`,
+        Status: sub.isActive ? 'Ativa' : 'Inativa',
+        'Data Inicio': new Date(sub.startDate).toLocaleDateString('pt-BR'),
+        'Data Fim': sub.endDate ? new Date(sub.endDate).toLocaleDateString('pt-BR') : 'N/A',
+        'Criado Em': new Date(sub.createdAt).toLocaleDateString('pt-BR'),
+      };
+    });
+
+    res.json({ data: exportData });
+  } catch (error) {
+    console.error('Erro ao exportar assinaturas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // GET /api/admin/subscriptions/:id - Buscar assinatura por ID
 router.get('/:id', async (req, res) => {
   try {
@@ -418,77 +489,6 @@ router.delete('/:id/discount', async (req, res) => {
     res.json({ message: 'Desconto removido com sucesso' });
   } catch (error) {
     console.error('Erro ao remover desconto:', error);
-    res.status(500).json({ error: 'Erro interno do servidor' });
-  }
-});
-
-// GET /api/admin/subscriptions/export - Exportar para Excel
-router.get('/export', async (req, res) => {
-  try {
-    const { search, status } = req.query;
-
-    const where = {};
-
-    if (search) {
-      where.OR = [
-        { user: { name: { contains: search, mode: 'insensitive' } } },
-        { user: { email: { contains: search, mode: 'insensitive' } } },
-        { plan: { name: { contains: search, mode: 'insensitive' } } },
-      ];
-    }
-
-    if (status) {
-      where.isActive = status === 'active';
-    }
-
-    const subscriptions = await prisma.subscription.findMany({
-      where,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            price: true,
-          },
-        },
-        discount: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    // Formatar dados para CSV
-    const csvData = subscriptions.map(sub => {
-      const basePrice = sub.plan.price;
-      const discountPercentage = sub.discount?.isActive ? sub.discount.percentage : 0;
-      const finalPrice = basePrice * (1 - discountPercentage / 100);
-
-      return {
-        ID: sub.id,
-        Usuario: sub.user.name,
-        Email: sub.user.email,
-        Plano: sub.plan.name,
-        'Preco Original': basePrice.toFixed(2),
-        'Desconto (%)': discountPercentage.toFixed(2),
-        'Preco Final': finalPrice.toFixed(2),
-        Status: sub.isActive ? 'Ativa' : 'Inativa',
-        'Data Inicio': new Date(sub.startDate).toLocaleDateString('pt-BR'),
-        'Data Fim': sub.endDate ? new Date(sub.endDate).toLocaleDateString('pt-BR') : 'N/A',
-        'Criado Em': new Date(sub.createdAt).toLocaleDateString('pt-BR'),
-      };
-    });
-
-    res.json({ data: csvData });
-  } catch (error) {
-    console.error('Erro ao exportar assinaturas:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
