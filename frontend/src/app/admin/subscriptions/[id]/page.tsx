@@ -109,7 +109,7 @@ export default function SubscriptionDetailsPage() {
     try {
       setApplyingDiscount(true);
       setError('');
-      
+
       await api.post(`/admin/subscriptions/${id}/discount`, {
         percentage: parseFloat(discountForm.percentage),
         endDate: discountForm.endDate || null,
@@ -119,7 +119,7 @@ export default function SubscriptionDetailsPage() {
       setSuccessMessage('Desconto aplicado com sucesso!');
       setDiscountForm({ percentage: '', endDate: '', reason: '' });
       await loadSubscription();
-      
+
       setTimeout(() => setSuccessMessage(''), 3000);
     } catch (err: any) {
       console.error('Erro ao aplicar desconto:', err);
@@ -155,7 +155,7 @@ export default function SubscriptionDetailsPage() {
     try {
       setChangingPlan(true);
       setError('');
-      
+
       await api.patch(`/admin/subscriptions/${id}/plan`, {
         planId: selectedPlanId,
       });
@@ -228,9 +228,7 @@ export default function SubscriptionDetailsPage() {
       <div className="min-h-screen bg-gray-50 flex">
         <AdminSidebar />
         <div className="flex-1 p-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>
           <button
             onClick={() => router.push('/admin/subscriptions')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
@@ -277,11 +275,7 @@ export default function SubscriptionDetailsPage() {
           </div>
         </div>
 
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
 
         {successMessage && (
           <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
@@ -417,7 +411,7 @@ export default function SubscriptionDetailsPage() {
                     max="100"
                     step="0.01"
                     value={discountForm.percentage}
-                    onChange={(e) => setDiscountForm({ ...discountForm, percentage: e.target.value })}
+                    onChange={e => setDiscountForm({ ...discountForm, percentage: e.target.value })}
                     className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
                     required
                   />
@@ -427,7 +421,7 @@ export default function SubscriptionDetailsPage() {
                   <input
                     type="date"
                     value={discountForm.endDate}
-                    onChange={(e) => setDiscountForm({ ...discountForm, endDate: e.target.value })}
+                    onChange={e => setDiscountForm({ ...discountForm, endDate: e.target.value })}
                     className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -436,7 +430,7 @@ export default function SubscriptionDetailsPage() {
                   <input
                     type="text"
                     value={discountForm.reason}
-                    onChange={(e) => setDiscountForm({ ...discountForm, reason: e.target.value })}
+                    onChange={e => setDiscountForm({ ...discountForm, reason: e.target.value })}
                     className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
                     placeholder="Ex: Cliente fiel"
                   />
@@ -461,7 +455,7 @@ export default function SubscriptionDetailsPage() {
               <label className="block text-gray-700 mb-2">Selecionar Novo Plano</label>
               <select
                 value={selectedPlanId}
-                onChange={(e) => setSelectedPlanId(e.target.value)}
+                onChange={e => setSelectedPlanId(e.target.value)}
                 className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
               >
                 {plans.map(plan => (
