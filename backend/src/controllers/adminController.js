@@ -96,17 +96,47 @@ const getAllUsers = async (req, res) => {
     });
 
     // Format users data
-    const formattedUsers = users.map(user => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      isActive: user.isActive,
-      createdAt: user.createdAt,
-      company: user.Company,
-      currentSubscription: user.subscriptions[0] || null,
-      planStatus: user.subscriptions[0]?.isActive ? 'active' : 'no_plan',
-    }));
+    const formattedUsers = users.map(user => {
+      const latestSubscription = user.subscriptions[0];
+
+      // Determinar status do plano baseado na assinatura mais recente
+      let planStatus = 'no_plan';
+      if (latestSubscription) {
+        if (latestSubscription.isActive) {
+          planStatus = 'active';
+        } else {
+          planStatus = 'canceled';
+        }
+      }
+
+      // Formatar currentSubscription com dados corretos
+      let currentSubscription = null;
+      if (latestSubscription) {
+        currentSubscription = {
+          id: latestSubscription.id,
+          plan: {
+            name: latestSubscription.plan.name,
+            price: latestSubscription.plan.price,
+          },
+          amount: latestSubscription.plan.price, // Pegar preço do plano
+          status: latestSubscription.isActive ? 'active' : 'canceled',
+          createdAt: latestSubscription.createdAt,
+          isActive: latestSubscription.isActive,
+        };
+      }
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        company: user.Company,
+        currentSubscription: currentSubscription,
+        planStatus: planStatus,
+      };
+    });
 
     const response = {
       users: formattedUsers,
@@ -153,15 +183,35 @@ const getUserDetails = async (req, res) => {
       });
     }
 
+    // Formatar subscriptions com preço do plano
+    const formattedSubscriptions = user.subscriptions.map(sub => ({
+      id: sub.id,
+      plan: {
+        id: sub.plan.id,
+        name: sub.plan.name,
+        description: sub.plan.description,
+        price: sub.plan.price,
+        features: [], // Adicionar features se existir no schema
+      },
+      amount: sub.plan.price, // Pegar preço do plano
+      status: sub.isActive ? 'active' : 'canceled',
+      isActive: sub.isActive,
+      createdAt: sub.createdAt,
+      updatedAt: sub.updatedAt,
+    }));
+
     // Mapear o campo Company para company (minúsculo) para consistency
     const userResponse = {
       ...user,
       company: user.Company,
       Company: undefined, // Remove o campo Company maiúsculo
+      subscriptions: formattedSubscriptions,
+      currentSubscription: formattedSubscriptions[0] || null, // Adicionar assinatura atual
     };
 
     console.log('✅ Detalhes do usuário carregados:', user.name);
     console.log('📊 Empresa encontrada:', user.Company ? 'Sim' : 'Não');
+    console.log('💳 Assinaturas:', formattedSubscriptions.length);
     res.json(userResponse);
   } catch (error) {
     console.error('💥 Erro ao buscar detalhes do usuário:', error);
@@ -281,6 +331,7 @@ const updateUserCompany = async (req, res) => {
     const companyData = req.body;
 
     console.log('🏢 Atualizando empresa do usuário:', userId);
+    console.log('📋 Dados recebidos:', JSON.stringify(companyData, null, 2));
 
     // Verificar se o usuário existe
     const user = await prisma.user.findUnique({
@@ -289,26 +340,92 @@ const updateUserCompany = async (req, res) => {
     });
 
     if (!user) {
+      console.log('❌ Usuário não encontrado:', userId);
       return res.status(404).json({
         message: 'Usuário não encontrado',
       });
     }
 
+    console.log('✅ Usuário encontrado:', user.name);
+    console.log('🏢 Empresa existente:', user.Company ? 'Sim' : 'Não');
+
+    // Limpar dados vazios e preparar para o Prisma
+    const cleanData = {};
+
+    // Campos de texto - converter string vazia para null
+    const textFields = [
+      'companyName',
+      'legalName',
+      'cnpj',
+      'businessType',
+      'mainActivity',
+      'secondaryActivity',
+      'businessSegment',
+      'address',
+      'addressNumber',
+      'complement',
+      'neighborhood',
+      'city',
+      'state',
+      'zipCode',
+      'businessPhone',
+      'businessEmail',
+      'website',
+      'taxRegime',
+      'notes',
+    ];
+
+    textFields.forEach(field => {
+      if (companyData[field] !== undefined) {
+        cleanData[field] = companyData[field] && companyData[field].trim() !== '' ? companyData[field].trim() : null;
+      }
+    });
+
+    // Campo numérico - monthlyRevenue
+    if (companyData.monthlyRevenue !== undefined) {
+      cleanData.monthlyRevenue = companyData.monthlyRevenue ? parseFloat(companyData.monthlyRevenue) : null;
+    }
+
+    // Campo numérico - employeeCount
+    if (companyData.employeeCount !== undefined) {
+      cleanData.employeeCount = companyData.employeeCount ? parseInt(companyData.employeeCount) : 0;
+    }
+
+    // Campo de data - foundationDate
+    if (companyData.foundationDate !== undefined && companyData.foundationDate !== null) {
+      if (companyData.foundationDate.trim() !== '') {
+        try {
+          cleanData.foundationDate = new Date(companyData.foundationDate + 'T00:00:00.000Z');
+        } catch (error) {
+          console.log('⚠️ Erro ao converter data de fundação, será definida como null');
+          cleanData.foundationDate = null;
+        }
+      } else {
+        cleanData.foundationDate = null;
+      }
+    }
+
+    console.log('🧹 Dados limpos:', JSON.stringify(cleanData, null, 2));
+
     let company;
     if (user.Company) {
       // Atualizar empresa existente
+      console.log('🔄 Atualizando empresa existente...');
       company = await prisma.company.update({
         where: { userId: userId },
-        data: companyData,
+        data: cleanData,
       });
+      console.log('✅ Empresa atualizada:', company.id);
     } else {
       // Criar nova empresa
+      console.log('➕ Criando nova empresa...');
       company = await prisma.company.create({
         data: {
-          ...companyData,
+          ...cleanData,
           userId: userId,
         },
       });
+      console.log('✅ Empresa criada:', company.id);
     }
 
     // Buscar usuário atualizado com a empresa
@@ -334,16 +451,27 @@ const updateUserCompany = async (req, res) => {
     res.json(userResponse);
   } catch (error) {
     console.error('💥 Erro ao atualizar empresa:', error);
+    console.error('Stack trace:', error.stack);
 
-    if (error.code === 'P2002' && error.meta?.target?.includes('cnpj')) {
+    if (error.code === 'P2002') {
+      const field = error.meta?.target?.[0] || 'campo';
       return res.status(400).json({
-        message: 'Este CNPJ já está sendo usado por outra empresa',
+        message: `Este ${field} já está sendo usado por outra empresa`,
+        error: error.message,
+      });
+    }
+
+    if (error.code === 'P2025') {
+      return res.status(404).json({
+        message: 'Empresa não encontrada',
+        error: error.message,
       });
     }
 
     res.status(500).json({
       message: 'Erro ao atualizar empresa',
       error: error.message,
+      details: error.stack,
     });
   }
 };
