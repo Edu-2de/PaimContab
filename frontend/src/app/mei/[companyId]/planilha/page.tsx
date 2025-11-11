@@ -121,7 +121,8 @@ function MeiSpreadsheetContent() {
     lucroFinal: 0,
     limiteMeiUtilizado: 0,
   });
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(''); // Vazio = ano todo
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
