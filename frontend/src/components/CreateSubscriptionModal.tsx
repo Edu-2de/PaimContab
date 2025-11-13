@@ -31,9 +31,10 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
 
   const fetchUsers = async () => {
     try {
-      const response = await apiClient.get('/api/admin/users');
-      if (response.success && Array.isArray(response.data)) {
-        setUsers(response.data);
+      const response = await apiClient.get('/api/admin/users?limit=1000');
+      const data = response as { users?: Array<{ id: string; name: string; email: string }> };
+      if (data.users && Array.isArray(data.users)) {
+        setUsers(data.users);
       }
     } catch (err) {
       console.error('Erro ao buscar usuários:', err);
@@ -43,8 +44,9 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
   const fetchPlans = async () => {
     try {
       const response = await apiClient.get('/api/admin/subscriptions/plans');
-      if (response.success && Array.isArray(response.data)) {
-        setPlans(response.data);
+      const data = response as { data?: Array<{ id: string; name: string; price: number }> };
+      if (data.data && Array.isArray(data.data)) {
+        setPlans(data.data);
       }
     } catch (err) {
       console.error('Erro ao buscar planos:', err);
@@ -82,27 +84,31 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
+        <div
+          className="flex items-center justify-between p-6 border-b border-gray-100"
+          style={{ backgroundColor: '#1e2939' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <HiCreditCard className="w-6 h-6 text-purple-600" />
+            <div className="p-2 bg-white bg-opacity-10 rounded-lg">
+              <HiCreditCard className="w-6 h-6 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Criar Assinatura</h2>
+            <h2 className="text-xl font-bold text-white">Criar Nova Assinatura</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <HiXMark className="w-6 h-6 text-gray-600" />
+          <button onClick={onClose} className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+            <HiXMark className="w-6 h-6 text-white" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuário</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Usuário</label>
             <select
               required
               value={formData.userId}
               onChange={e => setFormData({ ...formData, userId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
             >
               <option value="">Selecione um usuário</option>
               {users.map(user => (
@@ -114,12 +120,13 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Plano</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Plano</label>
             <select
               required
               value={formData.planId}
               onChange={e => setFormData({ ...formData, planId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
             >
               <option value="">Selecione um plano</option>
               {plans.map(plan => (
@@ -131,32 +138,34 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Data de Início</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Data de Início</label>
             <input
               type="date"
               required
               value={formData.startDate}
               onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
             />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
             <input
               type="checkbox"
               id="isActive"
               checked={formData.isActive}
               onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-600"
+              className="w-5 h-5 border-gray-300 rounded focus:ring-2"
+              style={{ accentColor: '#1e2939' }}
             />
-            <label htmlFor="isActive" className="text-sm font-medium text-gray-700">
+            <label htmlFor="isActive" className="text-sm font-semibold text-gray-900">
               Assinatura Ativa
             </label>
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800 font-medium">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800 font-semibold">{error}</p>
             </div>
           )}
 
@@ -164,14 +173,15 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+              className="flex-1 px-5 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-semibold"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              className="flex-1 px-5 py-3 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-lg"
+              style={{ backgroundColor: '#1e2939' }}
             >
               {loading ? 'Criando...' : 'Criar Assinatura'}
             </button>

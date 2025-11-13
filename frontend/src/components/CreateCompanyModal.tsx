@@ -30,9 +30,10 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
 
   const fetchUsers = async () => {
     try {
-      const response = await apiClient.get('/api/admin/users');
-      if (response.success && response.data) {
-        setUsers(response.data);
+      const response = await apiClient.get('/api/admin/users?limit=1000');
+      const data = response as { users?: Array<{ id: string; name: string; email: string }> };
+      if (data.users && Array.isArray(data.users)) {
+        setUsers(data.users);
       }
     } catch (err) {
       console.error('Erro ao buscar usuários:', err);
@@ -65,27 +66,31 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+      <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+        <div
+          className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10"
+          style={{ backgroundColor: '#1e2939' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <HiBuildingOffice2 className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-white bg-opacity-10 rounded-lg">
+              <HiBuildingOffice2 className="w-6 h-6 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-gray-900">Criar Empresa</h2>
+            <h2 className="text-xl font-bold text-white">Criar Nova Empresa</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <HiXMark className="w-6 h-6 text-gray-600" />
+          <button onClick={onClose} className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+            <HiXMark className="w-6 h-6 text-white" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuário Responsável</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Usuário Responsável</label>
             <select
               required
               value={formData.userId}
               onChange={e => setFormData({ ...formData, userId: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
             >
               <option value="">Selecione um usuário</option>
               {users.map(user => (
@@ -97,54 +102,58 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Empresa</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Nome da Empresa</label>
             <input
               type="text"
               required
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
               placeholder="Empresa Ltda"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">CNPJ</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">CNPJ</label>
             <input
               type="text"
               required
               value={formData.cnpj}
               onChange={e => setFormData({ ...formData, cnpj: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
               placeholder="00.000.000/0000-00"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Endereço</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Endereço</label>
             <input
               type="text"
               value={formData.address}
               onChange={e => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
               placeholder="Rua Exemplo, 123"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+            <label className="block text-sm font-semibold text-gray-900 mb-2">Telefone</label>
             <input
               type="tel"
               value={formData.phone}
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent font-medium text-gray-900"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
+              style={{ outlineColor: '#1e2939' }}
               placeholder="(00) 0000-0000"
             />
           </div>
 
           {error && (
-            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800 font-medium">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800 font-semibold">{error}</p>
             </div>
           )}
 
@@ -152,14 +161,15 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+              className="flex-1 px-5 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-semibold"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              className="flex-1 px-5 py-3 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-lg"
+              style={{ backgroundColor: '#1e2939' }}
             >
               {loading ? 'Criando...' : 'Criar Empresa'}
             </button>

@@ -195,20 +195,20 @@ function AdminCompaniesContent() {
                 onSuccess={() => fetchCompanies()}
                 entityName="Empresas"
                 templateData={[
-                  { 
-                    Nome: 'Empresa Exemplo Ltda', 
-                    CNPJ: '12.345.678/0001-90', 
+                  {
+                    Nome: 'Empresa Exemplo Ltda',
+                    CNPJ: '12.345.678/0001-90',
                     Email: 'contato@empresa.com',
                     Telefone: '(11) 98765-4321',
                     Endereco: 'Rua Exemplo, 123',
                     Cidade: 'São Paulo',
                     Estado: 'SP',
                     CEP: '01234-567',
-                    'Email Usuario': 'usuario@exemplo.com'
+                    'Email Usuario': 'usuario@exemplo.com',
                   },
                 ]}
               />
-              <button 
+              <button
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
               >

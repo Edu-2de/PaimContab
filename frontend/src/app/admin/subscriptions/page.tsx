@@ -105,16 +105,13 @@ function AdminSubscriptionsContent() {
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE}/admin/subscriptions/${subscriptionId}/cancel`,
-        {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE}/admin/subscriptions/${subscriptionId}/cancel`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+      });
 
       if (!response.ok) throw new Error('Erro ao cancelar assinatura');
 
@@ -191,12 +188,31 @@ function AdminSubscriptionsContent() {
               <p className="text-gray-600 mt-1">Gerencie todas as assinaturas e planos do sistema</p>
             </div>
             <div className="flex gap-2">
-              <ExportButton 
-                endpoint={`${API_BASE}/admin/subscriptions/export${filterStatus ? `?status=${filterStatus}` : ''}${searchTerm ? `${filterStatus ? '&' : '?'}search=${searchTerm}` : ''}`}
+              <ExportButton
+                endpoint={`${API_BASE}/admin/subscriptions/export${filterStatus ? `?status=${filterStatus}` : ''}${
+                  searchTerm ? `${filterStatus ? '&' : '?'}search=${searchTerm}` : ''
+                }`}
                 filename="assinaturas"
                 label="Exportar Excel"
               />
-              <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
+              <ImportExcelButton
+                endpoint={`${API_BASE}/admin/subscriptions/import`}
+                requiredColumns={['Email', 'Plano']}
+                onSuccess={() => fetchSubscriptions()}
+                entityName="Assinaturas"
+                templateData={[
+                  {
+                    Email: 'usuario@exemplo.com',
+                    Plano: 'Plano Básico',
+                    'Data Inicio': new Date().toLocaleDateString('pt-BR'),
+                    Status: 'Ativa',
+                  },
+                ]}
+              />
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+              >
                 <HiPlus className="w-4 h-4" />
                 Nova Assinatura
               </button>
@@ -377,6 +393,16 @@ function AdminSubscriptionsContent() {
           )}
         </div>
       </div>
+
+      {/* Modal de Criação */}
+      <CreateSubscriptionModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          fetchSubscriptions();
+          setShowCreateModal(false);
+        }}
+      />
     </div>
   );
 }
