@@ -493,4 +493,137 @@ router.delete('/:id/discount', async (req, res) => {
   }
 });
 
+// POST /api/admin/subscriptions - Criar nova assinatura
+router.post('/', async (req, res) => {
+  try {
+    const { userId, planId, startDate, isActive } = req.body;
+
+    // Validações
+    if (!userId || !planId) {
+      return res.status(400).json({ error: 'Usuário e plano são obrigatórios' });
+    }
+
+    // Verificar se usuário existe
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Verificar se plano existe
+    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      return res.status(404).json({ error: 'Plano não encontrado' });
+    }
+
+    // Criar assinatura
+    const subscription = await prisma.subscription.create({
+      data: {
+        userId,
+        planId,
+        startDate: startDate ? new Date(startDate) : new Date(),
+        isActive: isActive !== undefined ? isActive : true,
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        plan: true,
+        discount: true,
+      },
+    });
+
+    res.status(201).json({ success: true, data: subscription });
+  } catch (error) {
+    console.error('Erro ao criar assinatura:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/admin/subscriptions/import - Importar assinaturas do Excel
+router.post('/import', async (req, res) => {
+  try {
+    const { data } = req.body;
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ error: 'Dados inválidos' });
+    }
+
+    const requiredColumns = ['Email', 'Plano'];
+    const errors = [];
+    const created = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNum = i + 2; // Excel row (1-indexed + header)
+
+      // Validar colunas obrigatórias
+      const missingColumns = requiredColumns.filter(col => !row[col]);
+      if (missingColumns.length > 0) {
+        errors.push(`Linha ${rowNum}: Faltando colunas ${missingColumns.join(', ')}`);
+        continue;
+      }
+
+      try {
+        // Buscar usuário por email
+        const user = await prisma.user.findUnique({
+          where: { email: row['Email'] },
+        });
+
+        if (!user) {
+          errors.push(`Linha ${rowNum}: Usuário com email ${row['Email']} não encontrado`);
+          continue;
+        }
+
+        // Buscar plano por nome
+        const plan = await prisma.plan.findFirst({
+          where: { name: { equals: row['Plano'], mode: 'insensitive' } },
+        });
+
+        if (!plan) {
+          errors.push(`Linha ${rowNum}: Plano "${row['Plano']}" não encontrado`);
+          continue;
+        }
+
+        // Criar assinatura
+        const subscription = await prisma.subscription.create({
+          data: {
+            userId: user.id,
+            planId: plan.id,
+            startDate: row['Data Inicio'] ? new Date(row['Data Inicio']) : new Date(),
+            isActive: row['Status'] !== 'Inativa',
+          },
+        });
+
+        created.push(subscription.id);
+      } catch (error) {
+        console.error(`Erro na linha ${rowNum}:`, error);
+        errors.push(`Linha ${rowNum}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      created: created.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `${created.length} assinaturas criadas${errors.length > 0 ? `, ${errors.length} erros` : ''}`,
+    });
+  } catch (error) {
+    console.error('Erro ao importar assinaturas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/admin/subscriptions/plans - Listar planos disponíveis
+router.get('/plans', async (req, res) => {
+  try {
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json({ success: true, data: plans });
+  } catch (error) {
+    console.error('Erro ao buscar planos:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 module.exports = router;

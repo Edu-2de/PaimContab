@@ -8,6 +8,8 @@ router.get('/dashboard', requireAdmin, adminController.getDashboard);
 
 // Usuários
 router.get('/users/export', requireAdmin, adminController.exportUsers);
+router.post('/users/import', requireAdmin, adminController.importUsers);
+router.post('/users', requireAdmin, adminController.createUser);
 router.get('/users', requireAdmin, adminController.getAllUsers);
 router.get('/users/:userId', requireAdmin, adminController.getUserDetails);
 router.patch('/users/:userId/status', requireAdmin, adminController.updateUserStatus);

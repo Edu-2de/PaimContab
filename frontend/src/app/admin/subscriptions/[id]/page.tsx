@@ -4,6 +4,16 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import AdminSidebar from '@/components/AdminSidebar';
 import { apiClient } from '@/utils/apiClient';
+import {
+  HiArrowLeft,
+  HiUser,
+  HiCreditCard,
+  HiCalendar,
+  HiTag,
+  HiXMark,
+  HiCheckCircle,
+  HiXCircle,
+} from 'react-icons/hi2';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -228,6 +238,7 @@ export default function SubscriptionDetailsPage() {
       setError('Erro ao reativar assinatura');
     }
   };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -241,10 +252,15 @@ export default function SubscriptionDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <AdminSidebar />
-        <div className="flex-1 p-8">
-          <p className="text-gray-600">Carregando...</p>
+      <div className="min-h-screen bg-gray-50">
+        <AdminSidebar currentPage="subscriptions" />
+        <div className="admin-content-wrapper">
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-gray-900 mx-auto mb-4"></div>
+              <p className="text-gray-800 font-medium">Carregando assinatura...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -252,16 +268,19 @@ export default function SubscriptionDetailsPage() {
 
   if (error && !subscription) {
     return (
-      <div className="min-h-screen bg-gray-50 flex">
-        <AdminSidebar />
-        <div className="flex-1 p-8">
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>
-          <button
-            onClick={() => router.push('/admin/subscriptions')}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          >
-            Voltar para Assinaturas
-          </button>
+      <div className="min-h-screen bg-gray-50">
+        <AdminSidebar currentPage="subscriptions" />
+        <div className="admin-content-wrapper">
+          <div className="p-8">
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg font-medium">{error}</div>
+            <button
+              onClick={() => router.push('/admin/subscriptions')}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+            >
+              <HiArrowLeft className="w-5 h-5" />
+              Voltar para Assinaturas
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -270,235 +289,276 @@ export default function SubscriptionDetailsPage() {
   if (!subscription) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <AdminSidebar />
-      <div className="flex-1 p-8">
-        <div className="mb-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Detalhes da Assinatura</h1>
-            <button
-              onClick={() => router.push('/admin/subscriptions')}
-              className="mt-2 text-blue-600 hover:text-blue-800"
-            >
-              ← Voltar para lista
-            </button>
-          </div>
-          <div className="flex gap-2">
-            {subscription.isActive ? (
+    <div className="min-h-screen bg-gray-50">
+      <AdminSidebar currentPage="subscriptions" />
+      <div className="admin-content-wrapper">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 px-8 py-6">
+          <div className="flex items-center justify-between">
+            <div>
               <button
-                onClick={handleCancelSubscription}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={() => router.push('/admin/subscriptions')}
+                className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 mb-2 transition-colors font-medium"
               >
-                Cancelar Assinatura
+                <HiArrowLeft className="w-5 h-5" />
+                <span>Voltar</span>
               </button>
-            ) : (
-              <button
-                onClick={handleReactivateSubscription}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-              >
-                Reativar Assinatura
-              </button>
-            )}
+              <h1 className="text-2xl font-bold text-gray-900">Detalhes da Assinatura</h1>
+              <p className="text-gray-600 mt-1 font-medium">Gerencie e visualize informações completas</p>
+            </div>
+            <div className="flex gap-3">
+              {subscription.isActive ? (
+                <button
+                  onClick={handleCancelSubscription}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                >
+                  <HiXCircle className="w-5 h-5" />
+                  Cancelar Assinatura
+                </button>
+              ) : (
+                <button
+                  onClick={handleReactivateSubscription}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <HiCheckCircle className="w-5 h-5" />
+                  Reativar Assinatura
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {error && <div className="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">{error}</div>}
-
-        {successMessage && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-            {successMessage}
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Informações do Usuário */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Informações do Usuário</h2>
-            <div className="space-y-3">
-              <div>
-                <span className="text-gray-600">Nome:</span>
-                <p className="font-medium">{subscription.user.name}</p>
-              </div>
-              <div>
-                <span className="text-gray-600">Email:</span>
-                <p className="font-medium">{subscription.user.email}</p>
-              </div>
-              <div>
-                <span className="text-gray-600">Cadastrado em:</span>
-                <p className="font-medium">{formatDate(subscription.user.createdAt)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Informações do Plano */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Plano Atual</h2>
-            <div className="space-y-3">
-              <div>
-                <span className="text-gray-600">Plano:</span>
-                <p className="font-medium">{subscription.plan.name}</p>
-              </div>
-              <div>
-                <span className="text-gray-600">Preço Original:</span>
-                <p className="font-medium">{formatCurrency(subscription.originalAmount || subscription.plan.price)}</p>
-              </div>
-              {subscription.discount && (
-                <div>
-                  <span className="text-gray-600">Desconto:</span>
-                  <p className="font-medium text-green-600">{subscription.discount.percentage}% OFF</p>
-                </div>
-              )}
-              <div>
-                <span className="text-gray-600">Preço Final:</span>
-                <p className="font-bold text-lg text-blue-600">{formatCurrency(subscription.amount)}</p>
-              </div>
-              <div>
-                <span className="text-gray-600">Ciclo:</span>
-                <p className="font-medium capitalize">{subscription.plan.billingCycle}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Informações da Assinatura */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Detalhes da Assinatura</h2>
-            <div className="space-y-3">
-              <div>
-                <span className="text-gray-600">Status:</span>
-                <p className={`font-medium ${subscription.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                  {subscription.isActive ? 'Ativa' : 'Inativa'}
-                </p>
-              </div>
-              <div>
-                <span className="text-gray-600">Data de Início:</span>
-                <p className="font-medium">{formatDate(subscription.startDate)}</p>
-              </div>
-              {subscription.endDate && (
-                <div>
-                  <span className="text-gray-600">Data de Término:</span>
-                  <p className="font-medium">{formatDate(subscription.endDate)}</p>
-                </div>
-              )}
-              <div>
-                <span className="text-gray-600">Criada em:</span>
-                <p className="font-medium">{formatDate(subscription.createdAt)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Desconto Ativo */}
-          {subscription.discount && (
-            <div className="bg-green-50 border border-green-200 rounded-lg shadow p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-semibold text-gray-800">Desconto Ativo</h2>
-                <button
-                  onClick={handleRemoveDiscount}
-                  className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600"
-                >
-                  Remover
-                </button>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <span className="text-gray-600">Porcentagem:</span>
-                  <p className="font-bold text-green-600">{subscription.discount.percentage}%</p>
-                </div>
-                <div>
-                  <span className="text-gray-600">Início:</span>
-                  <p className="font-medium">{formatDate(subscription.discount.startDate)}</p>
-                </div>
-                {subscription.discount.endDate && (
-                  <div>
-                    <span className="text-gray-600">Término:</span>
-                    <p className="font-medium">{formatDate(subscription.discount.endDate)}</p>
-                  </div>
-                )}
-                {subscription.discount.reason && (
-                  <div>
-                    <span className="text-gray-600">Motivo:</span>
-                    <p className="font-medium">{subscription.discount.reason}</p>
-                  </div>
-                )}
-              </div>
+        {/* Content */}
+        <div className="p-8">
+          {/* Alerts */}
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg font-medium">
+              {error}
             </div>
           )}
-        </div>
 
-        {/* Aplicar Desconto */}
-        {!subscription.discount && (
-          <div className="mt-6 bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Aplicar Desconto</h2>
-            <form onSubmit={handleApplyDiscount} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {successMessage && (
+            <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg font-medium">
+              {successMessage}
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Card: Informações do Usuário */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <HiUser className="w-6 h-6 text-gray-700" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Informações do Usuário</h2>
+              </div>
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-gray-700 mb-2">Porcentagem (%)*</label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={discountForm.percentage}
-                    onChange={e => setDiscountForm({ ...discountForm, percentage: e.target.value })}
-                    className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Nome</span>
+                  <p className="text-gray-900 font-medium">{subscription.user.name}</p>
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2">Data de Término (Opcional)</label>
-                  <input
-                    type="date"
-                    value={discountForm.endDate}
-                    onChange={e => setDiscountForm({ ...discountForm, endDate: e.target.value })}
-                    className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                  />
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Email</span>
+                  <p className="text-gray-900 font-medium">{subscription.user.email}</p>
                 </div>
                 <div>
-                  <label className="block text-gray-700 mb-2">Motivo (Opcional)</label>
-                  <input
-                    type="text"
-                    value={discountForm.reason}
-                    onChange={e => setDiscountForm({ ...discountForm, reason: e.target.value })}
-                    className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-                    placeholder="Ex: Cliente fiel"
-                  />
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Cadastrado em</span>
+                  <p className="text-gray-900 font-medium">{formatDate(subscription.user.createdAt)}</p>
                 </div>
               </div>
-              <button
-                type="submit"
-                disabled={applyingDiscount}
-                className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-              >
-                {applyingDiscount ? 'Aplicando...' : 'Aplicar Desconto'}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Alterar Plano */}
-        <div className="mt-6 bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Alterar Plano</h2>
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
-              <label className="block text-gray-700 mb-2">Selecionar Novo Plano</label>
-              <select
-                value={selectedPlanId}
-                onChange={e => setSelectedPlanId(e.target.value)}
-                className="w-full px-4 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-              >
-                {plans.map(plan => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name} - {formatCurrency(plan.price)}/{plan.billingCycle}
-                  </option>
-                ))}
-              </select>
             </div>
-            <button
-              onClick={handleChangePlan}
-              disabled={changingPlan || selectedPlanId === subscription.planId}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {changingPlan ? 'Alterando...' : 'Alterar Plano'}
-            </button>
+
+            {/* Card: Informações do Plano */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <HiCreditCard className="w-6 h-6 text-gray-700" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Plano Atual</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Plano</span>
+                  <p className="text-gray-900 font-medium">{subscription.plan.name}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Preço Original</span>
+                  <p className="text-gray-900 font-medium">
+                    {formatCurrency(subscription.originalAmount || subscription.plan.price)}
+                  </p>
+                </div>
+                {subscription.discount && (
+                  <div>
+                    <span className="text-sm text-gray-600 font-medium block mb-1">Desconto</span>
+                    <p className="text-green-600 font-semibold">{subscription.discount.percentage}% OFF</p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Preço Final</span>
+                  <p className="text-2xl font-bold text-gray-900">{formatCurrency(subscription.amount)}</p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Ciclo de Cobrança</span>
+                  <p className="text-gray-900 font-medium capitalize">{subscription.plan.billingCycle}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card: Detalhes da Assinatura */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="p-2 bg-gray-100 rounded-lg">
+                  <HiCalendar className="w-6 h-6 text-gray-700" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900">Detalhes da Assinatura</h2>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Status</span>
+                  <p className={`font-semibold ${subscription.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                    {subscription.isActive ? 'Ativa' : 'Inativa'}
+                  </p>
+                </div>
+                <div>
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Data de Início</span>
+                  <p className="text-gray-900 font-medium">{formatDate(subscription.startDate)}</p>
+                </div>
+                {subscription.endDate && (
+                  <div>
+                    <span className="text-sm text-gray-600 font-medium block mb-1">Data de Término</span>
+                    <p className="text-gray-900 font-medium">{formatDate(subscription.endDate)}</p>
+                  </div>
+                )}
+                <div>
+                  <span className="text-sm text-gray-600 font-medium block mb-1">Criada em</span>
+                  <p className="text-gray-900 font-medium">{formatDate(subscription.createdAt)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card: Desconto Ativo (se houver) */}
+            {subscription.discount && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-5">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 rounded-lg">
+                      <HiTag className="w-6 h-6 text-green-700" />
+                    </div>
+                    <h2 className="text-lg font-semibold text-gray-900">Desconto Ativo</h2>
+                  </div>
+                  <button
+                    onClick={handleRemoveDiscount}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors font-medium"
+                  >
+                    <HiXMark className="w-4 h-4" />
+                    Remover
+                  </button>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-sm text-gray-700 font-medium block mb-1">Porcentagem</span>
+                    <p className="text-2xl font-bold text-green-600">{subscription.discount.percentage}%</p>
+                  </div>
+                  <div>
+                    <span className="text-sm text-gray-700 font-medium block mb-1">Início</span>
+                    <p className="text-gray-900 font-medium">{formatDate(subscription.discount.startDate)}</p>
+                  </div>
+                  {subscription.discount.endDate && (
+                    <div>
+                      <span className="text-sm text-gray-700 font-medium block mb-1">Término</span>
+                      <p className="text-gray-900 font-medium">{formatDate(subscription.discount.endDate)}</p>
+                    </div>
+                  )}
+                  {subscription.discount.reason && (
+                    <div>
+                      <span className="text-sm text-gray-700 font-medium block mb-1">Motivo</span>
+                      <p className="text-gray-900 font-medium">{subscription.discount.reason}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Formulário: Aplicar Desconto */}
+          {!subscription.discount && (
+            <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-5">Aplicar Desconto</h2>
+              <form onSubmit={handleApplyDiscount} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Porcentagem (%)<span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={discountForm.percentage}
+                      onChange={e => setDiscountForm({ ...discountForm, percentage: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
+                      required
+                      placeholder="Ex: 15"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Data de Término (Opcional)</label>
+                    <input
+                      type="date"
+                      value={discountForm.endDate}
+                      onChange={e => setDiscountForm({ ...discountForm, endDate: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Motivo (Opcional)</label>
+                    <input
+                      type="text"
+                      value={discountForm.reason}
+                      onChange={e => setDiscountForm({ ...discountForm, reason: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
+                      placeholder="Ex: Cliente fiel"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={applyingDiscount}
+                  className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                >
+                  {applyingDiscount ? 'Aplicando...' : 'Aplicar Desconto'}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Formulário: Alterar Plano */}
+          <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-5">Alterar Plano</h2>
+            <div className="flex gap-4 items-end">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Novo Plano</label>
+                <select
+                  value={selectedPlanId}
+                  onChange={e => setSelectedPlanId(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
+                >
+                  {plans.map(plan => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} - {formatCurrency(plan.price)}/{plan.billingCycle}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={handleChangePlan}
+                disabled={changingPlan || selectedPlanId === subscription.planId}
+                className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+              >
+                {changingPlan ? 'Alterando...' : 'Alterar Plano'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

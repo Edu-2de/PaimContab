@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/AdminSidebar';
 import AdminProtection from '@/components/AdminProtection';
 import ExportButton from '@/components/ExportButton';
+import ImportExcelButton from '@/components/ImportExcelButton';
+import CreateUserModal from '@/components/CreateUserModal';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -78,6 +80,7 @@ function UsersPageContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
