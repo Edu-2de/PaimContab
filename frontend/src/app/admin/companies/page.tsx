@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 import AdminProtection from '../../../components/AdminProtection';
 import ExportButton from '../../../components/ExportButton';
+import ImportExcelButton from '../../../components/ImportExcelButton';
+import CreateCompanyModal from '../../../components/CreateCompanyModal';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -59,6 +61,7 @@ function AdminCompaniesContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const itemsPerPage = 10;
 
   const fetchCompanies = useCallback(async () => {
@@ -186,7 +189,29 @@ function AdminCompaniesContent() {
                 filename="empresas"
                 label="Exportar Excel"
               />
-              <button className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
+              <ImportExcelButton
+                endpoint={`${API_BASE}/admin/companies/import`}
+                requiredColumns={['Nome', 'CNPJ', 'Email Usuario']}
+                onSuccess={() => fetchCompanies()}
+                entityName="Empresas"
+                templateData={[
+                  { 
+                    Nome: 'Empresa Exemplo Ltda', 
+                    CNPJ: '12.345.678/0001-90', 
+                    Email: 'contato@empresa.com',
+                    Telefone: '(11) 98765-4321',
+                    Endereco: 'Rua Exemplo, 123',
+                    Cidade: 'São Paulo',
+                    Estado: 'SP',
+                    CEP: '01234-567',
+                    'Email Usuario': 'usuario@exemplo.com'
+                  },
+                ]}
+              />
+              <button 
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+              >
                 <HiPlus className="w-4 h-4" />
                 Nova Empresa
               </button>
@@ -360,6 +385,16 @@ function AdminCompaniesContent() {
           )}
         </div>
       </div>
+
+      {/* Modal de Criação */}
+      <CreateCompanyModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          fetchCompanies();
+          setShowCreateModal(false);
+        }}
+      />
     </div>
   );
 }

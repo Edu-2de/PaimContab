@@ -251,13 +251,22 @@ function UsersPageContent() {
                 filename="usuarios"
                 label="Exportar Excel"
               />
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors font-medium">
+              <ImportExcelButton
+                endpoint={`${API_BASE}/admin/users/import`}
+                requiredColumns={['Nome', 'Email', 'Senha']}
+                onSuccess={() => loadUsers(pagination.page, search, filterStatus)}
+                entityName="Usuários"
+                templateData={[
+                  { Nome: 'João Silva', Email: 'joao@exemplo.com', Senha: 'senha123', Admin: 'Não' },
+                  { Nome: 'Maria Santos', Email: 'maria@exemplo.com', Senha: 'senha456', Admin: 'Sim' },
+                ]}
+              />
+              <button
+                onClick={() => setShowCreateModal(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium"
+              >
                 <HiUserPlus className="w-4 h-4" />
                 Novo Usuário
-              </button>
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium">
-                <HiPlus className="w-4 h-4" />
-                Importar Usuários
               </button>
             </div>
           </div>
@@ -523,6 +532,16 @@ function UsersPageContent() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Criação */}
+      <CreateUserModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          loadUsers(pagination.page, search, filterStatus);
+          setShowCreateModal(false);
+        }}
+      />
     </div>
   );
 }

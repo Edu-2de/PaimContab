@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 import AdminProtection from '../../../components/AdminProtection';
 import ExportButton from '../../../components/ExportButton';
+import ImportExcelButton from '../../../components/ImportExcelButton';
+import CreateSubscriptionModal from '../../../components/CreateSubscriptionModal';
 import Link from 'next/link';
 import {
   HiMagnifyingGlass,
@@ -56,6 +58,7 @@ function AdminSubscriptionsContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const itemsPerPage = 10;
 
   const fetchSubscriptions = useCallback(async () => {
