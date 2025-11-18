@@ -102,9 +102,9 @@ export default function SubscriptionDetailsPage() {
   const loadPlans = useCallback(async () => {
     try {
       console.log('🔍 Carregando planos...');
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/plans`;
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payment/plans`;
       console.log('📍 URL:', url);
-      
+
       const response = await apiClient.get(url);
       console.log('📦 Resposta dos planos:', response);
 

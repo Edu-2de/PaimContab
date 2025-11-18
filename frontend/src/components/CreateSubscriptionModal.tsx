@@ -148,13 +148,20 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
               onChange={e => setFormData({ ...formData, userId: e.target.value })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
               style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
+              disabled={users.length === 0}
             >
-              <option value="">Selecione um usuário</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.name} ({user.email})
-                </option>
-              ))}
+              {users.length === 0 ? (
+                <option value="">Carregando usuários sem assinatura...</option>
+              ) : (
+                <>
+                  <option value="">Selecione um usuário</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email})
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
 
@@ -166,13 +173,20 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
               onChange={e => setFormData({ ...formData, planId: e.target.value })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
               style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
+              disabled={plans.length === 0}
             >
-              <option value="">Selecione um plano</option>
-              {plans.map(plan => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name} - R$ {plan.price.toFixed(2)}
-                </option>
-              ))}
+              {plans.length === 0 ? (
+                <option value="">Carregando planos...</option>
+              ) : (
+                <>
+                  <option value="">Selecione um plano</option>
+                  {plans.map(plan => (
+                    <option key={plan.id} value={plan.id}>
+                      {plan.name} - R$ {plan.price.toFixed(2)}
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
 

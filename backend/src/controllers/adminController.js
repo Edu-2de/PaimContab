@@ -61,7 +61,7 @@ const getAllUsers = async (req, res) => {
   try {
     console.log('👥 Buscando todos os usuários...');
 
-    const { page = 1, limit = 10, search = '' } = req.query;
+    const { page = 1, limit = 10, search = '', withoutCompany, withoutSubscription } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     // Build search condition
@@ -74,9 +74,34 @@ const getAllUsers = async (req, res) => {
         }
       : {};
 
+    // Build filter conditions
+    const filterConditions = [];
+
+    // Filtrar usuários sem empresa
+    if (withoutCompany === 'true') {
+      filterConditions.push({ Company: null });
+    }
+
+    // Filtrar usuários sem assinatura ativa
+    if (withoutSubscription === 'true') {
+      filterConditions.push({
+        subscriptions: {
+          none: {
+            isActive: true,
+          },
+        },
+      });
+    }
+
+    // Combine all conditions
+    const whereCondition = {
+      ...searchCondition,
+      ...(filterConditions.length > 0 && { AND: filterConditions }),
+    };
+
     // Get users with pagination
     const users = await prisma.user.findMany({
-      where: searchCondition,
+      where: whereCondition,
       include: {
         Company: true,
         subscriptions: {
@@ -92,7 +117,7 @@ const getAllUsers = async (req, res) => {
 
     // Get total count for pagination
     const totalUsers = await prisma.user.count({
-      where: searchCondition,
+      where: whereCondition,
     });
 
     // Format users data
