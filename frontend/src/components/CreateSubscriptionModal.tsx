@@ -83,32 +83,39 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full shadow-2xl">
-        <div
-          className="flex items-center justify-between p-6 border-b border-gray-100"
-          style={{ backgroundColor: '#1e2939' }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white bg-opacity-10 rounded-lg">
-              <HiCreditCard className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 bg-white bg-opacity-40 flex items-center justify-center z-50 p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-slideUp">
+        {/* Header - Clean e minimalista */}
+        <div className="px-6 py-5 border-b border-gray-100 bg-white">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: '#1e2939' }}
+              >
+                <HiCreditCard className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Criar Nova Assinatura</h2>
             </div>
-            <h2 className="text-xl font-bold text-white">Criar Nova Assinatura</h2>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <HiXMark className="w-5 h-5 text-gray-500" />
+            </button>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
-            <HiXMark className="w-6 h-6 text-white" />
-          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Form - Fundo branco */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-white">
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">Usuário</label>
             <select
               required
               value={formData.userId}
               onChange={e => setFormData({ ...formData, userId: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
             >
               <option value="">Selecione um usuário</option>
               {users.map(user => (
@@ -125,8 +132,8 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
               required
               value={formData.planId}
               onChange={e => setFormData({ ...formData, planId: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
             >
               <option value="">Selecione um plano</option>
               {plans.map(plan => (
@@ -144,43 +151,44 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
               required
               value={formData.startDate}
               onChange={e => setFormData({ ...formData, startDate: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
             />
           </div>
 
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
+          <div className="flex items-center gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-100">
             <input
               type="checkbox"
               id="isActive"
               checked={formData.isActive}
               onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-              className="w-5 h-5 border-gray-300 rounded focus:ring-2"
+              className="w-4 h-4 border-gray-300 rounded focus:ring-2"
               style={{ accentColor: '#1e2939' }}
             />
-            <label htmlFor="isActive" className="text-sm font-semibold text-gray-900">
+            <label htmlFor="isActive" className="text-sm font-medium text-gray-900 select-none cursor-pointer">
               Assinatura Ativa
             </label>
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800 font-semibold">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+              <p className="text-sm text-red-700 font-medium">{error}</p>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-5 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-semibold"
+              className="flex-1 px-4 py-2.5 text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-all font-semibold"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-5 py-3 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-lg"
+              className="flex-1 px-4 py-2.5 text-white rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold"
               style={{ backgroundColor: '#1e2939' }}
             >
               {loading ? 'Criando...' : 'Criar Assinatura'}

@@ -54,10 +54,11 @@ function AdminSubscriptionsContent() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterPlan, setFilterPlan] = useState('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const itemsPerPage = 10;
 
@@ -68,7 +69,7 @@ function AdminSubscriptionsContent() {
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
         ...(searchTerm && { search: searchTerm }),
-        ...(filterStatus && { status: filterStatus }),
+        ...(filterStatus && filterStatus !== 'all' && { status: filterStatus }),
       });
 
       const response = await fetch(`${API_BASE}/admin/subscriptions?${params}`, {
@@ -156,7 +157,7 @@ function AdminSubscriptionsContent() {
       subscription.user?.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       subscription.plan?.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    const matchesStatus = !filterStatus || subscription.status === filterStatus;
+    const matchesStatus = filterStatus === 'all' || subscription.status === filterStatus;
 
     return matchesSearch && matchesStatus;
   });
@@ -189,11 +190,10 @@ function AdminSubscriptionsContent() {
             </div>
             <div className="flex gap-2">
               <ExportButton
-                endpoint={`${API_BASE}/admin/subscriptions/export${filterStatus ? `?status=${filterStatus}` : ''}${
-                  searchTerm ? `${filterStatus ? '&' : '?'}search=${searchTerm}` : ''
-                }`}
+                endpoint={`${API_BASE}/admin/subscriptions/export${
+                  filterStatus !== 'all' ? `?status=${filterStatus}` : ''
+                }${searchTerm ? `${filterStatus !== 'all' ? '&' : '?'}search=${searchTerm}` : ''}`}
                 filename="assinaturas"
-                label="Exportar Excel"
               />
               <ImportExcelButton
                 endpoint={`${API_BASE}/admin/subscriptions/import`}
@@ -220,57 +220,152 @@ function AdminSubscriptionsContent() {
           </div>
         </div>
 
-        {/* Filters and Search */}
-        <div className="bg-white border-b border-gray-200 px-8 py-4">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 max-w-md">
-              <div className="relative">
-                <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Buscar assinaturas..."
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-200 focus:border-gray-400 outline-none"
-                />
+        {/* Filtros e Busca - Padrão Profissional */}
+        <div className="p-8">
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl shadow-xl mb-6">
+            {/* Header dos Filtros */}
+            <div className="px-6 py-4 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                    <HiAdjustmentsHorizontal className="w-5 h-5 text-gray-900" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Filtros e Pesquisa</h2>
+                    <p className="text-sm text-gray-300">
+                      {filteredSubscriptions.length}{' '}
+                      {filteredSubscriptions.length === 1 ? 'assinatura encontrada' : 'assinaturas encontradas'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                >
+                  <HiAdjustmentsHorizontal className="w-4 h-4" />
+                  {showAdvancedFilters ? 'Ocultar Filtros' : 'Mais Filtros'}
+                </button>
               </div>
             </div>
 
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-2 px-3 py-2 border rounded-lg transition-colors ${
-                showFilters ? 'bg-gray-100 border-gray-300' : 'border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <HiAdjustmentsHorizontal className="w-4 h-4" />
-              Filtros
-            </button>
-          </div>
+            {/* Barra de Pesquisa Principal */}
+            <div className="p-6">
+              <div className="flex gap-3 mb-4">
+                <div className="relative flex-1">
+                  <HiMagnifyingGlass className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    placeholder="Pesquisar por usuário, plano ou email..."
+                    className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="px-6 py-3 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-all font-semibold whitespace-nowrap"
+                >
+                  Buscar
+                </button>
+              </div>
 
-          {showFilters && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+              {/* Filtros Rápidos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label className="block text-sm font-semibold text-white mb-2">Status</label>
                   <select
                     value={filterStatus}
                     onChange={e => setFilterStatus(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-200 focus:border-gray-400 outline-none"
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
-                    <option value="">Todos os status</option>
-                    <option value="active">Ativa</option>
-                    <option value="inactive">Inativa</option>
-                    <option value="pending">Pendente</option>
-                    <option value="cancelled">Cancelada</option>
+                    <option value="all">Todos os Status</option>
+                    <option value="active">Ativas</option>
+                    <option value="inactive">Inativas</option>
+                    <option value="pending">Pendentes</option>
+                    <option value="cancelled">Canceladas</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Plano</label>
+                  <select
+                    value={filterPlan}
+                    onChange={e => setFilterPlan(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
+                  >
+                    <option value="all">Todos os Planos</option>
+                    <option value="basic">Básico</option>
+                    <option value="professional">Profissional</option>
+                    <option value="premium">Premium</option>
+                    <option value="enterprise">Empresarial</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Método de Pagamento</label>
+                  <select className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium">
+                    <option value="all">Todos</option>
+                    <option value="credit_card">Cartão de Crédito</option>
+                    <option value="boleto">Boleto</option>
+                    <option value="pix">PIX</option>
                   </select>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
 
-        {/* Content */}
-        <div className="p-8">
+              {/* Filtros Avançados */}
+              {showAdvancedFilters && (
+                <div className="mt-6 pt-6 border-t border-gray-700 animate-slideDown">
+                  <h3 className="text-sm font-bold text-white mb-4">Filtros Avançados</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-white mb-2">Valor da Assinatura</label>
+                      <select className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium">
+                        <option value="all">Qualquer Valor</option>
+                        <option value="0-50">Até R$ 50</option>
+                        <option value="50-100">R$ 50 - R$ 100</option>
+                        <option value="100-200">R$ 100 - R$ 200</option>
+                        <option value="200+">Acima de R$ 200</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-white mb-2">Data de Início</label>
+                      <select className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium">
+                        <option value="all">Qualquer Data</option>
+                        <option value="today">Hoje</option>
+                        <option value="week">Última Semana</option>
+                        <option value="month">Último Mês</option>
+                        <option value="year">Último Ano</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Botões de Ação */}
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setFilterStatus('all');
+                        setFilterPlan('all');
+                        fetchSubscriptions();
+                      }}
+                      className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm"
+                    >
+                      Limpar Filtros
+                    </button>
+                    <button
+                      onClick={() => fetchSubscriptions()}
+                      className="px-4 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm"
+                    >
+                      Aplicar Filtros
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Content */}
           {filteredSubscriptions.length === 0 ? (
             <div className="text-center py-12">
               <HiCreditCard className="mx-auto h-12 w-12 text-gray-400 mb-4" />

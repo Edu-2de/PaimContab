@@ -45,13 +45,16 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 bg-white bg-opacity-40 flex items-center justify-center z-50 p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden animate-slideUp">
         {/* Header - Clean e minimalista */}
         <div className="px-6 py-5 border-b border-gray-100 bg-white">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#1e2939' }}>
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: '#1e2939' }}
+              >
                 <HiUserPlus className="w-5 h-5 text-white" />
               </div>
               <h2 className="text-xl font-bold text-gray-900">Criar Novo Usuário</h2>
@@ -75,7 +78,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
-              style={{ focusRingColor: '#1e2939' }}
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
               placeholder="Ex: João Silva"
             />
           </div>
@@ -88,6 +91,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
               placeholder="Ex: joao@exemplo.com"
             />
           </div>
@@ -101,6 +105,7 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
               value={formData.password}
               onChange={e => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
               placeholder="Mínimo 6 caracteres"
             />
           </div>
@@ -138,57 +143,6 @@ export default function CreateUserModal({ isOpen, onClose, onSuccess }: CreateUs
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-2.5 text-white rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold"
-              style={{ backgroundColor: '#1e2939' }}
-            >
-              {loading ? 'Criando...' : 'Criar Usuário'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-              required
-              minLength={6}
-              value={formData.password}
-              onChange={e => setFormData({ ...formData, password: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
-              placeholder="Mínimo 6 caracteres"
-            />
-          </div>
-
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-            <input
-              type="checkbox"
-              id="isAdmin"
-              checked={formData.isAdmin}
-              onChange={e => setFormData({ ...formData, isAdmin: e.target.checked })}
-              className="w-5 h-5 border-gray-300 rounded focus:ring-2"
-              style={{ accentColor: '#1e2939' }}
-            />
-            <label htmlFor="isAdmin" className="text-sm font-semibold text-gray-900">
-              Usuário Administrador
-            </label>
-          </div>
-
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800 font-semibold">{error}</p>
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-5 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-semibold"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex-1 px-5 py-3 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-lg"
               style={{ backgroundColor: '#1e2939' }}
             >
               {loading ? 'Criando...' : 'Criar Usuário'}

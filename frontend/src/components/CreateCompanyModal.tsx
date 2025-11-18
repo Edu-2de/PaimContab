@@ -65,32 +65,39 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div
-          className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10"
-          style={{ backgroundColor: '#1e2939' }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-white bg-opacity-10 rounded-lg">
-              <HiBuildingOffice2 className="w-6 h-6 text-white" />
+    <div className="fixed inset-0 bg-white bg-opacity-40 flex items-center justify-center z-50 p-4 animate-fadeIn">
+      <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl overflow-hidden animate-slideUp">
+        {/* Header - Clean e minimalista */}
+        <div className="px-6 py-5 border-b border-gray-100 bg-white sticky top-0 z-10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: '#1e2939' }}
+              >
+                <HiBuildingOffice2 className="w-5 h-5 text-white" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-900">Criar Nova Empresa</h2>
             </div>
-            <h2 className="text-xl font-bold text-white">Criar Nova Empresa</h2>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <HiXMark className="w-5 h-5 text-gray-500" />
+            </button>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
-            <HiXMark className="w-6 h-6 text-white" />
-          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+        {/* Form - Fundo branco */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-white">
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">Usuário Responsável</label>
             <select
               required
               value={formData.userId}
               onChange={e => setFormData({ ...formData, userId: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
             >
               <option value="">Selecione um usuário</option>
               {users.map(user => (
@@ -108,8 +115,8 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
               required
               value={formData.name}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
               placeholder="Empresa Ltda"
             />
           </div>
@@ -121,8 +128,8 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
               required
               value={formData.cnpj}
               onChange={e => setFormData({ ...formData, cnpj: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
               placeholder="00.000.000/0000-00"
             />
           </div>
@@ -133,8 +140,8 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
               type="text"
               value={formData.address}
               onChange={e => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
               placeholder="Rua Exemplo, 123"
             />
           </div>
@@ -145,30 +152,31 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
               type="tel"
               value={formData.phone}
               onChange={e => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent font-medium text-gray-900 transition-all"
-              style={{ outlineColor: '#1e2939' }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
+              style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
               placeholder="(00) 0000-0000"
             />
           </div>
 
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800 font-semibold">{error}</p>
+            <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+              <p className="text-sm text-red-700 font-medium">{error}</p>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4">
+          {/* Actions */}
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-5 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-semibold"
+              className="flex-1 px-4 py-2.5 text-gray-700 bg-white hover:bg-gray-50 border border-gray-200 rounded-xl transition-all font-semibold"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-5 py-3 text-white rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold shadow-lg"
+              className="flex-1 px-4 py-2.5 text-white rounded-xl hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all font-semibold"
               style={{ backgroundColor: '#1e2939' }}
             >
               {loading ? 'Criando...' : 'Criar Empresa'}

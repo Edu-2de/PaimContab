@@ -110,16 +110,24 @@ export default function ImportExcelButton({
   return (
     <>
       <div className="flex gap-2">
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-        >
-          <HiArrowUpTray className="w-5 h-5" />
-          Importar Excel
-        </button>
+        <div className="relative group">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center justify-center w-10 h-10 bg-transparent text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <HiArrowUpTray className="w-5 h-5" />
+          </button>
+
+          {/* Tooltip */}
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+            Importar Excel
+            <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+          </div>
+        </div>
+
         <button
           onClick={downloadTemplate}
-          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium text-sm"
         >
           Baixar Modelo
         </button>

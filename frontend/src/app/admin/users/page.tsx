@@ -12,12 +12,12 @@ import {
   HiUserCircle,
   HiCheckCircle,
   HiXCircle,
-  HiPlus,
   HiUserPlus,
   HiAdjustmentsHorizontal,
   HiChevronLeft,
   HiChevronRight,
   HiEllipsisVertical,
+  HiPlus,
 } from 'react-icons/hi2';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -80,6 +80,9 @@ function UsersPageContent() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterRole, setFilterRole] = useState('all');
+  const [filterPlan, setFilterPlan] = useState('all');
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -249,7 +252,6 @@ function UsersPageContent() {
               <ExportButton
                 endpoint={`${API_BASE}/admin/users/export${search ? `?search=${search}` : ''}`}
                 filename="usuarios"
-                label="Exportar Excel"
               />
               <ImportExcelButton
                 endpoint={`${API_BASE}/admin/users/import`}
@@ -263,68 +265,159 @@ function UsersPageContent() {
               />
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2.5 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors font-medium"
+                className="flex items-center gap-2 px-4 py-2.5 bg-[#1e2939] text-white rounded-lg hover:bg-slate-800 transition-colors font-medium"
               >
-                <HiUserPlus className="w-4 h-4" />
-                Novo Usuário
+                <HiPlus  className="w-4 h-4" />
+                 Novo Usuário
               </button>
             </div>
           </div>
         </div>
 
         <div className="p-8">
-          {/* Filtros e Busca */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 mb-8 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-slate-900">Filtros e Busca</h2>
-              <div className="flex items-center gap-2 text-sm text-slate-600">
-                <span className="font-medium">Total:</span>
-                <span className="px-2 py-1 bg-slate-100 text-slate-700 rounded-md font-semibold">
-                  {pagination.total} usuários
-                </span>
+          {/* Filtros e Busca - Redesign Profissional */}
+          <div className="bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-2xl shadow-xl mb-6">
+            {/* Header dos Filtros */}
+            <div className="px-6 py-4 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center">
+                    <HiAdjustmentsHorizontal className="w-5 h-5 text-gray-900" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Filtros e Pesquisa</h2>
+                    <p className="text-sm text-gray-300">
+                      {pagination.total} {pagination.total === 1 ? 'usuário encontrado' : 'usuários encontrados'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm font-medium"
+                >
+                  <HiAdjustmentsHorizontal className="w-4 h-4" />
+                  {showAdvancedFilters ? 'Ocultar Filtros' : 'Mais Filtros'}
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-              {/* Busca */}
-              <form onSubmit={handleSearch} className="lg:col-span-6 flex gap-3">
+            {/* Barra de Pesquisa Principal */}
+            <div className="p-6">
+              <form onSubmit={handleSearch} className="flex gap-3">
                 <div className="relative flex-1">
-                  <HiMagnifyingGlass className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                  <HiMagnifyingGlass className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    placeholder="Buscar por nome ou email..."
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white"
+                    placeholder="Pesquisar por nome, email ou empresa..."
+                    className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-slate-700 text-white text-sm font-medium rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 transition-colors"
+                  className="px-6 py-3 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-all font-semibold whitespace-nowrap"
                 >
                   Buscar
                 </button>
               </form>
 
-              {/* Filtros */}
-              <div className="lg:col-span-6 flex gap-3">
-                <div className="flex-1">
+              {/* Filtros Rápidos */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Status da Conta</label>
                   <select
                     value={filterStatus}
                     onChange={e => handleFilterChange(e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent bg-white"
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
                     <option value="all">Todos os Status</option>
-                    <option value="active">Usuários Ativos</option>
-                    <option value="inactive">Usuários Inativos</option>
-                    <option value="with_company">Com Empresa</option>
-                    <option value="without_company">Sem Empresa</option>
+                    <option value="active">Ativos</option>
+                    <option value="inactive">Inativos</option>
                   </select>
                 </div>
-                <button className="px-4 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors">
-                  <HiAdjustmentsHorizontal className="w-5 h-5" />
-                </button>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Tipo de Usuário</label>
+                  <select
+                    value={filterRole}
+                    onChange={e => setFilterRole(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
+                  >
+                    <option value="all">Todos os Tipos</option>
+                    <option value="admin">Administradores</option>
+                    <option value="user">Usuários Comuns</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-white mb-2">Status do Plano</label>
+                  <select
+                    value={filterPlan}
+                    onChange={e => setFilterPlan(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
+                  >
+                    <option value="all">Todos os Planos</option>
+                    <option value="active">Plano Ativo</option>
+                    <option value="canceled">Plano Cancelado</option>
+                    <option value="pending">Pendente</option>
+                    <option value="no_plan">Sem Plano</option>
+                  </select>
+                </div>
               </div>
+
+              {/* Filtros Avançados (Expansível) */}
+              {showAdvancedFilters && (
+                <div className="mt-6 pt-6 border-t border-gray-700 animate-slideDown">
+                  <h3 className="text-sm font-bold text-white mb-4">Filtros Avançados</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-white mb-2">Possui Empresa</label>
+                      <select
+                        onChange={e => handleFilterChange(e.target.value)}
+                        className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
+                      >
+                        <option value="all">Todos</option>
+                        <option value="with_company">Com Empresa</option>
+                        <option value="without_company">Sem Empresa</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-semibold text-white mb-2">Data de Cadastro</label>
+                      <select className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium">
+                        <option value="all">Qualquer Data</option>
+                        <option value="today">Hoje</option>
+                        <option value="week">Última Semana</option>
+                        <option value="month">Último Mês</option>
+                        <option value="year">Último Ano</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Botões de Ação dos Filtros */}
+                  <div className="flex gap-3 mt-6">
+                    <button
+                      onClick={() => {
+                        setSearch('');
+                        setFilterStatus('all');
+                        setFilterRole('all');
+                        setFilterPlan('all');
+                        loadUsers(1, '', 'all');
+                      }}
+                      className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm"
+                    >
+                      Limpar Filtros
+                    </button>
+                    <button
+                      onClick={() => loadUsers(1, search, filterStatus)}
+                      className="px-4 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm"
+                    >
+                      Aplicar Filtros
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
