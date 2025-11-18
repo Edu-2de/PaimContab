@@ -101,12 +101,23 @@ export default function SubscriptionDetailsPage() {
 
   const loadPlans = useCallback(async () => {
     try {
-      const response = await apiClient.get(`${API_BASE}/plans`);
+      console.log('🔍 Carregando planos...');
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/plans`;
+      console.log('📍 URL:', url);
+      
+      const response = await apiClient.get(url);
+      console.log('📦 Resposta dos planos:', response);
+
       if (response.success && response.data) {
+        console.log('✅ Planos carregados:', response.data);
         setPlans(response.data as Plan[]);
+      } else {
+        console.error('❌ Erro ao carregar planos:', response.error);
+        setError(response.error || 'Erro ao carregar planos');
       }
     } catch (err) {
-      console.error('Erro ao carregar planos:', err);
+      console.error('❌ Erro ao carregar planos:', err);
+      setError('Erro ao carregar planos');
     }
   }, []);
 
@@ -543,17 +554,22 @@ export default function SubscriptionDetailsPage() {
                   value={selectedPlanId}
                   onChange={e => setSelectedPlanId(e.target.value)}
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
+                  disabled={plans.length === 0}
                 >
-                  {plans.map(plan => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name} - {formatCurrency(plan.price)}/{plan.billingCycle}
-                    </option>
-                  ))}
+                  {plans.length === 0 ? (
+                    <option value="">Carregando planos...</option>
+                  ) : (
+                    plans.map(plan => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} - {formatCurrency(plan.price)}/{plan.billingCycle}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
               <button
                 onClick={handleChangePlan}
-                disabled={changingPlan || selectedPlanId === subscription.planId}
+                disabled={changingPlan || selectedPlanId === subscription.planId || plans.length === 0}
                 className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
               >
                 {changingPlan ? 'Alterando...' : 'Alterar Plano'}

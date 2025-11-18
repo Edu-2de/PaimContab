@@ -183,50 +183,53 @@ function EditCompanyContent() {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-gray-50">
+      <AdminProtection>
         <AdminSidebar />
-        <div className="flex-1 overflow-auto p-8">
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Carregando...</p>
+        <div className="admin-content-wrapper">
+          <div className="flex justify-center items-center min-h-screen">
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+              <p className="mt-4 text-gray-600">Carregando...</p>
+            </div>
           </div>
         </div>
-      </div>
+      </AdminProtection>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <AdminProtection>
       <AdminSidebar />
-      <div className="flex-1 overflow-auto">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.push('/admin/companies')}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <HiArrowLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Editar Empresa</h1>
-                <p className="text-sm text-gray-600 mt-1">Atualize as informações da empresa</p>
+      <div className="admin-content-wrapper">
+        <div className="min-h-screen bg-gray-50">
+          {/* Header */}
+          <div className="bg-white border-b border-gray-200 px-8 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push('/admin/companies')}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <HiArrowLeft className="w-5 h-5 text-gray-600" />
+                </button>
+                <div>
+                  <h1 className="text-2xl font-bold text-gray-900">Editar Empresa</h1>
+                  <p className="text-sm text-gray-600 mt-1">Atualize as informações da empresa</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Content */}
-        <div className="p-8">
-          {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error}</div>}
+          {/* Content */}
+          <div className="p-8">
+            {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800">{error}</div>}
 
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 flex items-center gap-2">
-              <HiCheckCircle className="w-5 h-5" />
-              {success}
-            </div>
-          )}
+            {success && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 flex items-center gap-2">
+                <HiCheckCircle className="w-5 h-5" />
+                {success}
+              </div>
+            )}
 
           <form onSubmit={handleSubmit} className="max-w-4xl">
             <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
@@ -566,5 +569,6 @@ function EditCompanyContent() {
         </div>
       </div>
     </div>
+    </AdminProtection>
   );
 }

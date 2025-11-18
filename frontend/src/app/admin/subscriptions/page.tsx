@@ -430,22 +430,24 @@ function AdminSubscriptionsContent() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {subscription.endDate ? formatDate(subscription.endDate) : 'N/A'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Link
                               href={`/admin/subscriptions/${subscription.id}`}
-                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                              className="inline-flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
                               title="Ver detalhes"
                             >
                               <HiEye className="w-4 h-4" />
+                              Visualizar
                             </Link>
                             {subscription.status === 'active' && (
                               <button
                                 onClick={() => handleCancelSubscription(subscription.id)}
-                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                className="inline-flex items-center gap-1 px-3 py-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
                                 title="Cancelar assinatura"
                               >
                                 <HiTrash className="w-4 h-4" />
+                                Cancelar
                               </button>
                             )}
                           </div>

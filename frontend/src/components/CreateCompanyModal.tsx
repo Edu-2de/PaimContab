@@ -30,13 +30,26 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
 
   const fetchUsers = async () => {
     try {
-      const response = await apiClient.get('/api/admin/users?limit=1000');
-      const data = response as { users?: Array<{ id: string; name: string; email: string }> };
-      if (data.users && Array.isArray(data.users)) {
-        setUsers(data.users);
+      console.log('🔍 Buscando usuários para criar empresa...');
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=1000`;
+      console.log('📍 URL:', url);
+
+      const response = await apiClient.get(url);
+      console.log('📦 Resposta:', response);
+
+      if (response.success && response.data) {
+        const data = response.data as { users?: Array<{ id: string; name: string; email: string }> };
+        if (data.users && Array.isArray(data.users)) {
+          console.log('✅ Usuários carregados:', data.users.length);
+          setUsers(data.users);
+        } else {
+          console.warn('⚠️ Formato inesperado:', data);
+        }
+      } else {
+        console.error('❌ Erro na resposta:', response.error);
       }
     } catch (err) {
-      console.error('Erro ao buscar usuários:', err);
+      console.error('❌ Erro ao buscar usuários:', err);
     }
   };
 
@@ -46,7 +59,8 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
     setError('');
 
     try {
-      const response = await apiClient.post('/api/admin/companies', formData);
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/companies`;
+      const response = await apiClient.post(url, formData);
       if (response.success) {
         onSuccess();
         onClose();

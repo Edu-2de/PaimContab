@@ -31,25 +31,56 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
 
   const fetchUsers = async () => {
     try {
-      const response = await apiClient.get('/api/admin/users?limit=1000');
-      const data = response as { users?: Array<{ id: string; name: string; email: string }> };
-      if (data.users && Array.isArray(data.users)) {
-        setUsers(data.users);
+      console.log('🔍 Buscando usuários para criar assinatura...');
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=1000`;
+      console.log('📍 URL:', url);
+
+      const response = await apiClient.get(url);
+      console.log('📦 Resposta:', response);
+
+      if (response.success && response.data) {
+        const data = response.data as { users?: Array<{ id: string; name: string; email: string }> };
+        if (data.users && Array.isArray(data.users)) {
+          console.log('✅ Usuários carregados:', data.users.length);
+          setUsers(data.users);
+        } else {
+          console.warn('⚠️ Formato inesperado:', data);
+        }
+      } else {
+        console.error('❌ Erro na resposta:', response.error);
       }
     } catch (err) {
-      console.error('Erro ao buscar usuários:', err);
+      console.error('❌ Erro ao buscar usuários:', err);
     }
   };
 
   const fetchPlans = async () => {
     try {
-      const response = await apiClient.get('/api/admin/subscriptions/plans');
-      const data = response as { data?: Array<{ id: string; name: string; price: number }> };
-      if (data.data && Array.isArray(data.data)) {
-        setPlans(data.data);
+      console.log('🔍 Buscando planos...');
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/plans`;
+      console.log('📍 URL:', url);
+
+      const response = await apiClient.get(url);
+      console.log('📦 Resposta dos planos:', response);
+
+      if (response.success && response.data) {
+        if (Array.isArray(response.data)) {
+          console.log('✅ Planos carregados (array direto):', response.data.length);
+          setPlans(response.data);
+        } else {
+          const data = response.data as { data?: Array<{ id: string; name: string; price: number }> };
+          if (data.data && Array.isArray(data.data)) {
+            console.log('✅ Planos carregados (nested):', data.data.length);
+            setPlans(data.data);
+          } else {
+            console.warn('⚠️ Formato inesperado:', data);
+          }
+        }
+      } else {
+        console.error('❌ Erro na resposta:', response.error);
       }
     } catch (err) {
-      console.error('Erro ao buscar planos:', err);
+      console.error('❌ Erro ao buscar planos:', err);
     }
   };
 
@@ -59,7 +90,8 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
     setError('');
 
     try {
-      const response = await apiClient.post('/api/admin/subscriptions', formData);
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/subscriptions`;
+      const response = await apiClient.post(url, formData);
       if (response.success) {
         onSuccess();
         onClose();
