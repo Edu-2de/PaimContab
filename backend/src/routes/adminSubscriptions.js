@@ -12,7 +12,7 @@ router.use(adminMiddleware);
 router.get('/', async (req, res) => {
   try {
     const { page = 1, limit = 10, search, status } = req.query;
-    const skip = (page - 1) * limit;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where = {};
 
@@ -25,66 +25,144 @@ router.get('/', async (req, res) => {
     }
 
     if (status) {
-      where.status = status;
+      where.isActive = status === 'active';
     }
 
-    // Como não temos modelo Subscription ainda, vou simular os dados
-    // Em um cenário real, você criaria o modelo no Prisma Schema
-    const mockSubscriptions = [
-      {
-        id: '1',
-        userId: '1',
-        planId: '1',
-        status: 'active',
-        startDate: new Date('2024-01-01'),
-        endDate: new Date('2025-01-01'),
-        amount: 29.9,
-        paymentMethod: 'credit_card',
-        user: { name: 'João Silva', email: 'joao@example.com' },
-        plan: { name: 'Plano Básico', price: 29.9, billingCycle: 'monthly' },
-        createdAt: new Date('2024-01-01'),
-        updatedAt: new Date('2024-01-01'),
-      },
-      {
-        id: '2',
-        userId: '2',
-        planId: '2',
-        status: 'pending',
-        startDate: new Date('2024-02-01'),
-        endDate: new Date('2025-02-01'),
-        amount: 59.9,
-        paymentMethod: 'boleto',
-        user: { name: 'Maria Santos', email: 'maria@example.com' },
-        plan: { name: 'Plano Premium', price: 59.9, billingCycle: 'monthly' },
-        createdAt: new Date('2024-02-01'),
-        updatedAt: new Date('2024-02-01'),
-      },
-    ];
+    const [subscriptions, total] = await Promise.all([
+      prisma.subscription.findMany({
+        where,
+        skip,
+        take: parseInt(limit),
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          plan: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+            },
+          },
+          discount: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      prisma.subscription.count({ where }),
+    ]);
 
-    const filteredSubscriptions = mockSubscriptions.filter(sub => {
-      if (status && sub.status !== status) return false;
-      if (search) {
-        const searchLower = search.toLowerCase();
-        return (
-          sub.user.name.toLowerCase().includes(searchLower) ||
-          sub.user.email.toLowerCase().includes(searchLower) ||
-          sub.plan.name.toLowerCase().includes(searchLower)
-        );
-      }
-      return true;
+    // Transformar dados para o formato esperado pelo frontend
+    const formattedSubscriptions = subscriptions.map(sub => {
+      const basePrice = sub.plan.price;
+      const discountPercentage = sub.discount?.isActive ? sub.discount.percentage : 0;
+      const finalPrice = basePrice * (1 - discountPercentage / 100);
+
+      return {
+        id: sub.id,
+        userId: sub.userId,
+        planId: sub.planId,
+        status: sub.isActive ? 'active' : 'inactive',
+        startDate: sub.startDate,
+        endDate: sub.endDate,
+        amount: finalPrice,
+        originalAmount: basePrice,
+        discount: sub.discount,
+        stripeSubscriptionId: sub.stripeSubscriptionId,
+        user: sub.user,
+        plan: {
+          ...sub.plan,
+          billingCycle: 'monthly',
+        },
+        createdAt: sub.createdAt,
+        updatedAt: sub.updatedAt,
+      };
     });
 
-    const total = filteredSubscriptions.length;
-    const subscriptions = filteredSubscriptions.slice(skip, skip + parseInt(limit));
-
     res.json({
-      subscriptions,
+      subscriptions: formattedSubscriptions,
       total,
       page: parseInt(page),
-      totalPages: Math.ceil(total / limit),
+      totalPages: Math.ceil(total / parseInt(limit)),
     });
   } catch (error) {
     console.error('Erro ao buscar assinaturas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/admin/subscriptions/export - Exportar para Excel (DEVE VIR ANTES DE /:id)
+router.get('/export', async (req, res) => {
+  try {
+    const { search, status } = req.query;
+
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { plan: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (status) {
+      where.isActive = status === 'active';
+    }
+
+    const subscriptions = await prisma.subscription.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        plan: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        discount: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // Formatar dados para Excel
+    const exportData = subscriptions.map(sub => {
+      const basePrice = sub.plan.price;
+      const discountPercentage = sub.discount?.isActive ? sub.discount.percentage : 0;
+      const finalPrice = basePrice * (1 - discountPercentage / 100);
+
+      return {
+        ID: sub.id,
+        Usuario: sub.user.name,
+        Email: sub.user.email,
+        Plano: sub.plan.name,
+        'Preco Original': `R$ ${basePrice.toFixed(2)}`,
+        'Desconto (%)': discountPercentage > 0 ? `${discountPercentage.toFixed(0)}%` : 'Sem desconto',
+        'Preco Final': `R$ ${finalPrice.toFixed(2)}`,
+        Status: sub.isActive ? 'Ativa' : 'Inativa',
+        'Data Inicio': new Date(sub.startDate).toLocaleDateString('pt-BR'),
+        'Data Fim': sub.endDate ? new Date(sub.endDate).toLocaleDateString('pt-BR') : 'N/A',
+        'Criado Em': new Date(sub.createdAt).toLocaleDateString('pt-BR'),
+      };
+    });
+
+    res.json({ data: exportData });
+  } catch (error) {
+    console.error('Erro ao exportar assinaturas:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -94,23 +172,53 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Mock data para assinatura específica
-    const mockSubscription = {
-      id,
-      userId: '1',
-      planId: '1',
-      status: 'active',
-      startDate: new Date('2024-01-01'),
-      endDate: new Date('2025-01-01'),
-      amount: 29.9,
-      paymentMethod: 'credit_card',
-      user: { name: 'João Silva', email: 'joao@example.com' },
-      plan: { name: 'Plano Básico', price: 29.9, billingCycle: 'monthly' },
-      createdAt: new Date('2024-01-01'),
-      updatedAt: new Date('2024-01-01'),
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            createdAt: true,
+          },
+        },
+        plan: true,
+        discount: true, // Incluir desconto
+      },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    // Calcular preço com desconto
+    const basePrice = subscription.plan.price;
+    const discountPercentage = subscription.discount?.isActive ? subscription.discount.percentage : 0;
+    const finalPrice = basePrice * (1 - discountPercentage / 100);
+
+    const formattedSubscription = {
+      id: subscription.id,
+      userId: subscription.userId,
+      planId: subscription.planId,
+      status: subscription.isActive ? 'active' : 'inactive',
+      isActive: subscription.isActive,
+      startDate: subscription.startDate,
+      endDate: subscription.endDate,
+      amount: finalPrice, // Preço com desconto
+      originalAmount: basePrice, // Preço original
+      discount: subscription.discount, // Informações do desconto
+      stripeSubscriptionId: subscription.stripeSubscriptionId,
+      user: subscription.user,
+      plan: {
+        ...subscription.plan,
+        billingCycle: 'monthly',
+      },
+      createdAt: subscription.createdAt,
+      updatedAt: subscription.updatedAt,
     };
 
-    res.json(mockSubscription);
+    res.json(formattedSubscription);
   } catch (error) {
     console.error('Erro ao buscar assinatura:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
@@ -122,15 +230,93 @@ router.patch('/:id/cancel', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Em um cenário real, você atualizaria o status da assinatura
-    // await prisma.subscription.update({
-    //   where: { id },
-    //   data: { status: 'cancelled' }
-    // });
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+    });
 
-    res.json({ message: 'Assinatura cancelada com sucesso' });
+    if (!subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    const updatedSubscription = await prisma.subscription.update({
+      where: { id },
+      data: {
+        isActive: false,
+        endDate: new Date(),
+      },
+    });
+
+    res.json({
+      message: 'Assinatura cancelada com sucesso',
+      subscription: updatedSubscription,
+    });
   } catch (error) {
     console.error('Erro ao cancelar assinatura:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// PATCH /api/admin/subscriptions/:id/reactivate - Reativar assinatura
+router.patch('/:id/reactivate', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    const updatedSubscription = await prisma.subscription.update({
+      where: { id },
+      data: {
+        isActive: true,
+        endDate: null,
+      },
+    });
+
+    res.json({
+      message: 'Assinatura reativada com sucesso',
+      subscription: updatedSubscription,
+    });
+  } catch (error) {
+    console.error('Erro ao reativar assinatura:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// PATCH /api/admin/subscriptions/:id/plan - Alterar plano
+router.patch('/:id/plan', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { planId } = req.body;
+
+    if (!planId) {
+      return res.status(400).json({ error: 'planId é obrigatório' });
+    }
+
+    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      return res.status(404).json({ error: 'Plano não encontrado' });
+    }
+
+    const updatedSubscription = await prisma.subscription.update({
+      where: { id },
+      data: { planId },
+      include: {
+        plan: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+
+    res.json({
+      message: 'Plano alterado com sucesso',
+      subscription: updatedSubscription,
+    });
+  } catch (error) {
+    console.error('Erro ao alterar plano:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });
@@ -138,29 +324,304 @@ router.patch('/:id/cancel', async (req, res) => {
 // POST /api/admin/subscriptions - Criar nova assinatura
 router.post('/', async (req, res) => {
   try {
-    const { userId, planId, amount, paymentMethod } = req.body;
+    const { userId, planId, startDate } = req.body;
 
-    // Validações básicas
-    if (!userId || !planId || !amount) {
-      return res.status(400).json({ error: 'Campos obrigatórios: userId, planId, amount' });
+    if (!userId || !planId) {
+      return res.status(400).json({ error: 'Campos obrigatórios: userId, planId' });
     }
 
-    // Em um cenário real, você criaria a assinatura no banco
-    const newSubscription = {
-      id: Date.now().toString(),
-      userId,
-      planId,
-      status: 'active',
-      startDate: new Date(),
-      amount: parseFloat(amount),
-      paymentMethod,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
 
-    res.status(201).json(newSubscription);
+    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      return res.status(404).json({ error: 'Plano não encontrado' });
+    }
+
+    const existingSubscription = await prisma.subscription.findFirst({
+      where: { userId, isActive: true },
+    });
+
+    if (existingSubscription) {
+      return res.status(400).json({ error: 'Usuário já possui uma assinatura ativa' });
+    }
+
+    const newSubscription = await prisma.subscription.create({
+      data: {
+        userId,
+        planId,
+        startDate: startDate ? new Date(startDate) : new Date(),
+        isActive: true,
+      },
+      include: {
+        user: { select: { name: true, email: true } },
+        plan: true,
+      },
+    });
+
+    res.status(201).json({
+      message: 'Assinatura criada com sucesso',
+      subscription: newSubscription,
+    });
   } catch (error) {
     console.error('Erro ao criar assinatura:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/admin/subscriptions/stats/overview - Estatísticas
+router.get('/stats/overview', async (req, res) => {
+  try {
+    const [totalSubscriptions, activeSubscriptions, inactiveSubscriptions, activeSubs] = await Promise.all([
+      prisma.subscription.count(),
+      prisma.subscription.count({ where: { isActive: true } }),
+      prisma.subscription.count({ where: { isActive: false } }),
+      prisma.subscription.findMany({
+        where: { isActive: true },
+        include: { plan: true },
+      }),
+    ]);
+
+    const totalRevenue = activeSubs.reduce((sum, sub) => sum + sub.plan.price, 0);
+
+    const subscriptionsByPlan = await prisma.subscription.groupBy({
+      by: ['planId'],
+      where: { isActive: true },
+      _count: true,
+    });
+
+    const plansWithCount = await Promise.all(
+      subscriptionsByPlan.map(async item => {
+        const plan = await prisma.plan.findUnique({ where: { id: item.planId } });
+        return {
+          planName: plan?.name || 'Desconhecido',
+          count: item._count,
+        };
+      })
+    );
+
+    res.json({
+      total: totalSubscriptions,
+      active: activeSubscriptions,
+      inactive: inactiveSubscriptions,
+      monthlyRevenue: totalRevenue,
+      byPlan: plansWithCount,
+    });
+  } catch (error) {
+    console.error('Erro ao buscar estatísticas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/admin/subscriptions/:id/discount - Aplicar desconto
+router.post('/:id/discount', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { percentage, endDate, reason } = req.body;
+    const adminId = req.user.id; // ID do admin logado
+
+    if (!percentage || percentage < 0 || percentage > 100) {
+      return res.status(400).json({ error: 'Porcentagem inválida (0-100)' });
+    }
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+      include: { discount: true },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    // Se já tem desconto, deletar o antigo
+    if (subscription.discount) {
+      await prisma.discount.delete({
+        where: { id: subscription.discount.id },
+      });
+    }
+
+    // Criar novo desconto
+    const discount = await prisma.discount.create({
+      data: {
+        subscriptionId: id,
+        percentage: parseFloat(percentage),
+        endDate: endDate ? new Date(endDate) : null,
+        reason: reason || null,
+        createdBy: adminId,
+        isActive: true,
+      },
+    });
+
+    res.json({
+      message: 'Desconto aplicado com sucesso',
+      discount,
+    });
+  } catch (error) {
+    console.error('Erro ao aplicar desconto:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// DELETE /api/admin/subscriptions/:id/discount - Remover desconto
+router.delete('/:id/discount', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const subscription = await prisma.subscription.findUnique({
+      where: { id },
+      include: { discount: true },
+    });
+
+    if (!subscription) {
+      return res.status(404).json({ error: 'Assinatura não encontrada' });
+    }
+
+    if (!subscription.discount) {
+      return res.status(404).json({ error: 'Assinatura não possui desconto' });
+    }
+
+    await prisma.discount.delete({
+      where: { id: subscription.discount.id },
+    });
+
+    res.json({ message: 'Desconto removido com sucesso' });
+  } catch (error) {
+    console.error('Erro ao remover desconto:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/admin/subscriptions - Criar nova assinatura
+router.post('/', async (req, res) => {
+  try {
+    const { userId, planId, startDate, isActive } = req.body;
+
+    // Validações
+    if (!userId || !planId) {
+      return res.status(400).json({ error: 'Usuário e plano são obrigatórios' });
+    }
+
+    // Verificar se usuário existe
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Verificar se plano existe
+    const plan = await prisma.plan.findUnique({ where: { id: planId } });
+    if (!plan) {
+      return res.status(404).json({ error: 'Plano não encontrado' });
+    }
+
+    // Criar assinatura
+    const subscription = await prisma.subscription.create({
+      data: {
+        userId,
+        planId,
+        startDate: startDate ? new Date(startDate) : new Date(),
+        isActive: isActive !== undefined ? isActive : true,
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        plan: true,
+        discount: true,
+      },
+    });
+
+    res.status(201).json({ success: true, data: subscription });
+  } catch (error) {
+    console.error('Erro ao criar assinatura:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/admin/subscriptions/import - Importar assinaturas do Excel
+router.post('/import', async (req, res) => {
+  try {
+    const { data } = req.body;
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ error: 'Dados inválidos' });
+    }
+
+    const requiredColumns = ['Email', 'Plano'];
+    const errors = [];
+    const created = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNum = i + 2; // Excel row (1-indexed + header)
+
+      // Validar colunas obrigatórias
+      const missingColumns = requiredColumns.filter(col => !row[col]);
+      if (missingColumns.length > 0) {
+        errors.push(`Linha ${rowNum}: Faltando colunas ${missingColumns.join(', ')}`);
+        continue;
+      }
+
+      try {
+        // Buscar usuário por email
+        const user = await prisma.user.findUnique({
+          where: { email: row['Email'] },
+        });
+
+        if (!user) {
+          errors.push(`Linha ${rowNum}: Usuário com email ${row['Email']} não encontrado`);
+          continue;
+        }
+
+        // Buscar plano por nome
+        const plan = await prisma.plan.findFirst({
+          where: { name: { equals: row['Plano'], mode: 'insensitive' } },
+        });
+
+        if (!plan) {
+          errors.push(`Linha ${rowNum}: Plano "${row['Plano']}" não encontrado`);
+          continue;
+        }
+
+        // Criar assinatura
+        const subscription = await prisma.subscription.create({
+          data: {
+            userId: user.id,
+            planId: plan.id,
+            startDate: row['Data Inicio'] ? new Date(row['Data Inicio']) : new Date(),
+            isActive: row['Status'] !== 'Inativa',
+          },
+        });
+
+        created.push(subscription.id);
+      } catch (error) {
+        console.error(`Erro na linha ${rowNum}:`, error);
+        errors.push(`Linha ${rowNum}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      created: created.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `${created.length} assinaturas criadas${errors.length > 0 ? `, ${errors.length} erros` : ''}`,
+    });
+  } catch (error) {
+    console.error('Erro ao importar assinaturas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/admin/subscriptions/plans - Listar planos disponíveis
+router.get('/plans', async (req, res) => {
+  try {
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { name: 'asc' },
+    });
+
+    res.json({ success: true, data: plans });
+  } catch (error) {
+    console.error('Erro ao buscar planos:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 });

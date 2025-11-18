@@ -589,6 +589,179 @@ const getUserSubscriptionStatus = async (req, res) => {
   }
 };
 
+// Controller function to export users
+const exportUsers = async (req, res) => {
+  try {
+    const { search = '' } = req.query;
+
+    console.log('📤 Exportando usuários...');
+
+    // Build search condition
+    const searchCondition = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' } },
+            { email: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+
+    // Get all users without pagination for export
+    const users = await prisma.user.findMany({
+      where: searchCondition,
+      include: {
+        Company: true,
+        subscriptions: {
+          include: { plan: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Format users data for Excel
+    const exportData = users.map(user => {
+      const latestSubscription = user.subscriptions[0];
+
+      return {
+        ID: user.id,
+        Nome: user.name,
+        Email: user.email,
+        Tipo: user.role === 'admin' ? 'Administrador' : user.role === 'mei' ? 'MEI' : 'Usuário',
+        Status: user.isActive ? 'Ativo' : 'Inativo',
+        Empresa: user.Company?.companyName || 'Sem empresa',
+        CNPJ: user.Company?.cnpj || '',
+        Plano: latestSubscription?.plan?.name || 'Sem plano',
+        'Assinatura Ativa': latestSubscription?.isActive ? 'Sim' : 'Não',
+        'Cadastrado Em': new Date(user.createdAt).toLocaleDateString('pt-BR'),
+      };
+    });
+
+    console.log(`✅ ${exportData.length} usuários exportados`);
+    res.json({ data: exportData });
+  } catch (error) {
+    console.error('💥 Erro ao exportar usuários:', error);
+    res.status(500).json({
+      message: 'Erro ao exportar usuários',
+      error: error.message,
+    });
+  }
+};
+
+// Create new user
+const createUser = async (req, res) => {
+  try {
+    const { name, email, password, isAdmin } = req.body;
+
+    // Validations
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Nome, email e senha são obrigatórios' });
+    }
+
+    // Check if email already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'Email já está em uso' });
+    }
+
+    // Hash password
+    const bcrypt = require('bcryptjs');
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create user
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        isAdmin: isAdmin || false,
+        isActive: true,
+      },
+    });
+
+    // Remove password from response
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.status(201).json({ success: true, data: userWithoutPassword });
+  } catch (error) {
+    console.error('Erro ao criar usuário:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// Import users from Excel
+const importUsers = async (req, res) => {
+  try {
+    const { data } = req.body;
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ error: 'Dados inválidos' });
+    }
+
+    const requiredColumns = ['Nome', 'Email', 'Senha'];
+    const errors = [];
+    const created = [];
+    const bcrypt = require('bcryptjs');
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNum = i + 2; // Excel row (1-indexed + header)
+
+      // Validate required columns
+      const missingColumns = requiredColumns.filter(col => !row[col]);
+      if (missingColumns.length > 0) {
+        errors.push(`Linha ${rowNum}: Faltando colunas ${missingColumns.join(', ')}`);
+        continue;
+      }
+
+      try {
+        // Check if email already exists
+        const emailExists = await prisma.user.findUnique({
+          where: { email: row['Email'] },
+        });
+
+        if (emailExists) {
+          errors.push(`Linha ${rowNum}: Email ${row['Email']} já está em uso`);
+          continue;
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(row['Senha'], 10);
+
+        // Create user
+        const user = await prisma.user.create({
+          data: {
+            name: row['Nome'],
+            email: row['Email'],
+            password: hashedPassword,
+            isAdmin: row['Admin'] === 'Sim' || row['Admin'] === 'TRUE' || false,
+            isActive: true,
+          },
+        });
+
+        created.push(user.id);
+      } catch (error) {
+        console.error(`Erro na linha ${rowNum}:`, error);
+        errors.push(`Linha ${rowNum}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      created: created.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `${created.length} usuários criados${errors.length > 0 ? `, ${errors.length} erros` : ''}`,
+    });
+  } catch (error) {
+    console.error('Erro ao importar usuários:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
 module.exports = {
   getDashboard,
   getAllUsers,
@@ -598,4 +771,7 @@ module.exports = {
   updateUserCompany,
   deleteUser,
   getUserSubscriptionStatus,
+  exportUsers,
+  createUser,
+  importUsers,
 };

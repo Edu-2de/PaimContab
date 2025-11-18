@@ -15,6 +15,7 @@ import {
   HiOutlineCalendar,
   HiOutlineBuildingOffice2,
   HiOutlineTableCells,
+  HiLockClosed,
 } from 'react-icons/hi2';
 
 interface MeiSidebarProps {
@@ -26,6 +27,7 @@ interface MeiSidebarProps {
 interface User {
   name: string;
   email: string;
+  role?: string;
 }
 
 interface Company {
@@ -38,6 +40,7 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
   const [user, setUser] = useState<User | null>(null);
   const [company, setCompany] = useState<Company | null>(null);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const [hasCalendarAccess, setHasCalendarAccess] = useState(false);
   const pathname = usePathname();
 
   // Obter companyId do usuário se não for passado como prop
@@ -124,11 +127,89 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
       }
     }
 
-    setCompany({
-      name: 'Minha Empresa MEI',
-      cnpj: '12.345.678/0001-90',
-    });
-  }, []);
+    // Buscar dados da empresa do banco de dados
+    const fetchCompanyData = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        if (!token || !effectiveCompanyId) return;
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/company/${effectiveCompanyId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const companyData = await response.json();
+          setCompany({
+            name: companyData.companyName || 'Minha Empresa MEI',
+            cnpj: companyData.cnpj || undefined,
+          });
+        } else {
+          // Fallback para dados padrão se a requisição falhar
+          setCompany({
+            name: 'Minha Empresa MEI',
+            cnpj: undefined,
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados da empresa:', error);
+        setCompany({
+          name: 'Minha Empresa MEI',
+          cnpj: undefined,
+        });
+      }
+    };
+
+    fetchCompanyData();
+
+    // Verificar assinatura e acesso ao calendário
+    const checkCalendarAccess = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const userData = localStorage.getItem('user');
+
+        if (!token || !userData) return;
+
+        const userObj = JSON.parse(userData);
+
+        // Verificar se está em modo admin (via URL)
+        const urlParams = new URLSearchParams(window.location.search);
+        const adminView = urlParams.get('adminView') === 'true';
+
+        // Admin sempre tem acesso (tanto como admin normal quanto em adminView)
+        if (userObj.role === 'admin' || adminView) {
+          setHasCalendarAccess(true);
+          return;
+        }
+
+        // Buscar dados da assinatura
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/user/subscription`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const subscriptionData = await response.json();
+
+          // Apenas planos Profissional e Premium têm acesso ao calendário
+          const planName = subscriptionData?.plan?.name?.toLowerCase() || '';
+          const hasAccess =
+            subscriptionData?.isActive && (planName.includes('profissional') || planName.includes('premium'));
+
+          setHasCalendarAccess(hasAccess);
+        } else {
+          setHasCalendarAccess(false);
+        }
+      } catch (error) {
+        console.error('Erro ao verificar acesso ao calendário:', error);
+        setHasCalendarAccess(false);
+      }
+    };
+
+    checkCalendarAccess();
+  }, [effectiveCompanyId]);
 
   const handleToggle = () => {
     setIsCollapsed(!isCollapsed);
@@ -205,6 +286,37 @@ export default function MeiSidebar({ currentPage = 'dashboard', onToggle, compan
           {navigationItems.map(item => {
             const Icon = item.icon;
             const active = isActive(item.key);
+            const isCalendar = item.key === 'calendario';
+            const isLocked = isCalendar && !hasCalendarAccess;
+
+            // Se estiver bloqueado, renderiza um div ao invés de Link
+            if (isLocked) {
+              return (
+                <div
+                  key={item.key}
+                  onMouseEnter={() => setHoveredItem(item.key)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  className={`
+                    group flex items-center gap-3 px-3 py-3 rounded-lg transition-all duration-200 relative cursor-not-allowed opacity-60
+                    ${isCollapsed ? 'justify-center' : ''}
+                    text-gray-400
+                  `}
+                  title={
+                    isCollapsed
+                      ? `${item.name} - Necessário plano Profissional ou Premium`
+                      : 'Necessário plano mais avançado para esta ação'
+                  }
+                >
+                  <Icon className="w-5 h-5 flex-shrink-0 text-gray-500" />
+                  {!isCollapsed && (
+                    <div className="flex items-center justify-between flex-1 overflow-hidden">
+                      <span className="text-sm font-medium truncate text-gray-500">{item.name}</span>
+                      <HiLockClosed className="w-4 h-4 text-red-400 flex-shrink-0 ml-2" />
+                    </div>
+                  )}
+                </div>
+              );
+            }
 
             return (
               <Link

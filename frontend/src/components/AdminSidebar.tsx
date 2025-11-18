@@ -131,8 +131,7 @@ export default function AdminSidebar({ currentPage = 'dashboard', onToggle }: Ad
   };
 
   const isActive = (itemKey: string) => {
-    if (currentPage === itemKey) return true;
-
+    // Priorizar a verificação por pathname (mais preciso)
     if (itemKey === 'dashboard' && pathname === '/admin/dashboard') return true;
     if (itemKey === 'users' && pathname?.startsWith('/admin/users')) return true;
     if (itemKey === 'companies' && pathname?.startsWith('/admin/companies')) return true;
@@ -140,6 +139,11 @@ export default function AdminSidebar({ currentPage = 'dashboard', onToggle }: Ad
     if (itemKey === 'subscriptions' && pathname?.startsWith('/admin/subscriptions')) return true;
     if (itemKey === 'reports' && pathname?.startsWith('/admin/reports')) return true;
     if (itemKey === 'settings' && pathname?.startsWith('/admin/settings')) return true;
+
+    // Fallback para currentPage apenas se pathname não corresponder a nenhuma rota
+    if (!pathname || pathname === '/admin' || pathname === '/') {
+      return currentPage === itemKey;
+    }
 
     return false;
   };

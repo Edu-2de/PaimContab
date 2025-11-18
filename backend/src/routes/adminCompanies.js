@@ -58,6 +58,139 @@ router.get('/', async (req, res) => {
   }
 });
 
+// GET /api/admin/companies/export - Exportar empresas
+router.get('/export', async (req, res) => {
+  try {
+    const { search, status } = req.query;
+
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { cnpj: { contains: search } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    const companies = await prisma.company.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Formatar dados para Excel
+    const exportData = companies.map(company => ({
+      ID: company.id,
+      Nome: company.name || '',
+      CNPJ: company.cnpj || '',
+      Email: company.email || '',
+      Telefone: company.phone || '',
+      Endereco: company.address || '',
+      Cidade: company.city || '',
+      Estado: company.state || '',
+      CEP: company.zipCode || '',
+      Status: company.status || '',
+      Usuario: company.user?.name || '',
+      'Email Usuario': company.user?.email || '',
+      'Criado Em': new Date(company.createdAt).toLocaleDateString('pt-BR'),
+    }));
+
+    res.json({ data: exportData });
+  } catch (error) {
+    console.error('Erro ao exportar empresas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/admin/companies/import - Importar empresas do Excel
+router.post('/import', async (req, res) => {
+  try {
+    const { data } = req.body;
+
+    if (!Array.isArray(data) || data.length === 0) {
+      return res.status(400).json({ error: 'Dados inválidos' });
+    }
+
+    const requiredColumns = ['Nome', 'CNPJ', 'Email Usuario'];
+    const errors = [];
+    const created = [];
+
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i];
+      const rowNum = i + 2; // Excel row (1-indexed + header)
+
+      // Validar colunas obrigatórias
+      const missingColumns = requiredColumns.filter(col => !row[col]);
+      if (missingColumns.length > 0) {
+        errors.push(`Linha ${rowNum}: Faltando colunas ${missingColumns.join(', ')}`);
+        continue;
+      }
+
+      try {
+        // Buscar usuário por email
+        const user = await prisma.user.findUnique({
+          where: { email: row['Email Usuario'] },
+        });
+
+        if (!user) {
+          errors.push(`Linha ${rowNum}: Usuário com email ${row['Email Usuario']} não encontrado`);
+          continue;
+        }
+
+        // Verificar se CNPJ já existe
+        const cnpjExists = await prisma.company.findUnique({
+          where: { cnpj: row['CNPJ'] },
+        });
+
+        if (cnpjExists) {
+          errors.push(`Linha ${rowNum}: CNPJ ${row['CNPJ']} já está em uso`);
+          continue;
+        }
+
+        // Criar empresa
+        const company = await prisma.company.create({
+          data: {
+            name: row['Nome'],
+            cnpj: row['CNPJ'],
+            email: row['Email'] || '',
+            phone: row['Telefone'] || '',
+            address: row['Endereco'] || '',
+            city: row['Cidade'] || '',
+            state: row['Estado'] || '',
+            zipCode: row['CEP'] || '',
+            userId: user.id,
+            status: 'active',
+          },
+        });
+
+        created.push(company.id);
+      } catch (error) {
+        console.error(`Erro na linha ${rowNum}:`, error);
+        errors.push(`Linha ${rowNum}: ${error.message}`);
+      }
+    }
+
+    res.json({
+      success: true,
+      created: created.length,
+      errors: errors.length > 0 ? errors : undefined,
+      message: `${created.length} empresas criadas${errors.length > 0 ? `, ${errors.length} erros` : ''}`,
+    });
+  } catch (error) {
+    console.error('Erro ao importar empresas:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+});
+
 // GET /api/admin/companies/:id - Buscar empresa por ID
 router.get('/:id', async (req, res) => {
   try {

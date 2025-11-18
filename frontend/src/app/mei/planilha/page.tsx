@@ -143,6 +143,7 @@ function MeiSpreadsheetContent() {
   };
 
   // Criar linha vazia
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const createEmptyRow = (): SpreadsheetRow => ({
     id: `new-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     data: new Date().toISOString().split('T')[0],
@@ -165,25 +166,25 @@ function MeiSpreadsheetContent() {
   });
 
   // Adicionar linhas vazias automaticamente (mínimo 3, ideal 10)
-  const ensureEmptyRows = (currentRows: SpreadsheetRow[], minEmpty = 3, idealEmpty = 10) => {
+  const ensureEmptyRows = useCallback((currentRows: SpreadsheetRow[], minEmpty = 3, idealEmpty = 10) => {
     const emptyRows = currentRows.filter(row => !row.titulo && !row.tipo && row.valor === 0);
-
+  
     // Se tem menos que o mínimo, adicionar até o ideal
     if (emptyRows.length < minEmpty) {
       const rowsToAdd = idealEmpty;
       const newRows = Array.from({ length: rowsToAdd }, () => createEmptyRow());
       return [...currentRows, ...newRows];
     }
-
+  
     // Se tem menos que o ideal mas mais que o mínimo, adicionar algumas
     if (emptyRows.length < idealEmpty) {
       const rowsToAdd = idealEmpty - emptyRows.length;
       const newRows = Array.from({ length: rowsToAdd }, () => createEmptyRow());
       return [...currentRows, ...newRows];
     }
-
+  
     return currentRows;
-  };
+  }, [createEmptyRow]);
 
   // Buscar dados do backend e gerar planilha
   const fetchSpreadsheetData = useCallback(async () => {
@@ -267,7 +268,7 @@ function MeiSpreadsheetContent() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth]);
+  }, [ensureEmptyRows, selectedMonth]);
 
   useEffect(() => {
     fetchSpreadsheetData();

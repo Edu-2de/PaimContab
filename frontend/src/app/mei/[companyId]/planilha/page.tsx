@@ -121,7 +121,8 @@ function MeiSpreadsheetContent() {
     lucroFinal: 0,
     limiteMeiUtilizado: 0,
   });
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(''); // Vazio = ano todo
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -178,6 +179,25 @@ function MeiSpreadsheetContent() {
     };
   };
 
+  // Gerar lista de anos disponíveis (últimos 5 anos)
+  const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+
+  // Nomes dos meses
+  const monthNames = [
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
+
   // Criar linha vazia com data baseada no mês selecionado
   const createEmptyRow = useCallback((): SpreadsheetRow => {
     const today = new Date();
@@ -186,7 +206,7 @@ function MeiSpreadsheetContent() {
     // Se o mês selecionado for o atual, usar data de hoje
     // Senão, usar primeiro dia do mês selecionado
     let rowDate: string;
-    if (selectedMonth === currentMonth) {
+    if (selectedMonth && selectedMonth === currentMonth) {
       rowDate = today.toISOString().split('T')[0];
     } else {
       rowDate = `${selectedMonth}-01`;
@@ -273,27 +293,37 @@ function MeiSpreadsheetContent() {
         );
       }
 
-      // Filtrar por mês selecionado - comparar apenas YYYY-MM
+      // Filtrar por ano e mês (mês opcional)
       const filteredReceitas = receitas.filter((r: Receita) => {
-        const dataStr = (r.dataRecebimento || r.createdAt || '').substring(0, 7); // Pega YYYY-MM
-        const match = dataStr === selectedMonth;
-        console.log(
-          `🔍 Receita "${r.descricao}" - Data: ${r.dataRecebimento} - Mês extraído: ${dataStr} - Match: ${match}`
-        );
-        return match;
+        const dataCompleta = r.dataRecebimento || r.createdAt || '';
+        const dataAno = dataCompleta.substring(0, 4); // YYYY
+        const dataMes = dataCompleta.substring(5, 7); // MM
+
+        // Filtrar por ano
+        if (dataAno !== selectedYear) return false;
+
+        // Filtrar por mês (se selecionado)
+        if (selectedMonth && dataMes !== selectedMonth) return false;
+
+        return true;
       });
 
       const filteredDespesas = despesas.filter((d: Despesa) => {
-        const dataStr = (d.dataPagamento || d.createdAt || '').substring(0, 7); // Pega YYYY-MM
-        const match = dataStr === selectedMonth;
-        console.log(
-          `🔍 Despesa "${d.descricao}" - Data: ${d.dataPagamento} - Mês extraído: ${dataStr} - Match: ${match}`
-        );
-        return match;
+        const dataCompleta = d.dataPagamento || d.createdAt || '';
+        const dataAno = dataCompleta.substring(0, 4); // YYYY
+        const dataMes = dataCompleta.substring(5, 7); // MM
+
+        // Filtrar por ano
+        if (dataAno !== selectedYear) return false;
+
+        // Filtrar por mês (se selecionado)
+        if (selectedMonth && dataMes !== selectedMonth) return false;
+
+        return true;
       });
 
-      console.log('📊 Receitas filtradas do mês:', filteredReceitas.length);
-      console.log('📊 Despesas filtradas do mês:', filteredDespesas.length);
+      console.log('📊 Receitas filtradas:', filteredReceitas.length);
+      console.log('📊 Despesas filtradas:', filteredDespesas.length);
 
       // Converter receitas para formato da planilha - TODOS os campos
       const receitasRows: SpreadsheetRow[] = filteredReceitas.map((receita: Receita) => ({
@@ -353,7 +383,7 @@ function MeiSpreadsheetContent() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth, companyId, ensureEmptyRows]);
+  }, [selectedMonth, selectedYear, companyId, ensureEmptyRows]);
 
   useEffect(() => {
     if (hasAccess) {
@@ -774,21 +804,28 @@ function MeiSpreadsheetContent() {
                 <div className="flex items-center gap-3">
                   <label className="text-sm font-medium text-gray-700">Período:</label>
                   <select
+                    value={selectedYear}
+                    onChange={e => setSelectedYear(e.target.value)}
+                    className="text-sm border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 cursor-pointer rounded-lg px-3 py-2"
+                  >
+                    {availableYears.map(year => (
+                      <option key={year} value={year.toString()}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
                     value={selectedMonth}
                     onChange={e => setSelectedMonth(e.target.value)}
                     className="text-sm border border-gray-300 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700 cursor-pointer rounded-lg px-3 py-2"
                   >
-                    {Array.from({ length: 12 }, (_, i) => {
-                      const date = new Date();
-                      date.setMonth(date.getMonth() - i);
-                      const value = date.toISOString().slice(0, 7);
-                      const label = date.toLocaleDateString('pt-BR', { year: 'numeric', month: 'long' });
-                      return (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      );
-                    })}
+                    <option value="">Ano todo</option>
+                    {monthNames.map((month, index) => (
+                      <option key={index} value={(index + 1).toString().padStart(2, '0')}>
+                        {month}
+                      </option>
+                    ))}
                   </select>
                 </div>
 

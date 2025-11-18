@@ -71,7 +71,8 @@ const DespesasContent = memo(() => {
   const [showModal, setShowModal] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [selectedMonth, setSelectedMonth] = useState(''); // Vazio = todos os períodos
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [hasAccess, setHasAccess] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [formData, setFormData] = useState<DespesaFormData>({
@@ -131,35 +132,53 @@ const DespesasContent = memo(() => {
 
   // Buscar despesas do backend
   const fetchDespesas = useCallback(async () => {
-    if (!hasAccess) return;
+    if (!hasAccess || !companyId) {
+      console.log('⚠️ fetchDespesas bloqueado:', { hasAccess, companyId });
+      return;
+    }
 
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
+      const userData = localStorage.getItem('user');
+
+      if (!userData) return;
+
+      const userObj = JSON.parse(userData);
+      const adminMode = userObj.role === 'admin';
 
       // Se for admin, passar companyId como query parameter
-      const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+      const queryParam = adminMode ? `?companyId=${companyId}` : '';
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`;
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
+      console.log('🔄 Buscando despesas:', { url, adminMode, companyId });
+
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log('📡 Resposta despesas:', response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Despesas carregadas:', data.length);
         // Mapear numeroNota do backend para numeroNotaFiscal no frontend
         const despesasMapeadas = data.map((d: Despesa & { numeroNota?: string }) => ({
           ...d,
           numeroNotaFiscal: d.numeroNota || d.numeroNotaFiscal, // Mapear campo do backend
         }));
         setDespesas(despesasMapeadas);
+      } else {
+        const errorText = await response.text();
+        console.error('❌ Erro ao carregar despesas:', response.status, errorText);
       }
     } catch (error) {
-      console.error('Erro ao carregar despesas:', error);
+      console.error('❌ Erro ao carregar despesas:', error);
     } finally {
       setLoading(false);
       setMetricsLoading(false);
     }
-  }, [companyId, isAdmin, hasAccess]);
+  }, [companyId, hasAccess]);
 
   useEffect(() => {
     if (hasAccess) {
@@ -194,26 +213,53 @@ const DespesasContent = memo(() => {
       if (!matchesSearch) return false;
     }
 
-    // Filtro por mês
-    if (selectedMonth) {
-      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
-      if (despesaMonth !== selectedMonth) return false;
-    }
-
     return true;
   });
 
-  // Se quiser usar o filtro otimizado, substitua 'filteredDespesas' por 'optimizedFilteredDespesas' nas partes relevantes do código.
-
-  // Filtro adicional por mês usando useMemo para cache
+  // Filtro adicional por mês/ano usando useMemo para cache
   const finalFilteredDespesas = useMemo(() => {
-    if (!selectedMonth) return filteredDespesas;
+    let filtered = filteredDespesas;
 
-    return filteredDespesas.filter(despesa => {
-      const despesaMonth = despesa.dataPagamento?.slice(0, 7);
-      return despesaMonth === selectedMonth;
-    });
-  }, [filteredDespesas, selectedMonth]);
+    // Filtrar por ano
+    if (selectedYear) {
+      filtered = filtered.filter(despesa => {
+        const despesaYear = despesa.dataPagamento?.slice(0, 4);
+        return despesaYear === selectedYear;
+      });
+    }
+
+    // Filtrar por mês (se selecionado)
+    if (selectedMonth) {
+      filtered = filtered.filter(despesa => {
+        const despesaMonth = despesa.dataPagamento?.slice(5, 7);
+        return despesaMonth === selectedMonth;
+      });
+    }
+
+    return filtered;
+  }, [filteredDespesas, selectedMonth, selectedYear]);
+
+  // Gerar lista de anos disponíveis (últimos 5 anos)
+  const availableYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    return Array.from({ length: 5 }, (_, i) => currentYear - i);
+  }, []);
+
+  // Nomes dos meses
+  const monthNames = [
+    'Janeiro',
+    'Fevereiro',
+    'Março',
+    'Abril',
+    'Maio',
+    'Junho',
+    'Julho',
+    'Agosto',
+    'Setembro',
+    'Outubro',
+    'Novembro',
+    'Dezembro',
+  ];
 
   // Cálculos de métricas memoizados para performance
   const metrics = useMemo(() => {
@@ -242,6 +288,12 @@ const DespesasContent = memo(() => {
     try {
       setSaving(true);
       const token = localStorage.getItem('authToken');
+      const userData = localStorage.getItem('user');
+
+      if (!userData) return;
+
+      const userObj = JSON.parse(userData);
+      const adminMode = userObj.role === 'admin';
 
       const despesaData = {
         descricao: formData.descricao,
@@ -255,7 +307,7 @@ const DespesasContent = memo(() => {
         dedutivel: formData.dedutivel,
         observacoes: formData.observacoes,
         // Se for admin, incluir companyId no body
-        ...(isAdmin && { companyId }),
+        ...(adminMode && { companyId }),
       };
 
       let response;
@@ -269,7 +321,7 @@ const DespesasContent = memo(() => {
           body: JSON.stringify(despesaData),
         });
       } else {
-        const queryParam = isAdmin ? `?companyId=${companyId}` : '';
+        const queryParam = adminMode ? `?companyId=${companyId}` : '';
         response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/despesas${queryParam}`, {
           method: 'POST',
           headers: {
@@ -394,15 +446,28 @@ const DespesasContent = memo(() => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-6">
                 <select
+                  value={selectedYear}
+                  onChange={e => setSelectedYear(e.target.value)}
+                  className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
+                >
+                  {availableYears.map(year => (
+                    <option key={year} value={year.toString()}>
+                      {year}
+                    </option>
+                  ))}
+                </select>
+
+                <select
                   value={selectedMonth}
                   onChange={e => setSelectedMonth(e.target.value)}
                   className="text-sm border-0 bg-transparent focus:outline-none text-gray-700 font-medium cursor-pointer"
                 >
-                  <option value="">Todos os períodos</option>
-                  <option value="2024-12">Dezembro 2024</option>
-                  <option value="2024-11">Novembro 2024</option>
-                  <option value="2024-10">Outubro 2024</option>
-                  <option value="2024-09">Setembro 2024</option>
+                  <option value="">Todos os meses</option>
+                  {monthNames.map((month, index) => (
+                    <option key={index} value={(index + 1).toString().padStart(2, '0')}>
+                      {month}
+                    </option>
+                  ))}
                 </select>
 
                 <div className="relative">
@@ -417,7 +482,7 @@ const DespesasContent = memo(() => {
                 </div>
               </div>
 
-              <div className="text-sm text-gray-500">{filteredDespesas.length} despesas encontradas</div>
+              <div className="text-sm text-gray-500">{finalFilteredDespesas.length} despesas encontradas</div>
             </div>
           </div>
         </div>
