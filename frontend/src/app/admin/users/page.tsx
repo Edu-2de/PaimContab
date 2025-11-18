@@ -211,7 +211,7 @@ function UsersPageContent() {
       }
 
       if (response.ok) {
-        loadUsers(pagination.page, search, filterStatus);
+        loadUsers(pagination.page, search);
       }
     } catch (error) {
       console.error('Erro ao alterar status:', error);
@@ -275,7 +275,7 @@ function UsersPageContent() {
               <ImportExcelButton
                 endpoint={`${API_BASE}/admin/users/import`}
                 requiredColumns={['Nome', 'Email', 'Senha']}
-                onSuccess={() => loadUsers(pagination.page, search, filterStatus)}
+                onSuccess={() => loadUsers(pagination.page, search)}
                 entityName="Usuários"
                 templateData={[
                   { Nome: 'João Silva', Email: 'joao@exemplo.com', Senha: 'senha123', Admin: 'Não' },
@@ -347,7 +347,7 @@ function UsersPageContent() {
                   <label className="block text-sm font-semibold text-white mb-2">Status da Conta</label>
                   <select
                     value={filterStatus}
-                    onChange={e => handleFilterChange(e.target.value)}
+                    onChange={e => setFilterStatus(e.target.value)}
                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
                     <option value="all">Todos os Status</option>
@@ -360,10 +360,7 @@ function UsersPageContent() {
                   <label className="block text-sm font-semibold text-white mb-2">Tipo de Usuário</label>
                   <select
                     value={filterRole}
-                    onChange={e => {
-                      setFilterRole(e.target.value);
-                      loadUsers(1, search, filterStatus);
-                    }}
+                    onChange={e => setFilterRole(e.target.value)}
                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
                     <option value="all">Todos os Tipos</option>
@@ -376,10 +373,7 @@ function UsersPageContent() {
                   <label className="block text-sm font-semibold text-white mb-2">Status do Plano</label>
                   <select
                     value={filterPlan}
-                    onChange={e => {
-                      setFilterPlan(e.target.value);
-                      loadUsers(1, search, filterStatus);
-                    }}
+                    onChange={e => setFilterPlan(e.target.value)}
                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
                     <option value="all">Todos os Planos</option>
@@ -398,10 +392,7 @@ function UsersPageContent() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-semibold text-white mb-2">Possui Empresa</label>
-                      <select
-                        onChange={e => handleFilterChange(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
-                      >
+                      <select className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium">
                         <option value="all">Todos</option>
                         <option value="with_company">Com Empresa</option>
                         <option value="without_company">Sem Empresa</option>
@@ -428,17 +419,11 @@ function UsersPageContent() {
                         setFilterStatus('all');
                         setFilterRole('all');
                         setFilterPlan('all');
-                        loadUsers(1, '', 'all');
+                        loadUsers(1, '');
                       }}
                       className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium text-sm"
                     >
                       Limpar Filtros
-                    </button>
-                    <button
-                      onClick={() => loadUsers(1, search, filterStatus)}
-                      className="px-4 py-2 bg-white text-gray-900 rounded-lg hover:bg-gray-100 transition-colors font-medium text-sm"
-                    >
-                      Aplicar Filtros
                     </button>
                   </div>
                 </div>
@@ -452,7 +437,7 @@ function UsersPageContent() {
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-slate-900">Lista de Usuários</h3>
                 <div className="text-sm text-slate-600">
-                  Página {pagination.page} de {pagination.totalPages}
+                  {getFilteredUsers().length} de {pagination.total} usuários
                 </div>
               </div>
             </div>
@@ -482,12 +467,12 @@ function UsersPageContent() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {users.length === 0 ? (
+                  {getFilteredUsers().length === 0 ? (
                     <tr>
                       <td colSpan={6} className="px-6 py-12 text-center">
                         <div className="flex flex-col items-center justify-center">
                           <HiUserCircle className="w-16 h-16 text-gray-300 mb-4" />
-                          <p className="text-lg font-medium text-gray-600">Nenhum resultado encontrado</p>
+                          <p className="text-lg font-medium text-gray-600">Nenhum usuário encontrado</p>
                           <p className="text-sm text-gray-500 mt-1">
                             Tente ajustar os filtros ou buscar por outros termos
                           </p>
@@ -495,7 +480,7 @@ function UsersPageContent() {
                       </td>
                     </tr>
                   ) : (
-                    users.map(user => (
+                    getFilteredUsers().map(user => (
                       <tr key={user.id} className="hover:bg-slate-50 transition-colors duration-150">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
@@ -617,7 +602,7 @@ function UsersPageContent() {
                   </p>
                   <div className="flex items-center gap-1">
                     <button
-                      onClick={() => loadUsers(Math.max(1, pagination.page - 1), search, filterStatus)}
+                      onClick={() => loadUsers(Math.max(1, pagination.page - 1), search)}
                       disabled={pagination.page === 1}
                       className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -637,7 +622,7 @@ function UsersPageContent() {
                       return (
                         <button
                           key={pageNum}
-                          onClick={() => loadUsers(pageNum, search, filterStatus)}
+                          onClick={() => loadUsers(pageNum, search)}
                           className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                             pagination.page === pageNum
                               ? 'bg-slate-700 text-white'
@@ -649,9 +634,7 @@ function UsersPageContent() {
                       );
                     })}
                     <button
-                      onClick={() =>
-                        loadUsers(Math.min(pagination.totalPages, pagination.page + 1), search, filterStatus)
-                      }
+                      onClick={() => loadUsers(Math.min(pagination.totalPages, pagination.page + 1), search)}
                       disabled={pagination.page === pagination.totalPages}
                       className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -670,7 +653,7 @@ function UsersPageContent() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={() => {
-          loadUsers(pagination.page, search, filterStatus);
+          loadUsers(pagination.page, search);
           setShowCreateModal(false);
         }}
       />

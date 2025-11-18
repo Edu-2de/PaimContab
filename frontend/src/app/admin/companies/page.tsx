@@ -72,8 +72,6 @@ function AdminCompaniesContent() {
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
         ...(searchTerm && { search: searchTerm }),
-        ...(filterStatus && filterStatus !== 'all' && { status: filterStatus }),
-        ...(filterSegment && filterSegment !== 'all' && { segment: filterSegment }),
       });
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/companies?${params}`, {
@@ -93,11 +91,28 @@ function AdminCompaniesContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, filterStatus, filterSegment]);
+  }, [currentPage, searchTerm]);
 
   useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
+
+  const getFilteredCompanies = () => {
+    return companies.filter(company => {
+      // Filtro de Status
+      if (filterStatus !== 'all') {
+        if (filterStatus === 'active' && !company.isActive) return false;
+        if (filterStatus === 'inactive' && company.isActive) return false;
+      }
+
+      // Filtro de Segmento
+      if (filterSegment !== 'all') {
+        if (!company.businessSegment || company.businessSegment !== filterSegment) return false;
+      }
+
+      return true;
+    });
+  };
 
   const handleDeleteCompany = async (companyId: string) => {
     if (!confirm('Tem certeza que deseja excluir esta empresa? Esta ação não pode ser desfeita.')) {
@@ -140,22 +155,6 @@ function AdminCompaniesContent() {
     if (!cnpj) return '-';
     return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
   };
-
-  const filteredCompanies = companies.filter(company => {
-    const matchesSearch =
-      !searchTerm ||
-      company.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.cnpj?.includes(searchTerm) ||
-      company.businessEmail?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      company.user?.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus =
-      filterStatus === 'all' ||
-      (filterStatus === 'active' && company.isActive) ||
-      (filterStatus === 'inactive' && !company.isActive);
-
-    return matchesSearch && matchesStatus;
-  });
 
   if (loading) {
     return (
@@ -400,13 +399,12 @@ function AdminCompaniesContent() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCompanies.length === 0 ? (
+                    {getFilteredCompanies().length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-6 py-12 text-center">
                           <div className="flex flex-col items-center justify-center">
-                          
-                       
-                            <p className="text-lg font-medium text-gray-600">Nenhum resultado encontrado</p>
+                            <HiOfficeBuilding className="w-16 h-16 text-gray-300 mb-4" />
+                            <p className="text-lg font-medium text-gray-600">Nenhuma empresa encontrada</p>
                             <p className="text-sm text-gray-500 mt-1">
                               Tente ajustar os filtros ou buscar por outros termos
                             </p>
@@ -414,7 +412,7 @@ function AdminCompaniesContent() {
                         </td>
                       </tr>
                     ) : (
-                      filteredCompanies.map(company => (
+                      getFilteredCompanies().map(company => (
                         <tr key={company.id} className="hover:bg-gray-50">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div>
