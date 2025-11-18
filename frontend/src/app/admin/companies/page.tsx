@@ -73,6 +73,7 @@ function AdminCompaniesContent() {
         limit: itemsPerPage.toString(),
         ...(searchTerm && { search: searchTerm }),
         ...(filterStatus && filterStatus !== 'all' && { status: filterStatus }),
+        ...(filterSegment && filterSegment !== 'all' && { segment: filterSegment }),
       });
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/companies?${params}`, {
@@ -92,7 +93,7 @@ function AdminCompaniesContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, filterStatus]);
+  }, [currentPage, searchTerm, filterStatus, filterSegment]);
 
   useEffect(() => {
     fetchCompanies();
@@ -399,51 +400,66 @@ function AdminCompaniesContent() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCompanies.map(company => (
-                      <tr key={company.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{company.companyName || '-'}</div>
-                            {company.businessEmail && (
-                              <div className="text-sm text-gray-500">{company.businessEmail}</div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{formatCNPJ(company.cnpj)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{company.user?.name || '-'}</div>
-                            {company.user?.email && <div className="text-sm text-gray-500">{company.user.email}</div>}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(company.isActive)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(company.createdAt)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Link
-                              href={`/admin/companies/edit/${company.id}`}
-                              className="inline-flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                              title="Ver detalhes"
-                            >
-                              <HiEye className="w-4 h-4" />
-                              Visualizar
-                            </Link>
-                            <button
-                              onClick={() => handleDeleteCompany(company.id)}
-                              className="inline-flex items-center gap-1 px-3 py-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
-                              title="Excluir empresa"
-                            >
-                              <HiTrash className="w-4 h-4" />
-                              Deletar
-                            </button>
+                    {filteredCompanies.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                          
+                       
+                            <p className="text-lg font-medium text-gray-600">Nenhum resultado encontrado</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Tente ajustar os filtros ou buscar por outros termos
+                            </p>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      filteredCompanies.map(company => (
+                        <tr key={company.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{company.companyName || '-'}</div>
+                              {company.businessEmail && (
+                                <div className="text-sm text-gray-500">{company.businessEmail}</div>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{formatCNPJ(company.cnpj)}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">{company.user?.name || '-'}</div>
+                              {company.user?.email && <div className="text-sm text-gray-500">{company.user.email}</div>}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(company.isActive)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(company.createdAt)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Link
+                                href={`/admin/companies/edit/${company.id}`}
+                                className="inline-flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Ver detalhes"
+                              >
+                                <HiEye className="w-4 h-4" />
+                                Visualizar
+                              </Link>
+                              <button
+                                onClick={() => handleDeleteCompany(company.id)}
+                                className="inline-flex items-center gap-1 px-3 py-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Excluir empresa"
+                              >
+                                <HiTrash className="w-4 h-4" />
+                                Deletar
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

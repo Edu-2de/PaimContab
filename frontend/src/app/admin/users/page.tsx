@@ -116,7 +116,7 @@ function UsersPageContent() {
     }
   }, []);
 
-  const loadUsers = async (page = 1, searchTerm = '', status = 'all') => {
+  const loadUsers = async (page = 1, searchTerm = '') => {
     try {
       setLoading(true);
       const token = localStorage.getItem('authToken');
@@ -126,10 +126,7 @@ function UsersPageContent() {
         return;
       }
 
-      let url = `/api/admin/users?page=${page}&limit=20&search=${searchTerm}`;
-      if (status !== 'all') {
-        url += `&status=${status}`;
-      }
+      const url = `/api/admin/users?page=${page}&limit=20&search=${searchTerm}`;
 
       const response = await fetch(url, {
         headers: {
@@ -157,14 +154,36 @@ function UsersPageContent() {
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    loadUsers(1, search, filterStatus);
+  // Filtrar usuários no frontend
+  const getFilteredUsers = () => {
+    return users.filter(user => {
+      // Filtro de Status da Conta
+      if (filterStatus !== 'all') {
+        if (filterStatus === 'active' && !user.isActive) return false;
+        if (filterStatus === 'inactive' && user.isActive) return false;
+      }
+
+      // Filtro de Tipo de Usuário
+      if (filterRole !== 'all') {
+        if (filterRole === 'admin' && user.role !== 'admin') return false;
+        if (filterRole === 'user' && user.role !== 'user') return false;
+      }
+
+      // Filtro de Status do Plano
+      if (filterPlan !== 'all') {
+        if (filterPlan === 'active' && user.currentSubscription?.status !== 'active') return false;
+        if (filterPlan === 'canceled' && user.currentSubscription?.status !== 'canceled') return false;
+        if (filterPlan === 'pending' && user.currentSubscription?.status !== 'pending') return false;
+        if (filterPlan === 'no_plan' && user.currentSubscription) return false;
+      }
+
+      return true;
+    });
   };
 
-  const handleFilterChange = (status: string) => {
-    setFilterStatus(status);
-    loadUsers(1, search, status);
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadUsers(1, search);
   };
 
   const toggleUserStatus = async (userId: string, currentStatus: boolean) => {
