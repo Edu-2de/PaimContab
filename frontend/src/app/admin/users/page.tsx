@@ -267,8 +267,8 @@ function UsersPageContent() {
                 onClick={() => setShowCreateModal(true)}
                 className="flex items-center gap-2 px-4 py-2.5 bg-[#1e2939] text-white rounded-lg hover:bg-slate-800 transition-colors font-medium"
               >
-                <HiPlus  className="w-4 h-4" />
-                 Novo Usuário
+                <HiPlus className="w-4 h-4" />
+                Novo Usuário
               </button>
             </div>
           </div>
@@ -341,7 +341,10 @@ function UsersPageContent() {
                   <label className="block text-sm font-semibold text-white mb-2">Tipo de Usuário</label>
                   <select
                     value={filterRole}
-                    onChange={e => setFilterRole(e.target.value)}
+                    onChange={e => {
+                      setFilterRole(e.target.value);
+                      loadUsers(1, search, filterStatus);
+                    }}
                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
                     <option value="all">Todos os Tipos</option>
@@ -354,7 +357,10 @@ function UsersPageContent() {
                   <label className="block text-sm font-semibold text-white mb-2">Status do Plano</label>
                   <select
                     value={filterPlan}
-                    onChange={e => setFilterPlan(e.target.value)}
+                    onChange={e => {
+                      setFilterPlan(e.target.value);
+                      loadUsers(1, search, filterStatus);
+                    }}
                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
                     <option value="all">Todos os Planos</option>
@@ -457,110 +463,124 @@ function UsersPageContent() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
-                  {users.map(user => (
-                    <tr key={user.id} className="hover:bg-slate-50 transition-colors duration-150">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
-                            <HiUserCircle className="w-8 h-8 text-slate-600" />
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-semibold text-slate-900">{user.name}</div>
-                            <div className="text-sm text-slate-600">{user.email}</div>
-                            <div className="text-xs text-slate-400 font-medium uppercase">{user.role}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {user.company ? (
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">{user.company.companyName}</div>
-                            <div className="text-sm text-slate-600">
-                              {user.company.businessSegment || 'Não informado'}
-                            </div>
-                            <div className="text-xs text-slate-400">
-                              {user.company.city && user.company.state
-                                ? `${user.company.city}, ${user.company.state}`
-                                : 'Localização não informada'}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center">
-                            <div className="w-2 h-2 bg-slate-300 rounded-full mr-2"></div>
-                            <span className="text-sm text-slate-500 font-medium">Não cadastrada</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {user.currentSubscription ? (
-                          <div>
-                            <div className="text-sm font-medium text-slate-900">
-                              {user.currentSubscription.plan.name}
-                            </div>
-                            <div className="text-sm text-slate-600 font-semibold">
-                              {formatCurrency(user.currentSubscription.amount)}
-                            </div>
-                            {getPlanStatusBadge(user.currentSubscription.status)}
-                          </div>
-                        ) : (
-                          <div className="flex items-center">
-                            <div className="w-2 h-2 bg-slate-300 rounded-full mr-2"></div>
-                            <span className="text-sm text-slate-500 font-medium">Sem plano ativo</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {user.isActive ? (
-                          <div className="flex items-center gap-2">
-                            <HiCheckCircle className="w-5 h-5 text-emerald-600" />
-                            <span className="text-sm font-semibold text-emerald-700">Ativo</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <HiXCircle className="w-5 h-5 text-red-500" />
-                            <span className="text-sm font-semibold text-red-600">Inativo</span>
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-600 font-medium">{formatDate(user.createdAt)}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Link
-                            href={`/admin/users/${user.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
-                            title="Ver detalhes"
-                          >
-                            <HiEye className="w-4 h-4" />
-                            Detalhes
-                          </Link>
-                          <button
-                            onClick={() => toggleUserStatus(user.id, user.isActive)}
-                            className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                              user.isActive ? 'text-red-700 hover:bg-red-50' : 'text-emerald-700 hover:bg-emerald-50'
-                            }`}
-                            title={user.isActive ? 'Desativar' : 'Ativar'}
-                          >
-                            {user.isActive ? (
-                              <>
-                                <HiXCircle className="w-4 h-4" />
-                                Desativar
-                              </>
-                            ) : (
-                              <>
-                                <HiCheckCircle className="w-4 h-4" />
-                                Ativar
-                              </>
-                            )}
-                          </button>
-                          <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                            <HiEllipsisVertical className="w-4 h-4" />
-                          </button>
+                  {users.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <HiUserCircle className="w-16 h-16 text-gray-300 mb-4" />
+                          <p className="text-lg font-medium text-gray-600">Nenhum resultado encontrado</p>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Tente ajustar os filtros ou buscar por outros termos
+                          </p>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    users.map(user => (
+                      <tr key={user.id} className="hover:bg-slate-50 transition-colors duration-150">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center">
+                              <HiUserCircle className="w-8 h-8 text-slate-600" />
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-semibold text-slate-900">{user.name}</div>
+                              <div className="text-sm text-slate-600">{user.email}</div>
+                              <div className="text-xs text-slate-400 font-medium uppercase">{user.role}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {user.company ? (
+                            <div>
+                              <div className="text-sm font-medium text-slate-900">{user.company.companyName}</div>
+                              <div className="text-sm text-slate-600">
+                                {user.company.businessSegment || 'Não informado'}
+                              </div>
+                              <div className="text-xs text-slate-400">
+                                {user.company.city && user.company.state
+                                  ? `${user.company.city}, ${user.company.state}`
+                                  : 'Localização não informada'}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 bg-slate-300 rounded-full mr-2"></div>
+                              <span className="text-sm text-slate-500 font-medium">Não cadastrada</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {user.currentSubscription ? (
+                            <div>
+                              <div className="text-sm font-medium text-slate-900">
+                                {user.currentSubscription.plan.name}
+                              </div>
+                              <div className="text-sm text-slate-600 font-semibold">
+                                {formatCurrency(user.currentSubscription.amount)}
+                              </div>
+                              {getPlanStatusBadge(user.currentSubscription.status)}
+                            </div>
+                          ) : (
+                            <div className="flex items-center">
+                              <div className="w-2 h-2 bg-slate-300 rounded-full mr-2"></div>
+                              <span className="text-sm text-slate-500 font-medium">Sem plano ativo</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {user.isActive ? (
+                            <div className="flex items-center gap-2">
+                              <HiCheckCircle className="w-5 h-5 text-emerald-600" />
+                              <span className="text-sm font-semibold text-emerald-700">Ativo</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <HiXCircle className="w-5 h-5 text-red-500" />
+                              <span className="text-sm font-semibold text-red-600">Inativo</span>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-slate-600 font-medium">{formatDate(user.createdAt)}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link
+                              href={`/admin/users/${user.id}`}
+                              className="inline-flex items-center gap-1 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors text-sm font-medium"
+                              title="Ver detalhes"
+                            >
+                              <HiEye className="w-4 h-4" />
+                              Detalhes
+                            </Link>
+                            <button
+                              onClick={() => toggleUserStatus(user.id, user.isActive)}
+                              className={`inline-flex items-center gap-1 px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
+                                user.isActive ? 'text-red-700 hover:bg-red-50' : 'text-emerald-700 hover:bg-emerald-50'
+                              }`}
+                              title={user.isActive ? 'Desativar' : 'Ativar'}
+                            >
+                              {user.isActive ? (
+                                <>
+                                  <HiXCircle className="w-4 h-4" />
+                                  Desativar
+                                </>
+                              ) : (
+                                <>
+                                  <HiCheckCircle className="w-4 h-4" />
+                                  Ativar
+                                </>
+                              )}
+                            </button>
+                            <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                              <HiEllipsisVertical className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
