@@ -31,8 +31,8 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
 
   const fetchUsers = async () => {
     try {
-      console.log('🔍 Buscando usuários para criar assinatura...');
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=1000`;
+      console.log('🔍 Buscando usuários sem assinatura...');
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=1000&withoutSubscription=true`;
       console.log('📍 URL:', url);
 
       const response = await apiClient.get(url);
@@ -41,7 +41,7 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
       if (response.success && response.data) {
         const data = response.data as { users?: Array<{ id: string; name: string; email: string }> };
         if (data.users && Array.isArray(data.users)) {
-          console.log('✅ Usuários carregados:', data.users.length);
+          console.log('✅ Usuários sem assinatura carregados:', data.users.length);
           setUsers(data.users);
         } else {
           console.warn('⚠️ Formato inesperado:', data);
@@ -57,7 +57,7 @@ export default function CreateSubscriptionModal({ isOpen, onClose, onSuccess }: 
   const fetchPlans = async () => {
     try {
       console.log('🔍 Buscando planos...');
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/plans`;
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payment/plans`;
       console.log('📍 URL:', url);
 
       const response = await apiClient.get(url);

@@ -30,8 +30,8 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
 
   const fetchUsers = async () => {
     try {
-      console.log('🔍 Buscando usuários para criar empresa...');
-      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=1000`;
+      console.log('🔍 Buscando usuários sem empresa...');
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/users?limit=1000&withoutCompany=true`;
       console.log('📍 URL:', url);
 
       const response = await apiClient.get(url);
@@ -40,7 +40,7 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
       if (response.success && response.data) {
         const data = response.data as { users?: Array<{ id: string; name: string; email: string }> };
         if (data.users && Array.isArray(data.users)) {
-          console.log('✅ Usuários carregados:', data.users.length);
+          console.log('✅ Usuários sem empresa carregados:', data.users.length);
           setUsers(data.users);
         } else {
           console.warn('⚠️ Formato inesperado:', data);
@@ -112,13 +112,20 @@ export default function CreateCompanyModal({ isOpen, onClose, onSuccess }: Creat
               onChange={e => setFormData({ ...formData, userId: e.target.value })}
               className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-offset-0 font-medium text-gray-900 transition-all placeholder:text-gray-400 hover:border-gray-300"
               style={{ ['--tw-ring-color' as string]: '#1e2939' } as React.CSSProperties}
+              disabled={users.length === 0}
             >
-              <option value="">Selecione um usuário</option>
-              {users.map(user => (
-                <option key={user.id} value={user.id}>
-                  {user.name} ({user.email})
-                </option>
-              ))}
+              {users.length === 0 ? (
+                <option value="">Carregando usuários...</option>
+              ) : (
+                <>
+                  <option value="">Selecione um usuário</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email})
+                    </option>
+                  ))}
+                </>
+              )}
             </select>
           </div>
 
