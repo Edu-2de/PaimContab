@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 import AdminProtection from '../../../components/AdminProtection';
 import ExportButton from '../../../components/ExportButton';
@@ -62,14 +62,13 @@ function AdminSubscriptionsContent() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const itemsPerPage = 10;
 
-  const fetchSubscriptions = useCallback(async () => {
+  const fetchSubscriptions = async (searchQuery?: string) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
-        ...(searchTerm && { search: searchTerm }),
-        ...(filterStatus && filterStatus !== 'all' && { status: filterStatus }),
+        ...(searchQuery && { search: searchQuery }),
       });
 
       const response = await fetch(`${API_BASE}/admin/subscriptions?${params}`, {
@@ -94,11 +93,28 @@ function AdminSubscriptionsContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, filterStatus]);
+  };
 
   useEffect(() => {
     fetchSubscriptions();
-  }, [fetchSubscriptions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  const getFilteredSubscriptions = () => {
+    return subscriptions.filter(subscription => {
+      // Filtro de Status
+      if (filterStatus !== 'all') {
+        if (subscription.status !== filterStatus) return false;
+      }
+
+      // Filtro de Plano
+      if (filterPlan !== 'all') {
+        if (!subscription.plan || subscription.plan.name !== filterPlan) return false;
+      }
+
+      return true;
+    });
+  };
 
   const handleCancelSubscription = async (subscriptionId: string) => {
     if (!confirm('Tem certeza que deseja cancelar esta assinatura?')) {
@@ -149,18 +165,6 @@ function AdminSubscriptionsContent() {
       currency: 'BRL',
     }).format(value);
   };
-
-  const filteredSubscriptions = subscriptions.filter(subscription => {
-    const matchesSearch =
-      !searchTerm ||
-      subscription.user?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      subscription.user?.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      subscription.plan?.name.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = filterStatus === 'all' || subscription.status === filterStatus;
-
-    return matchesSearch && matchesStatus;
-  });
 
   if (loading) {
     return (
@@ -233,8 +237,8 @@ function AdminSubscriptionsContent() {
                   <div>
                     <h2 className="text-lg font-bold text-white">Filtros e Pesquisa</h2>
                     <p className="text-sm text-gray-300">
-                      {filteredSubscriptions.length}{' '}
-                      {filteredSubscriptions.length === 1 ? 'assinatura encontrada' : 'assinaturas encontradas'}
+                      {getFilteredSubscriptions().length}{' '}
+                      {getFilteredSubscriptions().length === 1 ? 'assinatura encontrada' : 'assinaturas encontradas'}
                     </p>
                   </div>
                 </div>
@@ -250,24 +254,38 @@ function AdminSubscriptionsContent() {
 
             {/* Barra de Pesquisa Principal */}
             <div className="p-6">
-              <div className="flex gap-3 mb-4">
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  setCurrentPage(1);
+                  fetchSubscriptions(searchTerm);
+                }}
+                className="flex gap-3 mb-4"
+              >
                 <div className="relative flex-1">
                   <HiMagnifyingGlass className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
+                    onKeyPress={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        setCurrentPage(1);
+                        fetchSubscriptions(searchTerm);
+                      }
+                    }}
                     placeholder="Pesquisar por usuário, plano ou email..."
                     className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   />
                 </div>
                 <button
-                  type="button"
+                  type="submit"
                   className="px-6 py-3 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-all font-semibold whitespace-nowrap"
                 >
                   Buscar
                 </button>
-              </div>
+              </form>
 
               {/* Filtros Rápidos */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -366,12 +384,12 @@ function AdminSubscriptionsContent() {
           </div>
 
           {/* Content */}
-          {filteredSubscriptions.length === 0 ? (
-            <div className="text-center py-12">
+          {getFilteredSubscriptions().length === 0 && !loading ? (
+            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
               <HiCreditCard className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma assinatura encontrada</h3>
               <p className="text-gray-600">
-                {searchTerm || filterStatus
+                {searchTerm || filterStatus !== 'all' || filterPlan !== 'all'
                   ? 'Tente ajustar os filtros de busca'
                   : 'Não há assinaturas cadastradas no sistema'}
               </p>
@@ -406,54 +424,74 @@ function AdminSubscriptionsContent() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredSubscriptions.map(subscription => (
-                      <tr key={subscription.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{subscription.user?.name || 'N/A'}</div>
-                            <div className="text-sm text-gray-500">{subscription.user?.email || 'N/A'}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{subscription.plan?.name || 'N/A'}</div>
-                            <div className="text-sm text-gray-500">{subscription.plan?.billingCycle || 'N/A'}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{formatCurrency(subscription.amount)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(subscription.status)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate(subscription.startDate)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {subscription.endDate ? formatDate(subscription.endDate) : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Link
-                              href={`/admin/subscriptions/${subscription.id}`}
-                              className="inline-flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
-                              title="Ver detalhes"
-                            >
-                              <HiEye className="w-4 h-4" />
-                              Visualizar
-                            </Link>
-                            {subscription.status === 'active' && (
-                              <button
-                                onClick={() => handleCancelSubscription(subscription.id)}
-                                className="inline-flex items-center gap-1 px-3 py-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
-                                title="Cancelar assinatura"
-                              >
-                                <HiTrash className="w-4 h-4" />
-                                Cancelar
-                              </button>
-                            )}
+                    {getFilteredSubscriptions().length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-12 text-center">
+                          <div className="flex flex-col items-center justify-center">
+                            <HiCreditCard className="w-16 h-16 text-gray-300 mb-4" />
+                            <p className="text-lg font-medium text-gray-600">Nenhuma assinatura encontrada</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Tente ajustar os filtros ou buscar por outros termos
+                            </p>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    ) : (
+                      getFilteredSubscriptions().map(subscription => (
+                        <tr key={subscription.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {subscription.user?.name || 'N/A'}
+                              </div>
+                              <div className="text-sm text-gray-500">{subscription.user?.email || 'N/A'}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {subscription.plan?.name || 'N/A'}
+                              </div>
+                              <div className="text-sm text-gray-500">{subscription.plan?.billingCycle || 'N/A'}</div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {formatCurrency(subscription.amount)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(subscription.status)}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(subscription.startDate)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {subscription.endDate ? formatDate(subscription.endDate) : 'N/A'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Link
+                                href={`/admin/subscriptions/${subscription.id}`}
+                                className="inline-flex items-center gap-1 px-3 py-2 text-gray-600 hover:bg-blue-50 rounded-lg transition-colors text-sm font-medium"
+                                title="Ver detalhes"
+                              >
+                                <HiEye className="w-4 h-4" />
+                                Visualizar
+                              </Link>
+                              {subscription.status === 'active' && (
+                                <button
+                                  onClick={() => handleCancelSubscription(subscription.id)}
+                                  className="inline-flex items-center gap-1 px-3 py-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
+                                  title="Cancelar assinatura"
+                                >
+                                  <HiTrash className="w-4 h-4" />
+                                  Cancelar
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
                   </tbody>
                 </table>
               </div>

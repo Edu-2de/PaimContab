@@ -12,7 +12,6 @@ import {
   HiUserCircle,
   HiCheckCircle,
   HiXCircle,
-  HiUserPlus,
   HiAdjustmentsHorizontal,
   HiChevronLeft,
   HiChevronRight,

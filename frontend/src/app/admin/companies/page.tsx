@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import AdminSidebar from '../../../components/AdminSidebar';
 import AdminProtection from '../../../components/AdminProtection';
 import ExportButton from '../../../components/ExportButton';
@@ -10,12 +10,14 @@ import Link from 'next/link';
 import {
   HiMagnifyingGlass,
   HiEye,
-  HiTrash,
+  HiXCircle,
+  HiCheckCircle,
   HiPlus,
   HiAdjustmentsHorizontal,
   HiChevronLeft,
   HiChevronRight,
   HiUserGroup,
+  HiBuildingOffice2,
 } from 'react-icons/hi2';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -63,15 +65,16 @@ function AdminCompaniesContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [availableSegments, setAvailableSegments] = useState<string[]>([]);
   const itemsPerPage = 10;
 
-  const fetchCompanies = useCallback(async () => {
+  const fetchCompanies = async (searchQuery?: string) => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: itemsPerPage.toString(),
-        ...(searchTerm && { search: searchTerm }),
+        ...(searchQuery && { search: searchQuery }),
       });
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/companies?${params}`, {
@@ -85,17 +88,23 @@ function AdminCompaniesContent() {
       const data = await response.json();
       setCompanies(data.companies || []);
       setTotalPages(Math.ceil(data.total / itemsPerPage));
+
+      // Extrair segmentos únicos
+      const segments = [...new Set(data.companies.map((c: Company) => c.businessSegment).filter(Boolean))];
+      setAvailableSegments(segments as string[]);
     } catch (error) {
       console.error('Erro:', error);
       setCompanies([]);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm]);
+  };
 
   useEffect(() => {
+    // Carregar apenas na primeira vez ou quando mudar página
     fetchCompanies();
-  }, [fetchCompanies]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
 
   const getFilteredCompanies = () => {
     return companies.filter(company => {
@@ -114,25 +123,27 @@ function AdminCompaniesContent() {
     });
   };
 
-  const handleDeleteCompany = async (companyId: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta empresa? Esta ação não pode ser desfeita.')) {
+  const handleToggleCompanyStatus = async (companyId: string, currentStatus: boolean) => {
+    if (!confirm(`Tem certeza que deseja ${currentStatus ? 'desativar' : 'ativar'} esta empresa?`)) {
       return;
     }
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/admin/companies/${companyId}`, {
-        method: 'DELETE',
+        method: 'PATCH',
         headers: {
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('authToken')}`,
         },
+        body: JSON.stringify({ isActive: !currentStatus }),
       });
 
-      if (!response.ok) throw new Error('Erro ao excluir empresa');
+      if (!response.ok) throw new Error('Erro ao alterar status da empresa');
 
       await fetchCompanies();
     } catch (error) {
       console.error('Erro:', error);
-      alert('Erro ao excluir empresa');
+      alert('Erro ao alterar status da empresa');
     }
   };
 
@@ -232,8 +243,8 @@ function AdminCompaniesContent() {
                   <div>
                     <h2 className="text-lg font-bold text-white">Filtros e Pesquisa</h2>
                     <p className="text-sm text-gray-300">
-                      {filteredCompanies.length}{' '}
-                      {filteredCompanies.length === 1 ? 'empresa encontrada' : 'empresas encontradas'}
+                      {getFilteredCompanies().length}{' '}
+                      {getFilteredCompanies().length === 1 ? 'empresa encontrada' : 'empresas encontradas'}
                     </p>
                   </div>
                 </div>
@@ -249,27 +260,41 @@ function AdminCompaniesContent() {
 
             {/* Barra de Pesquisa Principal */}
             <div className="p-6">
-              <div className="flex gap-3 mb-4">
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  setCurrentPage(1);
+                  fetchCompanies(searchTerm);
+                }}
+                className="flex gap-3 mb-4"
+              >
                 <div className="relative flex-1">
                   <HiMagnifyingGlass className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={e => setSearchTerm(e.target.value)}
+                    onKeyPress={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        setCurrentPage(1);
+                        fetchCompanies(searchTerm);
+                      }
+                    }}
                     placeholder="Pesquisar por nome, CNPJ ou cidade..."
                     className="w-full pl-12 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   />
                 </div>
                 <button
-                  type="button"
+                  type="submit"
                   className="px-6 py-3 bg-white text-gray-900 rounded-xl hover:bg-gray-100 transition-all font-semibold whitespace-nowrap"
                 >
                   Buscar
                 </button>
-              </div>
+              </form>
 
               {/* Filtros Rápidos */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-white mb-2">Status</label>
                   <select
@@ -291,19 +316,11 @@ function AdminCompaniesContent() {
                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium"
                   >
                     <option value="all">Todos os Segmentos</option>
-                    <option value="commerce">Comércio</option>
-                    <option value="service">Serviços</option>
-                    <option value="industry">Indústria</option>
-                    <option value="technology">Tecnologia</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-white mb-2">Possui Usuário</label>
-                  <select className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent transition-all font-medium">
-                    <option value="all">Todas</option>
-                    <option value="with_user">Com Usuário</option>
-                    <option value="without_user">Sem Usuário</option>
+                    {availableSegments.map(segment => (
+                      <option key={segment} value={segment}>
+                        {segment}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -362,12 +379,12 @@ function AdminCompaniesContent() {
           </div>
 
           {/* Content */}
-          {filteredCompanies.length === 0 ? (
-            <div className="text-center py-12">
+          {getFilteredCompanies().length === 0 && !loading ? (
+            <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
               <HiUserGroup className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma empresa encontrada</h3>
               <p className="text-gray-600">
-                {searchTerm || filterStatus
+                {searchTerm || filterStatus !== 'all' || filterSegment !== 'all'
                   ? 'Tente ajustar os filtros de busca'
                   : 'Não há empresas cadastradas no sistema'}
               </p>
@@ -383,6 +400,9 @@ function AdminCompaniesContent() {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         CNPJ
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Segmento
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Usuário
@@ -401,9 +421,9 @@ function AdminCompaniesContent() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {getFilteredCompanies().length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center">
+                        <td colSpan={7} className="px-6 py-12 text-center">
                           <div className="flex flex-col items-center justify-center">
-                            <HiOfficeBuilding className="w-16 h-16 text-gray-300 mb-4" />
+                            <HiBuildingOffice2 className="w-16 h-16 text-gray-300 mb-4" />
                             <p className="text-lg font-medium text-gray-600">Nenhuma empresa encontrada</p>
                             <p className="text-sm text-gray-500 mt-1">
                               Tente ajustar os filtros ou buscar por outros termos
@@ -426,6 +446,9 @@ function AdminCompaniesContent() {
                             <div className="text-sm text-gray-900">{formatCNPJ(company.cnpj)}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-700 font-medium">{company.businessSegment || '-'}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <div>
                               <div className="text-sm font-medium text-gray-900">{company.user?.name || '-'}</div>
                               {company.user?.email && <div className="text-sm text-gray-500">{company.user.email}</div>}
@@ -446,12 +469,25 @@ function AdminCompaniesContent() {
                                 Visualizar
                               </Link>
                               <button
-                                onClick={() => handleDeleteCompany(company.id)}
-                                className="inline-flex items-center gap-1 px-3 py-2 text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm font-medium"
-                                title="Excluir empresa"
+                                onClick={() => handleToggleCompanyStatus(company.id, company.isActive)}
+                                className={`inline-flex items-center gap-1 px-3 py-2 rounded ${
+                                  company.isActive
+                                    ? 'text-red-700 hover:bg-red-50'
+                                    : 'text-emerald-700 hover:bg-emerald-50'
+                                }`}
+                                title={company.isActive ? 'Desativar empresa' : 'Ativar empresa'}
                               >
-                                <HiTrash className="w-4 h-4" />
-                                Deletar
+                                {company.isActive ? (
+                                  <>
+                                    <HiXCircle className="w-4 h-4" />
+                                    Desativar
+                                  </>
+                                ) : (
+                                  <>
+                                    <HiCheckCircle className="w-4 h-4" />
+                                    Ativar
+                                  </>
+                                )}
                               </button>
                             </div>
                           </td>

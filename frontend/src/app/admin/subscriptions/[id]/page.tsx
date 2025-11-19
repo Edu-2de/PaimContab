@@ -263,14 +263,12 @@ export default function SubscriptionDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div>
         <AdminSidebar currentPage="subscriptions" />
-        <div className="admin-content-wrapper">
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-gray-900 mx-auto mb-4"></div>
-              <p className="text-gray-800 font-medium">Carregando assinatura...</p>
-            </div>
+        <div className="ml-64 flex items-center justify-center bg-white min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-gray-900 mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando assinatura...</p>
           </div>
         </div>
       </div>
@@ -279,14 +277,14 @@ export default function SubscriptionDetailsPage() {
 
   if (error && !subscription) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div>
         <AdminSidebar currentPage="subscriptions" />
-        <div className="admin-content-wrapper">
+        <div className="ml-64 min-h-screen bg-white">
           <div className="p-8">
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg font-medium">{error}</div>
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">{error}</div>
             <button
               onClick={() => router.push('/admin/subscriptions')}
-              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-all duration-200"
             >
               <HiArrowLeft className="w-5 h-5" />
               Voltar para Assinaturas
@@ -300,28 +298,29 @@ export default function SubscriptionDetailsPage() {
   if (!subscription) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div>
       <AdminSidebar currentPage="subscriptions" />
-      <div className="admin-content-wrapper">
+      <div className="ml-64 min-h-screen bg-white">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-8 py-6">
+        <div className="bg-white border-b border-gray-100 px-8 py-6 shadow-sm">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => router.push('/admin/subscriptions')}
-                className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 mb-2 transition-colors font-medium"
+                className="flex items-center justify-center w-10 h-10 text-gray-500 hover:text-gray-700 hover:bg-gray-50 rounded-lg transition-all duration-200"
               >
                 <HiArrowLeft className="w-5 h-5" />
-                <span>Voltar</span>
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">Detalhes da Assinatura</h1>
-              <p className="text-gray-600 mt-1 font-medium">Gerencie e visualize informações completas</p>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Detalhes da Assinatura</h1>
+                <p className="text-gray-500 mt-1 text-sm">Gerencie e visualize informações completas</p>
+              </div>
             </div>
             <div className="flex gap-3">
               {subscription.isActive ? (
                 <button
                   onClick={handleCancelSubscription}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-lg transition-all duration-200 font-medium"
                 >
                   <HiXCircle className="w-5 h-5" />
                   Cancelar Assinatura
@@ -329,7 +328,7 @@ export default function SubscriptionDetailsPage() {
               ) : (
                 <button
                   onClick={handleReactivateSubscription}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg transition-all duration-200 font-medium"
                 >
                   <HiCheckCircle className="w-5 h-5" />
                   Reativar Assinatura
@@ -343,147 +342,147 @@ export default function SubscriptionDetailsPage() {
         <div className="p-8">
           {/* Alerts */}
           {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg font-medium">
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
               {error}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg font-medium">
+            <div className="mb-6 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
               {successMessage}
             </div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Card: Informações do Usuário */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <HiUser className="w-6 h-6 text-gray-700" />
-                </div>
-                <h2 className="text-lg font-semibold text-gray-900">Informações do Usuário</h2>
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <HiUser className="w-5 h-5 text-gray-500" />
+                  Informações do Usuário
+                </h2>
               </div>
-              <div className="space-y-4">
+              <div className="p-6 space-y-4">
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Nome</span>
-                  <p className="text-gray-900 font-medium">{subscription.user.name}</p>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Nome</span>
+                  <p className="text-gray-900">{subscription.user.name}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Email</span>
-                  <p className="text-gray-900 font-medium">{subscription.user.email}</p>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Email</span>
+                  <p className="text-gray-900">{subscription.user.email}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Cadastrado em</span>
-                  <p className="text-gray-900 font-medium">{formatDate(subscription.user.createdAt)}</p>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Cadastrado em</span>
+                  <p className="text-gray-900">{formatDate(subscription.user.createdAt)}</p>
                 </div>
               </div>
             </div>
 
             {/* Card: Informações do Plano */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <HiCreditCard className="w-6 h-6 text-gray-700" />
-                </div>
-                <h2 className="text-lg font-semibold text-gray-900">Plano Atual</h2>
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <HiCreditCard className="w-5 h-5 text-gray-500" />
+                  Plano Atual
+                </h2>
               </div>
-              <div className="space-y-4">
+              <div className="p-6 space-y-4">
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Plano</span>
-                  <p className="text-gray-900 font-medium">{subscription.plan.name}</p>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Plano</span>
+                  <p className="text-gray-900">{subscription.plan.name}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Preço Original</span>
-                  <p className="text-gray-900 font-medium">
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Preço Original</span>
+                  <p className="text-gray-900">
                     {formatCurrency(subscription.originalAmount || subscription.plan.price)}
                   </p>
                 </div>
                 {subscription.discount && (
                   <div>
-                    <span className="text-sm text-gray-600 font-medium block mb-1">Desconto</span>
-                    <p className="text-green-600 font-semibold">{subscription.discount.percentage}% OFF</p>
+                    <span className="text-sm text-gray-500 font-medium block mb-1">Desconto</span>
+                    <p className="text-emerald-600 font-semibold">{subscription.discount.percentage}% OFF</p>
                   </div>
                 )}
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Preço Final</span>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Preço Final</span>
                   <p className="text-2xl font-bold text-gray-900">{formatCurrency(subscription.amount)}</p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Ciclo de Cobrança</span>
-                  <p className="text-gray-900 font-medium capitalize">{subscription.plan.billingCycle}</p>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Ciclo de Cobrança</span>
+                  <p className="text-gray-900 capitalize">{subscription.plan.billingCycle}</p>
                 </div>
               </div>
             </div>
 
             {/* Card: Detalhes da Assinatura */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="p-2 bg-gray-100 rounded-lg">
-                  <HiCalendar className="w-6 h-6 text-gray-700" />
-                </div>
-                <h2 className="text-lg font-semibold text-gray-900">Detalhes da Assinatura</h2>
+            <div className="bg-white border border-gray-100 rounded-xl shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                  <HiCalendar className="w-5 h-5 text-gray-500" />
+                  Detalhes da Assinatura
+                </h2>
               </div>
-              <div className="space-y-4">
+              <div className="p-6 space-y-4">
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Status</span>
-                  <p className={`font-semibold ${subscription.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Status</span>
+                  <p className={`font-semibold ${subscription.isActive ? 'text-emerald-600' : 'text-red-600'}`}>
                     {subscription.isActive ? 'Ativa' : 'Inativa'}
                   </p>
                 </div>
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Data de Início</span>
-                  <p className="text-gray-900 font-medium">{formatDate(subscription.startDate)}</p>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Data de Início</span>
+                  <p className="text-gray-900">{formatDate(subscription.startDate)}</p>
                 </div>
                 {subscription.endDate && (
                   <div>
-                    <span className="text-sm text-gray-600 font-medium block mb-1">Data de Término</span>
-                    <p className="text-gray-900 font-medium">{formatDate(subscription.endDate)}</p>
+                    <span className="text-sm text-gray-500 font-medium block mb-1">Data de Término</span>
+                    <p className="text-gray-900">{formatDate(subscription.endDate)}</p>
                   </div>
                 )}
                 <div>
-                  <span className="text-sm text-gray-600 font-medium block mb-1">Criada em</span>
-                  <p className="text-gray-900 font-medium">{formatDate(subscription.createdAt)}</p>
+                  <span className="text-sm text-gray-500 font-medium block mb-1">Criada em</span>
+                  <p className="text-gray-900">{formatDate(subscription.createdAt)}</p>
                 </div>
               </div>
             </div>
 
             {/* Card: Desconto Ativo (se houver) */}
             {subscription.discount && (
-              <div className="bg-green-50 border border-green-200 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 rounded-lg">
-                      <HiTag className="w-6 h-6 text-green-700" />
-                    </div>
-                    <h2 className="text-lg font-semibold text-gray-900">Desconto Ativo</h2>
+              <div className="bg-white border border-gray-100 rounded-xl shadow-sm">
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                      <HiTag className="w-5 h-5 text-emerald-600" />
+                      Desconto Ativo
+                    </h2>
+                    <button
+                      onClick={handleRemoveDiscount}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-700 text-sm rounded-lg hover:bg-red-100 border border-red-200 transition-all duration-200"
+                    >
+                      <HiXMark className="w-4 h-4" />
+                      Remover
+                    </button>
                   </div>
-                  <button
-                    onClick={handleRemoveDiscount}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors font-medium"
-                  >
-                    <HiXMark className="w-4 h-4" />
-                    Remover
-                  </button>
                 </div>
-                <div className="space-y-4">
+                <div className="p-6 space-y-4">
                   <div>
-                    <span className="text-sm text-gray-700 font-medium block mb-1">Porcentagem</span>
-                    <p className="text-2xl font-bold text-green-600">{subscription.discount.percentage}%</p>
+                    <span className="text-sm text-gray-500 font-medium block mb-1">Porcentagem</span>
+                    <p className="text-2xl font-bold text-emerald-600">{subscription.discount.percentage}%</p>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-700 font-medium block mb-1">Início</span>
-                    <p className="text-gray-900 font-medium">{formatDate(subscription.discount.startDate)}</p>
+                    <span className="text-sm text-gray-500 font-medium block mb-1">Início</span>
+                    <p className="text-gray-900">{formatDate(subscription.discount.startDate)}</p>
                   </div>
                   {subscription.discount.endDate && (
                     <div>
-                      <span className="text-sm text-gray-700 font-medium block mb-1">Término</span>
-                      <p className="text-gray-900 font-medium">{formatDate(subscription.discount.endDate)}</p>
+                      <span className="text-sm text-gray-500 font-medium block mb-1">Término</span>
+                      <p className="text-gray-900">{formatDate(subscription.discount.endDate)}</p>
                     </div>
                   )}
                   {subscription.discount.reason && (
                     <div>
-                      <span className="text-sm text-gray-700 font-medium block mb-1">Motivo</span>
-                      <p className="text-gray-900 font-medium">{subscription.discount.reason}</p>
+                      <span className="text-sm text-gray-500 font-medium block mb-1">Motivo</span>
+                      <p className="text-gray-900">{subscription.discount.reason}</p>
                     </div>
                   )}
                 </div>
@@ -493,61 +492,68 @@ export default function SubscriptionDetailsPage() {
 
           {/* Formulário: Aplicar Desconto */}
           {!subscription.discount && (
-            <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-5">Aplicar Desconto</h2>
-              <form onSubmit={handleApplyDiscount} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Porcentagem (%)<span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      value={discountForm.percentage}
-                      onChange={e => setDiscountForm({ ...discountForm, percentage: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
-                      required
-                      placeholder="Ex: 15"
-                    />
+            <div className="mt-6 bg-white border border-gray-100 rounded-xl shadow-sm">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900">Aplicar Desconto</h2>
+              </div>
+              <div className="p-6">
+                <form onSubmit={handleApplyDiscount} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Porcentagem (%)<span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={discountForm.percentage}
+                        onChange={e => setDiscountForm({ ...discountForm, percentage: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent outline-none text-gray-900"
+                        required
+                        placeholder="Ex: 15"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Data de Término (Opcional)</label>
+                      <input
+                        type="date"
+                        value={discountForm.endDate}
+                        onChange={e => setDiscountForm({ ...discountForm, endDate: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent outline-none text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Motivo (Opcional)</label>
+                      <input
+                        type="text"
+                        value={discountForm.reason}
+                        onChange={e => setDiscountForm({ ...discountForm, reason: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent outline-none text-gray-900"
+                        placeholder="Ex: Cliente fiel"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Data de Término (Opcional)</label>
-                    <input
-                      type="date"
-                      value={discountForm.endDate}
-                      onChange={e => setDiscountForm({ ...discountForm, endDate: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Motivo (Opcional)</label>
-                    <input
-                      type="text"
-                      value={discountForm.reason}
-                      onChange={e => setDiscountForm({ ...discountForm, reason: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 outline-none text-gray-900 font-medium"
-                      placeholder="Ex: Cliente fiel"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="submit"
-                  disabled={applyingDiscount}
-                  className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
-                >
-                  {applyingDiscount ? 'Aplicando...' : 'Aplicar Desconto'}
-                </button>
-              </form>
+                  <button
+                    type="submit"
+                    disabled={applyingDiscount}
+                    className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all duration-200 font-medium"
+                  >
+                    {applyingDiscount ? 'Aplicando...' : 'Aplicar Desconto'}
+                  </button>
+                </form>
+              </div>
             </div>
           )}
 
           {/* Formulário: Alterar Plano */}
-          <div className="mt-6 bg-white rounded-lg border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-5">Alterar Plano</h2>
-            <div className="flex gap-4 items-end">
+          <div className="mt-6 bg-white border border-gray-100 rounded-xl shadow-sm">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">Alterar Plano</h2>
+            </div>
+            <div className="p-6">
+              <div className="flex gap-4 items-end">
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Selecionar Novo Plano</label>
                 <select
